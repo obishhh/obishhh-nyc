@@ -19,3 +19,10 @@ img { display: block; max-width: 100%; }
   flex: 1;
   padding: 16px 16px 72px;
 }
+
+@view-transition { navigation: auto; }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
