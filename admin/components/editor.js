@@ -16,9 +16,14 @@ function trim(value) {
   return value;
 }
 
+const slugify = (text) =>
+  text.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
 // The form's values, tidied into the shape the card component draws.
 function tidy(values) {
   const data = trim(values);
+  // An article needs an address; borrow one from the title if it has none.
+  data.slug = slugify(data.slug || (data.body ? data.title : '')) || null;
   data.minutes ??= 0;
   data.move.score ??= 0;
   data.move.cost = data.move.cost.filter(Boolean);
@@ -77,6 +82,10 @@ export function editor({ cards, art: artOptions, onSave, onDelete }) {
       number('move.score', 'Damage', { min: 0, max: 999 }),
       textarea('move.text', 'Text', { placeholder: 'Write 600 words about one font. If heads, write 600 more.', maxlength: 80, hint: 'About 70 characters fit.' }),
       costRow(),
+    ),
+    section('Article',
+      textarea('body', 'Text', { rows: 10, placeholder: 'Leave a blank line between paragraphs.', hint: 'Tapping a published card opens this. Leave it empty and the card just flips.' }),
+      text('slug', 'Address', { placeholder: 'from the title', maxlength: 60, hint: 'The end of its link: obishhh.nyc/?card=…' }),
     ),
     section('Small print',
       text('dex', 'Dex strip', { placeholder: 'Essay. Length: 640 words. Filed: Oct 28, 2026.', maxlength: 64 }),
@@ -175,7 +184,7 @@ export function editor({ cards, art: artOptions, onSave, onDelete }) {
       load(await onSave(data, status, record?.id));
       flash(message);
     } catch (error) {
-      flash(error.message, true);
+      flash(error.code === '23505' ? 'Another card already uses that address.' : error.message, true);
     } finally {
       busy(false);
     }

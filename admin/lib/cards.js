@@ -13,8 +13,8 @@ const art = () => supabase.storage.from(BUCKET);
 // Rows use the database's column names; everything else uses the card component's.
 const fromRow = ({ first_print: firstPrint, ...row }) => ({ ...row, firstPrint });
 
-const toRow = ({ number, title, stage, type, finish, rarity, minutes, firstPrint, dex, move, stats, flavor, art }, status) =>
-  ({ status, number, title, stage, type, finish, rarity, minutes, first_print: firstPrint, dex, move, stats, flavor, art });
+const toRow = ({ number, title, stage, type, finish, rarity, minutes, firstPrint, dex, move, stats, flavor, art, slug, body }, status) =>
+  ({ status, number, title, stage, type, finish, rarity, minutes, first_print: firstPrint, dex, move, stats, flavor, art, slug, body });
 
 export const listCards = async () =>
   unwrap(await cards().select().order('position').order('created_at')).map(fromRow);

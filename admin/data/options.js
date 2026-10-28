@@ -40,6 +40,8 @@ export function blankCard(cards) {
     move: { name: '', text: '', score: 10, cost: ['plain', 'plain'] },
     stats: { reads: '0', replies: '0', filed: '' },
     flavor: null,
+    slug: '',
+    body: '',
     art: { src: '', alt: '', illustrator: '', position: '', title: '', author: '', license: '', source: '' },
   };
 }

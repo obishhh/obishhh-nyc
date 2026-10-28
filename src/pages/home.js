@@ -5,6 +5,7 @@ import { notice } from '../components/notice.js';
 import { loadBinder } from '../lib/cards.js';
 import { h } from '../lib/dom.js';
 import { enableFlip } from '../lib/flip.js';
+import { enableReading } from '../lib/reading.js';
 import { trackPointer } from '../lib/pointer.js';
 import { revealWhenReady } from '../lib/reveal.js';
 
@@ -19,6 +20,7 @@ async function binderPage() {
 
   const page = binder(cards, { label: 'Binder page 1' });
   trackPointer(page, '.card');
+  enableReading(page, cards);
   enableFlip(page, '.binder__flip');
   return page;
 }

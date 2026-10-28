@@ -7,7 +7,8 @@ import { sealed } from './sealed.js';
 const MAX_TILT = 0.8;
 
 function flippable(data) {
-  return h('div', { class: 'binder__flip', role: 'button', tabindex: 0, 'aria-pressed': 'false', 'aria-label': `${data.title}. Flip card.` },
+  const label = data.body ? `Read ${data.title}` : `${data.title}. Flip card.`;
+  return h('div', { class: 'binder__flip', role: 'button', tabindex: 0, 'aria-pressed': 'false', 'aria-label': label, dataset: data.body && { slug: data.slug } },
     card(data),
     cardBack(),
   );
