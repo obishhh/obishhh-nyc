@@ -12,7 +12,23 @@ html { scrollbar-gutter: stable; }
   height: 352px;
   pointer-events: none;
   will-change: transform;
+  perspective: 1400px;
 }
+
+.reader-ghost__turn {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.reader-ghost__turn > * {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.reader-ghost__turn > .card-back { transform: rotateY(180deg); }
 
 .reader {
   position: fixed;
@@ -113,7 +129,8 @@ html { scrollbar-gutter: stable; }
   height: 352px;
   border-radius: 12px;
   transform-origin: top left;
-  transform: scale(1.15) rotateY(var(--flip, 0deg));
+  /* Scaled from the corner, but turned over around its middle. */
+  transform: scale(1.15) translateX(126px) rotateY(var(--flip, 0deg)) translateX(-126px);
   transform-style: preserve-3d;
   transition: transform 0.6s var(--ease-out);
   cursor: pointer;
@@ -225,7 +242,7 @@ html { scrollbar-gutter: stable; }
 
   .reader__card { position: static; padding-top: 4px; }
   .reader__pocket { width: calc(252px * 0.78); height: calc(352px * 0.78); }
-  .reader__flip { transform: scale(0.78) rotateY(var(--flip, 0deg)); }
+  .reader__flip { transform: scale(0.78) translateX(126px) rotateY(var(--flip, 0deg)) translateX(-126px); }
   .reader__title { font-size: 46px; }
   .reader__body p { font-size: 17.5px; }
 }

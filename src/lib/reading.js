@@ -26,14 +26,20 @@ const transform = ({ x, y, scale, turn }) =>
   `translate(${x - CARD.width / 2}px, ${y - CARD.height / 2}px) scale(${scale}) rotate(${turn}deg)`;
 
 // A copy of the card flies between the binder and the article on its own layer, so
-// nothing it passes over can clip or fade it.
-function fly(face, from, to, duration) {
+// nothing it passes over can clip or fade it. A card left face down turns back over on the way.
+function fly(face, from, to, duration, back = null) {
   const ghost = document.createElement('div');
   ghost.className = 'reader-ghost';
-  ghost.append(face.cloneNode(true));
+  const turn = document.createElement('div');
+  turn.className = 'reader-ghost__turn';
+  turn.append(face.cloneNode(true));
+  if (back) turn.append(back.cloneNode(true));
+  ghost.append(turn);
   document.body.append(ghost);
-  const flight = ghost.animate([{ transform: transform(from) }, { transform: transform(to) }], { duration, easing: EASE, fill: 'both' });
-  return flight.finished.then(() => ghost.remove());
+  const options = { duration, easing: EASE, fill: 'both' };
+  const flights = [ghost.animate([{ transform: transform(from) }, { transform: transform(to) }], options)];
+  if (back) flights.push(turn.animate([{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(0deg)' }], options));
+  return Promise.all(flights.map((flight) => flight.finished)).then(() => ghost.remove());
 }
 
 // Open published cards as articles over the binder, each at its own address (?card=slug).
@@ -109,7 +115,8 @@ export function enableReading(binder, cards) {
       const from = inArticle(view);
       const to = inBinder(pocket);
       view.pocket.style.visibility = 'hidden';
-      flight = fly(view.pocket.querySelector('.card'), from, to, 460);
+      const faceDown = view.pocket.querySelector('[aria-pressed="true"]');
+      flight = fly(view.pocket.querySelector('.card'), from, to, 460, faceDown && view.pocket.querySelector('.card-back'));
     }
     await Promise.all([flight, ...fades.map((animation) => animation.finished)]);
     view.root.remove();
