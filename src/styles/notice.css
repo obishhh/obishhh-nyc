@@ -1,0 +1,9 @@
+.notice {
+  max-width: 320px;
+  margin: 12vh auto 0;
+  font: 700 13px/1.5 var(--font-display);
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--page-muted);
+}

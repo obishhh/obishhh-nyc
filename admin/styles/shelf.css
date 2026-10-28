@@ -1,0 +1,178 @@
+.shelf__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 8px 0 10px;
+}
+
+.shelf__title {
+  margin: 0;
+  font: 700 40px/1 var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.shelf__summary {
+  margin: 10px 0 0;
+  font: 700 11px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--page-muted);
+}
+
+.shelf__help {
+  max-width: 560px;
+  margin: 0 0 40px;
+  font-size: 14px;
+  color: var(--page-muted);
+}
+
+.shelf__grid {
+  --scale: 0.7;
+  --pocket-width: calc(252px * var(--scale));
+  --pocket-height: calc(352px * var(--scale));
+
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--pocket-width));
+  justify-content: space-between;
+  gap: 40px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tile__open {
+  display: block;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+  -webkit-touch-callout: none;
+}
+
+.tile__open:focus-visible {
+  outline: 2px solid var(--ink-900);
+  outline-offset: 10px;
+}
+
+.tile .binder__pocket > .card {
+  transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+}
+
+.tile:hover .binder__pocket > .card,
+.tile.is-dragging .binder__pocket > .card {
+  --lift: -6px;
+  --turn: 0deg;
+  box-shadow: 0 2px 4px rgb(13 10 5 / 0.18), 0 22px 32px -10px rgb(13 10 5 / 0.28);
+}
+
+.tile[data-status='draft'] .binder__pocket > .card::before {
+  border-style: dashed;
+  border-color: var(--line-hover);
+}
+
+.tile.is-dragging {
+  z-index: 3;
+  cursor: grabbing;
+}
+
+.tile.is-dragging .binder__pocket > .card { --lift: -12px; }
+.shelf__grid.is-sorting { cursor: grabbing; }
+.shelf__grid.is-sorting .tile__open { pointer-events: none; }
+
+.tile__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tile__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font: 700 15px/1.2 var(--font-display);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tile__grip {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin-right: -6px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--page-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.tile__grip:hover { background: var(--page-line); color: var(--ink-900); }
+.tile__grip:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 1px; }
+
+.shelf__new-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: var(--pocket-width);
+  height: var(--pocket-height);
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 12px;
+  font: 700 12px/1 var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--page-muted);
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s, background-color 0.2s;
+}
+
+.shelf__new-link:hover,
+.shelf__new-link:focus-visible {
+  border-color: var(--ink-900);
+  background: #fcfbf8;
+  color: var(--ink-900);
+}
+
+.shelf__new-link:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 4px; }
+
+.shelf__new-plus {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.shelf__new-plus .icon { width: 20px; height: 20px; }
+
+@media (max-width: 599px) {
+  .shelf__header { flex-direction: column; align-items: flex-start; }
+  .shelf__title { font-size: 32px; }
+  .shelf__help { margin-bottom: 28px; }
+  .shelf__grid { --scale: 0.6; gap: 28px 12px; }
+}
+
+@media (max-width: 359px) {
+  .shelf__grid { --scale: 0.54; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile .binder__pocket > .card { transition: none; }
+}

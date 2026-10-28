@@ -1,10 +1,5 @@
+import { licenses } from '../data/licenses.js';
 import { h } from '../lib/dom.js';
-
-const LICENSES = {
-  'CC BY 3.0': 'https://creativecommons.org/licenses/by/3.0/',
-  'CC BY 4.0': 'https://creativecommons.org/licenses/by/4.0/',
-  'Public domain': 'https://creativecommons.org/publicdomain/mark/1.0/',
-};
 
 function entry({ label, src, title, author, license, source, changes = 'cropped' }) {
   return h('li', { class: 'credits__entry' },
@@ -12,14 +7,25 @@ function entry({ label, src, title, author, license, source, changes = 'cropped'
     h('div', { class: 'credits__text' },
       h('p', { class: 'credits__card' }, label),
       h('p', { class: 'credits__work' }, h('a', { href: source }, title), ` by ${author}`),
-      h('p', { class: 'credits__license' }, h('a', { href: LICENSES[license] }, license), ` · ${changes}`),
+      h('p', { class: 'credits__license' }, h('a', { href: licenses[license] }, license), ` · ${changes}`),
     ),
   );
 }
 
+// One entry per licensed work, in binder order. Your own photos need no credit.
+function cardWorks(cards) {
+  const works = new Map();
+  for (const { title, sealed, art } of cards) {
+    if (art.src && art.license && !works.has(art.src)) {
+      works.set(art.src, { label: sealed ? 'Sealed card' : title, ...art });
+    }
+  }
+  return [...works.values()];
+}
+
 export function credits({ cards, back }) {
   const works = [
-    ...cards.map(({ title, art }) => ({ label: title, ...art })),
+    ...cardWorks(cards),
     ...back.map((work) => ({ label: 'Card back', ...work })),
   ];
   return h('section', { class: 'credits' },

@@ -15,9 +15,9 @@ function nameBar({ title, minutes, type }) {
   );
 }
 
-function artwork({ src, alt }) {
+function artwork({ src, alt, position }) {
   return h('figure', { class: 'card__art' },
-    h('img', { src, alt, width: 202, height: 128, decoding: 'async' }),
+    src && h('img', { src, alt, width: 202, height: 128, decoding: 'async', style: position && { 'object-position': position } }),
   );
 }
 

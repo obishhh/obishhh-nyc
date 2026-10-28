@@ -1,0 +1,146 @@
+.editor__bar {
+  position: sticky;
+  top: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 40px;
+  padding: 8px 8px 8px 10px;
+  border: 1px solid var(--page-line);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 10px 30px -18px rgb(13 10 5 / 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.editor__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 38px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  font: 700 12px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--page-muted);
+  text-decoration: none;
+}
+
+.editor__back:hover { background: var(--page-line); color: var(--ink-900); }
+.editor__back:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 2px; }
+
+.editor__state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+}
+
+.editor__state-text {
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--page-muted);
+}
+
+.editor__state-text.is-dirty { color: var(--ink-900); }
+
+.editor__state-text.is-dirty::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--border-500);
+  box-shadow: 0 0 0 1px var(--border-700);
+  vertical-align: 1px;
+}
+
+.editor__actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+  margin-left: auto;
+}
+
+.editor__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  align-items: start;
+  gap: 64px;
+}
+
+.editor__form {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  max-width: 660px;
+}
+
+.form-section__title {
+  margin: 0 0 4px;
+  font: 700 24px/1.1 var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.form-section__intro {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: var(--page-muted);
+}
+
+.editor__preview {
+  position: sticky;
+  top: 96px;
+}
+
+@media (max-width: 999px) {
+  .editor__body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+  }
+
+  .editor__preview {
+    position: static;
+    order: -1;
+  }
+
+  .editor__form { max-width: none; }
+}
+
+@media (max-width: 599px) {
+  /* A backdrop filter would trap the fixed action bar inside this one. */
+  .editor__bar {
+    top: 8px;
+    margin-bottom: 28px;
+    padding-right: 14px;
+    background: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .editor__back span { display: none; }
+
+  .editor__actions {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 6;
+    justify-content: flex-end;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--page-line);
+    background: rgb(255 255 255 / 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .editor__actions .button--danger { margin-right: auto; }
+}

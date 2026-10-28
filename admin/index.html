@@ -3,83 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' data:; connect-src https://sevwmqmzawqldbnoyeng.supabase.co wss://sevwmqmzawqldbnoyeng.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://sevwmqmzawqldbnoyeng.supabase.co; connect-src https://sevwmqmzawqldbnoyeng.supabase.co wss://sevwmqmzawqldbnoyeng.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
   <meta name="robots" content="noindex, nofollow">
-  <title>Backdoor · obishhh</title>
+  <title>Editor’s room · obishhh</title>
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" href="/assets/icons/favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cabin+Condensed:wght@500;700&family=Cabin:ital,wght@0,400;0,700;1,700&family=Lilita+One&display=swap">
+  <link rel="stylesheet" href="/src/styles/tokens.css">
+  <link rel="stylesheet" href="/src/styles/base.css">
+  <link rel="stylesheet" href="/src/styles/energy.css">
+  <link rel="stylesheet" href="/src/styles/rarity.css">
+  <link rel="stylesheet" href="/src/styles/card.css">
+  <link rel="stylesheet" href="/src/styles/card-back.css">
+  <link rel="stylesheet" href="/src/styles/sealed.css">
+  <link rel="stylesheet" href="/src/styles/binder.css">
+  <link rel="stylesheet" href="/src/styles/notice.css">
+  <link rel="stylesheet" href="styles/controls.css">
+  <link rel="stylesheet" href="styles/door.css">
+  <link rel="stylesheet" href="styles/room.css">
+  <link rel="stylesheet" href="styles/shelf.css">
+  <link rel="stylesheet" href="styles/editor.css">
+  <link rel="stylesheet" href="styles/art-picker.css">
+  <link rel="stylesheet" href="styles/preview.css">
+  <link rel="stylesheet" href="styles/toast.css">
   <script type="module" src="main.js"></script>
 </head>
-<body>
-  <section id="login" hidden>
-    <h1>Backdoor</h1>
-    <p>Staff only. Well, staff of one.</p>
-    <form>
-      <div class="field" data-email-field>
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" autocomplete="username" required>
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
-      </div>
-      <p class="error" data-error></p>
-      <div class="bar">
-        <button class="primary" type="submit">Sign in</button>
-        <button class="quiet" type="button" data-switch-account hidden>Different account</button>
-      </div>
-    </form>
-  </section>
-
-  <section id="app" hidden>
-    <header class="bar">
-      <strong>obishhh.nyc · backdoor</strong>
-      <span class="spacer"></span>
-      <button type="button" data-sign-out>Sign out</button>
-    </header>
-    <div class="layout">
-      <aside id="posts">
-        <button class="primary" type="button" data-new>New post</button>
-        <div class="tabs" role="group" aria-label="Filter posts">
-          <button type="button" data-filter="all" aria-pressed="true">All</button>
-          <button type="button" data-filter="draft" aria-pressed="false">Drafts</button>
-          <button type="button" data-filter="published" aria-pressed="false">Published</button>
-        </div>
-        <ul data-list></ul>
-      </aside>
-
-      <main id="editor">
-        <div class="bar">
-          <span class="state" data-state></span>
-          <span class="flash" data-flash></span>
-          <span class="spacer"></span>
-          <button type="button" data-action="save">Save draft</button>
-          <button class="primary" type="button" data-action="publish">Publish</button>
-          <button type="button" data-action="unpublish" hidden>Unpublish</button>
-          <button class="danger" type="button" data-action="remove" hidden>Delete</button>
-        </div>
-        <form>
-          <div class="field"><input class="title" name="title" placeholder="Title" aria-label="Title"></div>
-          <div class="row">
-            <div><label for="slug">Slug</label><input id="slug" name="slug" placeholder="auto from title"></div>
-            <div>
-              <label for="kind">Kind</label>
-              <select id="kind" name="kind">
-                <option value="post">Post</option>
-                <option value="note">Note (tidbit)</option>
-                <option value="page">Page (permanent)</option>
-                <option value="link">Link</option>
-              </select>
-            </div>
-            <div><label for="tags">Tags</label><input id="tags" name="tags" placeholder="tv, type, subway"></div>
-          </div>
-          <div class="field"><label for="excerpt">Excerpt</label><input id="excerpt" name="excerpt" placeholder="One line for previews"></div>
-          <div class="field"><label for="body">Body (Markdown)</label><textarea id="body" name="body" placeholder="Write something small."></textarea></div>
-        </form>
-      </main>
-    </div>
-  </section>
-</body>
+<body></body>
 </html>
