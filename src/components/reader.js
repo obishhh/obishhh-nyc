@@ -1,23 +1,11 @@
 import { h, svg } from '../lib/dom.js';
 import { card } from './card.js';
 import { cardBack } from './card-back.js';
-import { energy } from './energy.js';
 import { rarity } from './rarity.js';
 
 const CLOSE = `<svg class="reader__icon" viewBox="0 0 16 16" aria-hidden="true">
   <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
 </svg>`;
-
-function move({ type, move: { name, text, score, cost = [type, 'plain'] } }) {
-  return h('aside', { class: 'reader__move' },
-    h('span', { class: 'reader__cost' }, cost.map((kind) => energy(kind))),
-    h('div', { class: 'reader__move-text' },
-      h('p', { class: 'reader__move-name' }, name),
-      h('p', { class: 'reader__move-body' }, text),
-    ),
-    h('span', { class: 'reader__score' }, String(score)),
-  );
-}
 
 function body({ body: paragraphs = [], rarity: level }) {
   const last = paragraphs.length - 1;
@@ -48,15 +36,12 @@ export function reader(data) {
       h('div', { class: 'reader__layout' },
         h('div', { class: 'reader__card' },
           h('div', { class: 'reader__pocket' }, flip),
-          h('p', { class: 'reader__hint' }, 'Tap the card to turn it over'),
         ),
         h('div', { class: 'reader__text' },
           h('p', { class: 'reader__stage' }, data.stage),
           h('h1', { class: 'reader__title', id: 'reader-title' }, data.title),
           h('p', { class: 'reader__byline' }, `${data.minutes} min read · Filed under ${data.stats.filed}`),
-          move(data),
           body(data),
-          data.flavor && h('p', { class: 'reader__flavor' }, data.flavor),
           h('footer', { class: 'reader__footer' },
             h('dl', { class: 'reader__stats' },
               stat('reads', data.stats.reads),
