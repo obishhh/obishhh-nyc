@@ -12,7 +12,7 @@ trackPointer(page, '.card');
 enableFlip(page, '.binder__flip');
 
 document.body.append(
-  masthead({ heading: true }),
+  masthead({ heading: true, door: true }),
   h('main', { class: 'page' }, page),
   colophon(),
 );

@@ -1,11 +1,12 @@
 import { currentSession, isAdmin, signOut } from './lib/auth.js';
 import { deletePost, getPost, isSlugTaken, listPosts, savePost } from './lib/posts.js';
 import { mountEditor } from './components/editor.js';
-import { mountLogin } from './components/login.js';
+import { door } from './components/door.js';
 import { mountPostList } from './components/post-list.js';
 
 const app = document.getElementById('app');
-const login = mountLogin(document.getElementById('login'), { onSignedIn: enter });
+const login = door({ onSignedIn: enter });
+document.body.prepend(login.root);
 const list = mountPostList(document.getElementById('posts'), { onSelect: open });
 const editor = mountEditor(document.getElementById('editor'), {
   save: (fields) => persist({ ...fields, status: editor.post?.status ?? 'draft' }, 'Saved'),
