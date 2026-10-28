@@ -101,7 +101,7 @@ export const cards = [
     type: 'plain',
     finish: 'standard',
     rarity: 'rare',
-    minutes: 2,
+    minutes: 1,
     firstPrint: true,
     dex: 'Page. Updated whenever. Since 2026.',
     move: { name: 'New Website', text: 'Shuffle the old site into your deck. Draw a fresh one.', score: 30 },
