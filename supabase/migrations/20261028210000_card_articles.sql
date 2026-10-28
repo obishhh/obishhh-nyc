@@ -7,6 +7,8 @@ alter table public.cards
 update public.cards
 set slug = 'about',
     minutes = 1,
+    dex = 'Page. Click a card to read more.',
+    move = jsonb_set(move, '{text}', to_jsonb('Not sure what I’ll be putting here, but it seemed fun to have.'::text)),
     body = E'Hi, I’m obishhh. This is my website.\n\nIt’s basically a blog dressed up as Pokémon cards. Every card is a post, and it could be about anything. Quite likely Pokémon.\n\nThe blurry ones aren’t finished yet. They’ll turn over when they are.\n\nThanks for stopping by.'
 where number = '001/120' and title = 'About';
 
