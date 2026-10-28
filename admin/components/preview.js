@@ -6,17 +6,17 @@ import { enableFlip } from '../../src/lib/flip.js';
 import { trackPointer } from '../../src/lib/pointer.js';
 
 const VIEWS = [
-  { value: 'revealed', label: 'Published' },
-  { value: 'sealed', label: 'Draft (sealed)' },
+  { value: 'revealed', label: 'Face up' },
+  { value: 'sealed', label: 'Sealed' },
 ];
 
-// The card exactly as the binder will show it. Click to flip; toggle to see it sealed.
+// The card exactly as the binder will show it. Click to flip, or see it sealed.
 export function preview() {
   const back = cardBack();
   const flip = h('div', { class: 'binder__flip', role: 'button', tabindex: 0, 'aria-pressed': 'false', 'aria-label': 'Flip the preview' });
   const pocket = h('div', { class: 'binder__pocket' }, flip);
   const buttons = VIEWS.map(({ value, label }) =>
-    h('button', { class: 'segmented__option', type: 'button', 'aria-pressed': String(value === 'revealed'), dataset: { view: value } }, label));
+    h('button', { class: 'preview__view', type: 'button', 'aria-pressed': String(value === 'revealed'), dataset: { view: value } }, label));
   const hint = h('p', { class: 'preview__hint' }, 'Click the card to flip it.');
   let view = 'revealed';
   let data = null;
@@ -49,7 +49,7 @@ export function preview() {
   return {
     root: h('div', { class: 'preview' },
       h('div', { class: 'preview__stage' }, pocket),
-      h('div', { class: 'segmented', role: 'group', 'aria-label': 'Preview as' }, buttons),
+      h('p', { class: 'preview__views', role: 'group', 'aria-label': 'Preview as' }, buttons),
       hint,
     ),
     update(next) {

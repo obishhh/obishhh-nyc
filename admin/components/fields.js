@@ -3,67 +3,36 @@ import { h } from '../../src/lib/dom.js';
 let count = 0;
 const uid = () => `field-${++count}`;
 
-const spanned = (span) => span && { span: String(span) };
-
-function field(label, control, { hint, span } = {}) {
+// A label on the left, the control on the right.
+export function row(label, control, hint) {
   const input = control.matches('input, select, textarea') ? control : control.querySelector('input, select, textarea');
-  input.id ||= uid();
-  return h('div', { class: 'field', dataset: spanned(span) },
-    h('label', { class: 'field__label', for: input.id }, label),
-    control,
-    hint && h('p', { class: 'field__hint' }, hint),
+  if (input) input.id ||= uid();
+  return h('div', { class: 'row' },
+    input ? h('label', { class: 'row__label', for: input.id }, label) : h('span', { class: 'row__label' }, label),
+    h('div', { class: 'row__value' }, control, hint && h('p', { class: 'row__hint' }, hint)),
   );
 }
 
-export function text(name, label, { hint, span, ...attrs } = {}) {
-  return field(label, h('input', { class: 'input', name, type: 'text', autocomplete: 'off', ...attrs }), { hint, span });
+const input = (name, attrs) => h('input', { class: 'input', name, type: 'text', autocomplete: 'off', ...attrs });
+
+export const text = (name, label, { hint, ...attrs } = {}) => row(label, input(name, attrs), hint);
+
+export function number(name, label, { hint, unit, ...attrs } = {}) {
+  const control = input(name, { class: 'input input--short', type: 'number', inputmode: 'numeric', ...attrs });
+  return row(label, unit ? h('span', { class: 'inline' }, control, h('span', { class: 'unit' }, unit)) : control, hint);
 }
 
-export function number(name, label, { hint, span, suffix, ...attrs } = {}) {
-  const input = h('input', { class: 'input', name, type: 'number', inputmode: 'numeric', ...attrs });
-  return field(label, suffix ? h('div', { class: 'affix' }, input, h('span', { class: 'affix__text' }, suffix)) : input, { hint, span });
-}
-
-export function textarea(name, label, { hint, span, rows = 2, ...attrs } = {}) {
-  return field(label, h('textarea', { class: 'input', name, rows, ...attrs }), { hint, span });
-}
+export const textarea = (name, label, { hint, rows = 2, ...attrs } = {}) =>
+  row(label, h('textarea', { class: 'input', name, rows, ...attrs }), hint);
 
 export const options = (choices) => choices.map(({ value, label }) => h('option', { value }, label));
 
-export function select(name, label, choices, { hint, span } = {}) {
-  return field(label, h('select', { class: 'input', name }, options(choices)), { hint, span });
-}
+export const dropdown = (name, choices, attrs = {}) => h('select', { class: 'input', name, ...attrs }, options(choices));
 
-// A row of radio pills. Each choice can bring an icon and its own data attributes.
-export function choice(name, legend, choices, { hint, span, variant = 'pills' } = {}) {
-  return h('fieldset', { class: `choice choice--${variant}`, dataset: spanned(span) },
-    h('legend', { class: 'field__label' }, legend),
-    h('div', { class: 'choice__options' },
-      choices.map(({ value, label, icon, dataset }) => h('label', { class: 'choice__option', dataset },
-        h('input', { class: 'choice__input', type: 'radio', name, value }),
-        icon,
-        h('span', { class: 'choice__label' }, label),
-      )),
-    ),
-    hint && h('p', { class: 'field__hint' }, hint),
-  );
-}
+export const select = (name, label, choices, { hint } = {}) => row(label, dropdown(name, choices), hint);
 
-export function toggle(name, label, { hint, span } = {}) {
-  return h('div', { class: 'field', dataset: spanned(span) },
-    h('label', { class: 'toggle' },
-      h('input', { class: 'toggle__input', type: 'checkbox', name, role: 'switch' }),
-      h('span', { class: 'toggle__track', 'aria-hidden': 'true' }),
-      h('span', { class: 'toggle__label' }, label),
-    ),
-    hint && h('p', { class: 'field__hint' }, hint),
-  );
-}
+export const checkbox = (name, label, text, { hint } = {}) =>
+  row(label, h('label', { class: 'check' }, h('input', { type: 'checkbox', name }), text), hint);
 
-export function section(title, intro, ...children) {
-  return h('section', { class: 'form-section' },
-    h('h2', { class: 'form-section__title' }, title),
-    intro && h('p', { class: 'form-section__intro' }, intro),
-    h('div', { class: 'form-grid' }, children),
-  );
-}
+export const section = (title, ...rows) =>
+  h('section', { class: 'form-section' }, h('h2', { class: 'form-section__title' }, title), rows);

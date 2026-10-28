@@ -1,16 +1,13 @@
-import { energy } from '../../src/components/energy.js';
-import { rarity } from '../../src/components/rarity.js';
 import { h, svg } from '../../src/lib/dom.js';
 import { blankCard, FINISHES, RARITIES, STAGES, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { formatDate } from '../lib/format.js';
 import { ARROW_LEFT } from '../lib/icons.js';
 import { artPicker } from './art-picker.js';
-import { choice, number, options, section, text, textarea, toggle } from './fields.js';
+import { checkbox, dropdown, number, row, section, select, text, textarea } from './fields.js';
 import { preview } from './preview.js';
-import { toast } from './toast.js';
 
-const CHIPS = { new: 'New', draft: 'Draft', published: 'Live' };
+const STATUS = { new: 'New card', draft: 'Draft', published: 'Live' };
 
 function trim(value) {
   if (typeof value === 'string') return value.trim();
@@ -29,13 +26,14 @@ function tidy(values) {
   return data;
 }
 
-function costPicker() {
-  const slot = (index, ...first) =>
-    h('select', { class: 'input', name: `move.cost.${index}`, 'aria-label': `Energy ${index + 1}` }, first, options(TYPES));
-  return h('fieldset', { class: 'cost', dataset: { span: '6' } },
-    h('legend', { class: 'field__label' }, 'Energy cost'),
-    h('div', { class: 'cost__slots' }, slot(0), slot(1, h('option', { value: '' }, 'None'))),
-    h('p', { class: 'field__hint' }, 'The little circles beside the move. The first one follows the card’s type until you change it.'),
+function costRow() {
+  const none = [{ value: '', label: 'None' }];
+  return row('Cost',
+    h('span', { class: 'inline' },
+      dropdown('move.cost.0', TYPES, { 'aria-label': 'First energy' }),
+      dropdown('move.cost.1', [...none, ...TYPES], { 'aria-label': 'Second energy' }),
+    ),
+    'The first energy follows the type until you change it.',
   );
 }
 
@@ -47,51 +45,59 @@ function button(label, variant, onClick) {
 
 // Edit one card. Every field redraws the preview as you type.
 export function editor({ cards, art: artOptions, onSave, onDelete }) {
-  const art = artPicker({ ...artOptions, onError: (error) => toast(`Couldn’t upload that one. ${error.message}`, { tone: 'bad' }) });
+  const state = h('p', { class: 'editor__state', role: 'status', 'aria-live': 'polite' });
+  let flashTimer;
+
+  function flash(message, bad = false) {
+    clearTimeout(flashTimer);
+    state.textContent = message;
+    state.classList.toggle('is-bad', bad);
+    flashTimer = setTimeout(renderState, bad ? 6000 : 2500);
+  }
+
+  const art = artPicker({ ...artOptions, onError: (error) => flash(`Upload failed. ${error.message}`, true) });
   const view = preview();
 
   const form = h('form', { class: 'editor__form', novalidate: true },
-    section('Name', 'The top line of the card.',
-      text('title', 'Title', { placeholder: 'Bodega Cat #14', maxlength: 32, span: 4, hint: 'Long titles get cut off. Watch the preview.' }),
-      number('minutes', 'Read time', { min: 0, max: 999, suffix: 'min', span: 2 }),
-      text('stage', 'Stage', { list: 'editor-stages', placeholder: 'Basic Post', maxlength: 24, span: 3 }),
-      text('number', 'Card number', { placeholder: '012/120', maxlength: 9, span: 3 }),
+    section('Card',
+      text('title', 'Title', { placeholder: 'Bodega Cat #14', maxlength: 32 }),
+      text('stage', 'Stage', { list: 'editor-stages', placeholder: 'Basic Post', maxlength: 24 }),
+      text('number', 'Number', { placeholder: '012/120', maxlength: 9 }),
+      number('minutes', 'Read time', { min: 0, max: 999, unit: 'min' }),
     ),
-    section('Look', 'Colour, shine and how rare it is.',
-      choice('type', 'Type', TYPES.map(({ value, label }) => ({ value, label, icon: energy(value), dataset: { type: value } })), { variant: 'types' }),
-      choice('finish', 'Finish', FINISHES),
-      choice('rarity', 'Rarity', RARITIES.map(({ value, label }) => ({ value, label, icon: rarity(value) }))),
-      toggle('firstPrint', 'First print badge', { hint: 'The little “1” at the start of the dex strip.' }),
+    section('Look',
+      select('type', 'Type', TYPES),
+      select('finish', 'Finish', FINISHES),
+      select('rarity', 'Rarity', RARITIES),
+      checkbox('firstPrint', 'First print', 'Show the “1” badge'),
     ),
-    section('Art', 'Pick something from the library or upload your own.', art.root),
-    section('Move', 'The attack in the middle of the card.',
-      text('move.name', 'Move name', { placeholder: 'Overthink', maxlength: 24, span: 4 }),
-      number('move.score', 'Damage', { min: 0, max: 999, span: 2 }),
-      textarea('move.text', 'Move text', { placeholder: 'Write 600 words about one font. If heads, write 600 more.', maxlength: 80, hint: 'About 70 characters fit.' }),
-      costPicker(),
+    section('Art', ...art.rows),
+    section('Move',
+      text('move.name', 'Name', { placeholder: 'Overthink', maxlength: 24 }),
+      number('move.score', 'Damage', { min: 0, max: 999 }),
+      textarea('move.text', 'Text', { placeholder: 'Write 600 words about one font. If heads, write 600 more.', maxlength: 80, hint: 'About 70 characters fit.' }),
+      costRow(),
     ),
-    section('Small print', 'Everything under the art and along the bottom.',
+    section('Small print',
       text('dex', 'Dex strip', { placeholder: 'Essay. Length: 640 words. Filed: Oct 28, 2026.', maxlength: 64 }),
-      text('stats.reads', 'Reads', { placeholder: '1.2k', maxlength: 8, span: 2 }),
-      text('stats.replies', 'Replies', { placeholder: '14', maxlength: 8, span: 2 }),
-      text('stats.filed', 'Filed under', { placeholder: 'type', maxlength: 12, span: 2 }),
-      textarea('flavor', 'Flavor text', { placeholder: 'Fed by nobody. Somehow 19 pounds.', maxlength: 80, hint: 'Optional. The italic box at the bottom.' }),
+      text('stats.reads', 'Reads', { placeholder: '1.2k', maxlength: 8 }),
+      text('stats.replies', 'Replies', { placeholder: '14', maxlength: 8 }),
+      text('stats.filed', 'Filed under', { placeholder: 'type', maxlength: 12 }),
+      textarea('flavor', 'Flavor', { placeholder: 'Optional', maxlength: 80 }),
     ),
     h('datalist', { id: 'editor-stages' }, STAGES.map((value) => h('option', { value }))),
   );
 
-  const chip = h('span', { class: 'chip' });
-  const state = h('span', { class: 'editor__state-text' });
   const remove = button('Delete', 'button--danger', destroy);
   const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished. It’s sealed again.'));
   const save = button('Save draft', '', keep);
-  const publish = button('Publish', 'button--publish', () => commit('published', 'Published. It’s face up in the binder.'));
+  const publish = button('Publish', 'button--primary', () => commit('published', 'Published.'));
   const actions = [remove, unpublish, save, publish];
 
   const root = h('div', { class: 'editor' },
     h('div', { class: 'editor__bar' },
-      h('a', { class: 'editor__back', href: '#/' }, svg(ARROW_LEFT), h('span', {}, 'All cards')),
-      h('p', { class: 'editor__state' }, chip, state),
+      h('a', { class: 'editor__back', href: '#/' }, svg(ARROW_LEFT), 'All cards'),
+      state,
       h('div', { class: 'editor__actions' }, actions),
     ),
     h('div', { class: 'editor__body' },
@@ -108,15 +114,14 @@ export function editor({ cards, art: artOptions, onSave, onDelete }) {
   const current = () => tidy(readForm(form));
 
   function renderState() {
+    clearTimeout(flashTimer);
     const status = record?.status ?? 'new';
-    chip.className = `chip chip--${status}`;
-    chip.textContent = CHIPS[status];
-    state.textContent = dirty
-      ? 'Unsaved changes'
-      : status === 'new'
-        ? 'Not saved yet'
-        : `${status === 'draft' ? 'Sealed on the site' : 'Face up in the binder'} · saved ${formatDate(record.updated_at)}`;
+    state.classList.remove('is-bad');
     state.classList.toggle('is-dirty', dirty);
+    state.textContent = [
+      STATUS[status],
+      dirty ? 'Unsaved changes' : record && `Saved ${formatDate(record.updated_at)}`,
+    ].filter(Boolean).join(' · ');
     remove.hidden = !record;
     unpublish.hidden = status !== 'published';
     publish.hidden = status === 'published';
@@ -146,12 +151,12 @@ export function editor({ cards, art: artOptions, onSave, onDelete }) {
 
   function ready(data) {
     if (!data.title) {
-      toast('Give it a title before it goes out.', { tone: 'bad' });
+      flash('Add a title before publishing.', true);
       form.elements.namedItem('title').focus();
       return false;
     }
     if (!data.art.src) {
-      toast('Pick some art before it goes out.', { tone: 'bad' });
+      flash('Pick an image before publishing.', true);
       art.focus();
       return false;
     }
@@ -168,9 +173,9 @@ export function editor({ cards, art: artOptions, onSave, onDelete }) {
     busy(true);
     try {
       load(await onSave(data, status, record?.id));
-      toast(message);
+      flash(message);
     } catch (error) {
-      toast(error.message, { tone: 'bad' });
+      flash(error.message, true);
     } finally {
       busy(false);
     }
@@ -186,9 +191,8 @@ export function editor({ cards, art: artOptions, onSave, onDelete }) {
     busy(true);
     try {
       await onDelete(record);
-      toast('Deleted. Into the bin it goes.');
     } catch (error) {
-      toast(error.message, { tone: 'bad' });
+      flash(error.message, true);
     } finally {
       busy(false);
     }

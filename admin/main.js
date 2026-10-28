@@ -4,7 +4,6 @@ import { h } from '../src/lib/dom.js';
 import { door } from './components/door.js';
 import { editor } from './components/editor.js';
 import { shelf } from './components/shelf.js';
-import { toast } from './components/toast.js';
 import { topbar } from './components/topbar.js';
 import { currentSession, isAdmin, signOut } from './lib/auth.js';
 import { deleteCard, listCards, listUploads, reorderCards, saveCard, uploadArt } from './lib/cards.js';
@@ -51,9 +50,9 @@ function render() {
     workbench.load(record || null);
     view.replaceChildren(workbench.root);
   } else {
-    if (id) toast('That card isn’t in the binder any more.', { tone: 'bad' });
     binder.update(cards);
     view.replaceChildren(binder.root);
+    if (id) binder.flash('That card isn’t in the binder any more.', true);
   }
   scrollTo(0, 0);
 }
@@ -90,6 +89,7 @@ async function remove({ id }) {
   await deleteCard(id);
   cards = cards.filter((other) => other.id !== id);
   go('#/');
+  binder.flash('Deleted.');
 }
 
 async function reorder(ids) {
@@ -98,27 +98,27 @@ async function reorder(ids) {
   cards = ids.map((id) => byId.get(id));
   try {
     await reorderCards(ids);
-    toast('Order saved. The binder’s been reshuffled.');
+    binder.flash('Order saved.');
   } catch (error) {
     cards = before;
     binder.update(cards);
-    toast(error.message, { tone: 'bad' });
+    binder.flash(error.message, true);
   }
 }
 
 async function enter() {
   if (!(await isAdmin())) {
     await signOut();
-    entrance.show('You got in, but you’re not on the list. Back you go.');
+    entrance.show('This account can’t edit the cards.');
     return;
   }
   entrance.hide();
   room.hidden = false;
-  view.replaceChildren(notice('Shuffling the binder…'));
+  view.replaceChildren(notice('Loading the cards…'));
   try {
     cards = await listCards();
   } catch (error) {
-    view.replaceChildren(notice(`The binder won’t open: ${error.message}`));
+    view.replaceChildren(notice(`Couldn’t load the cards: ${error.message}`));
     return;
   }
   shown = location.hash;

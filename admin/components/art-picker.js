@@ -1,80 +1,75 @@
 import { licenses } from '../../src/data/licenses.js';
-import { h, svg } from '../../src/lib/dom.js';
-import { PLUS } from '../lib/icons.js';
+import { h } from '../../src/lib/dom.js';
+import { dropdown, row, text } from './fields.js';
 import { focusPicker } from './focus-picker.js';
-import { select, text } from './fields.js';
 
 const NO_CREDIT = { alt: '', illustrator: 'obishhh', title: '', author: '', license: '', source: '' };
 const CREDIT_KEYS = Object.keys(NO_CREDIT);
 
 const LICENSE_CHOICES = [
-  { value: '', label: 'My own work (no credit needed)' },
+  { value: '', label: 'My own (no credit needed)' },
   ...Object.keys(licenses).map((name) => ({ value: name, label: name })),
 ];
 
 function option(src, label) {
-  return h('label', { class: 'art-option', title: label },
-    h('input', { class: 'art-option__input', type: 'radio', name: 'art.src', value: src, 'aria-label': label }),
-    h('img', { class: 'art-option__image', src, alt: '', loading: 'lazy', draggable: 'false' }),
+  return h('label', { class: 'art__option', title: label },
+    h('input', { class: 'art__input', type: 'radio', name: 'art.src', value: src, 'aria-label': label }),
+    h('img', { class: 'art__image', src, alt: '', loading: 'lazy', draggable: 'false' }),
   );
 }
 
-// Choose the card art: the built-in library or your own uploads. Picking a piece
-// fills in its credit; the focus dot decides the crop.
+// Choose the card art from the library or your own uploads. Picking a piece fills
+// in its credit; the focus dot decides the crop.
 export function artPicker({ library, loadUploads, upload, creditFor, onError }) {
   const focus = focusPicker('art.position');
+  const grid = h('div', { class: 'art__grid' }, library.map((work) => option(work.src, work.title)));
   const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
-  const uploadLabel = h('span', { class: 'art-option__label' }, 'Upload');
-  const uploader = h('label', { class: 'art-option art-option--upload' }, file, svg(PLUS), uploadLabel);
-  const uploads = h('div', { class: 'art-picker__grid' }, uploader);
-  const shelf = h('div', { class: 'art-picker__grid' }, library.map((work) => option(work.src, work.title)));
+  const uploadLabel = h('span', {}, 'Upload an image…');
+  const uploader = h('label', { class: 'button button--quiet art__upload' }, file, uploadLabel);
+  const license = dropdown('art.license', LICENSE_CHOICES);
+  const focusRow = row('Focus', focus.root);
+  const root = h('div', { class: 'art' }, grid, uploader);
 
-  const credit = {
-    alt: text('art.alt', 'Alt text', { placeholder: 'Describe the picture', hint: 'Read out by screen readers.', span: 6 }),
-    illustrator: text('art.illustrator', 'Illustrator', { placeholder: 'obishhh', maxlength: 40, hint: 'Printed on the card as “Illus. …”.', span: 6 }),
-    title: text('art.title', 'Work title', { span: 3 }),
-    author: text('art.author', 'Author', { span: 3 }),
-    license: select('art.license', 'License', LICENSE_CHOICES, { span: 3 }),
-    source: text('art.source', 'Source link', { type: 'url', placeholder: 'https://', span: 3 }),
-  };
-  const control = (key) => credit[key].querySelector('input, select');
+  const rows = [
+    row('Image', root),
+    focusRow,
+    text('art.alt', 'Alt text', { placeholder: 'Describe the picture' }),
+    text('art.illustrator', 'Illustrator', { placeholder: 'obishhh', maxlength: 40 }),
+    text('art.title', 'Work', { placeholder: 'Title of the original' }),
+    text('art.author', 'Author'),
+    row('License', license, 'Licensed art is listed on the credits page.'),
+    text('art.source', 'Source', { type: 'url', placeholder: 'https://' }),
+  ];
+  const control = (key) => rows.map((each) => each.querySelector(`[name="art.${key}"]`)).find(Boolean);
 
-  const root = h('div', { class: 'art-picker', dataset: { span: '6' } },
-    h('div', { class: 'art-picker__group' }, h('p', { class: 'field__label' }, 'Your uploads'), uploads),
-    h('div', { class: 'art-picker__group' }, h('p', { class: 'field__label' }, 'Library'), shelf),
-    h('div', { class: 'art-picker__detail' },
-      focus.root,
-      h('div', { class: 'form-grid' }, credit.alt, credit.illustrator),
-    ),
-    h('details', { class: 'art-picker__credit' },
-      h('summary', {}, 'Credit on the credits page'),
-      h('p', { class: 'field__hint' }, 'Licensed art is listed on /credits/. Your own photos aren’t.'),
-      h('div', { class: 'form-grid' }, credit.title, credit.author, credit.license, credit.source),
-    ),
-  );
-
-  const radios = () => [...root.querySelectorAll('.art-option__input')];
+  const radios = () => [...grid.querySelectorAll('.art__input')];
   const find = (src) => radios().find((radio) => radio.value === src);
 
+  // Uploads go first, newest at the front, ahead of the library.
   function addUpload(src) {
     const existing = find(src);
     if (existing) return existing;
     const tile = option(src, 'Your upload');
-    uploader.after(tile);
+    grid.prepend(tile);
     return tile.querySelector('input');
   }
 
-  // A new piece of art brings its own credit: from the library, from another card using it, or none.
+  function showFocus(src) {
+    focusRow.hidden = !src;
+    focus.show(src);
+  }
+
+  // New art brings its own credit: from the library, from another card using it, or none.
   function pick(radio) {
     const src = radio.value;
     const known = library.find((work) => work.src === src) ?? creditFor(src) ?? NO_CREDIT;
     for (const key of CREDIT_KEYS) control(key).value = known[key] ?? '';
-    focus.show(src);
+    showFocus(src);
     focus.clear();
     radio.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  root.addEventListener('change', ({ target }) => {
+  grid.addEventListener('change', ({ target }) => {
     if (target.name === 'art.src') pick(target);
   });
 
@@ -92,22 +87,21 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
       onError(error);
     } finally {
       uploader.classList.remove('is-busy');
-      uploadLabel.textContent = 'Upload';
+      uploadLabel.textContent = 'Upload an image…';
     }
   });
 
   loadUploads().then((sources) => sources.reverse().forEach(addUpload), () => {});
 
   return {
-    root,
-    // Before the form is filled: make sure the card's current art has a tile to check.
-    prepare({ src, license }) {
+    rows,
+    // Before the form is filled: make sure the card's art and license have options to select.
+    prepare({ src, license: name }) {
       if (src && !find(src)) addUpload(src);
-      const licenses = control('license');
-      if (license && ![...licenses.options].some((choice) => choice.value === license)) {
-        licenses.append(h('option', { value: license }, license));
+      if (name && ![...license.options].some((choice) => choice.value === name)) {
+        license.append(h('option', { value: name }, name));
       }
-      focus.show(src);
+      showFocus(src);
     },
     // After the form is filled.
     sync() {

@@ -7,14 +7,15 @@
 .topbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
   width: 100%;
-  max-width: 1180px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 28px 24px 24px;
+  padding: 28px 24px 20px;
 }
 
 .topbar__name {
+  margin-right: 12px;
   font: 700 22px/1 var(--font-display);
   letter-spacing: -0.01em;
   color: inherit;
@@ -22,10 +23,8 @@
 }
 
 .topbar__room {
-  padding: 2px 0 2px 12px;
-  border-left: 1px solid var(--line-strong);
-  font: 700 11px/1 var(--font-display);
-  letter-spacing: 0.08em;
+  font: 500 12px/1 var(--font-display);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--page-muted);
   text-decoration: none;
@@ -37,13 +36,13 @@
 .room__view {
   flex: 1;
   width: 100%;
-  max-width: 1180px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 8px 24px 96px;
 }
 
 @media (max-width: 599px) {
-  .topbar { padding: 18px 16px; }
-  .topbar .button--quiet { display: none; }
-  .room__view { padding: 4px 16px 120px; }
+  .topbar { padding: 18px 16px 12px; }
+  .topbar .button[target] { display: none; }
+  .room__view { padding: 4px 16px 112px; }
 }

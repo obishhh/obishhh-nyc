@@ -57,16 +57,14 @@ export function focusPicker(name) {
   reset.addEventListener('click', () => set(50, 50));
 
   const root = h('div', { class: 'focus' },
-    h('p', { class: 'field__label' }, 'Focus'),
     pad,
-    h('p', { class: 'field__hint' }, 'Drag the dot to choose what stays in frame. ', reset),
+    h('p', { class: 'row__hint' }, 'Drag the dot to choose what stays in frame. ', reset),
     input,
   );
 
   return {
     root,
     show(src) {
-      root.hidden = !src;
       if (src && image.getAttribute('src') !== src) image.src = src;
     },
     clear() {
