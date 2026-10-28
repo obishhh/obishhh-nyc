@@ -1,0 +1,41 @@
+:root {
+  color-scheme: light;
+
+  --font-body: 'Cabin', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Cabin Condensed', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  --font-logo: 'Lilita One', 'Arial Black', sans-serif;
+
+  --page: #ffffff;
+  --page-line: #efefec;
+  --page-muted: #8a877f;
+
+  --ink-900: #1a1712;
+  --ink-600: #4e4a42;
+  --hp-600: #d23a1e;
+
+  --border-300: #f9e15a;
+  --border-500: #f2cf1d;
+  --border-700: #c9a40c;
+
+  --foil-200: #fbefb0;
+  --foil-500: #d9b64a;
+  --foil-700: #a9862a;
+
+  --back-ink: #0d2350;
+  --back-border: #2a5bb8;
+  --back-gold: #ffcb05;
+  --back-gold-deep: #c78a00;
+
+  --rainbow: linear-gradient(135deg, #7cf3ff 0%, #c7a4ff 25%, #ffb3e1 50%, #fff3a1 75%, #8dffc7 100%);
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .7 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+[data-type='ink'] { --type-edge: #8ea0e0; --type-panel: #d5dbf6; --type-deep: #aeb9ec; --type-energy: #3c4fc4; }
+[data-type='spark'] { --type-edge: #f4da4c; --type-panel: #fbf2b7; --type-deep: #f2e07a; --type-energy: #e8b400; }
+[data-type='stone'] { --type-edge: #c9b08c; --type-panel: #efe3cf; --type-deep: #dcc8a6; --type-energy: #8c6a43; }
+[data-type='wire'] { --type-edge: #86cfa7; --type-panel: #d6f0e0; --type-deep: #ade0c2; --type-energy: #23946a; }
+[data-type='ember'] { --type-edge: #f59a6e; --type-panel: #fddccb; --type-deep: #f9b994; --type-energy: #e0471f; }
+[data-type='ghost'] { --type-edge: #b3a9d2; --type-panel: #e6e1f3; --type-deep: #cdc4e6; --type-energy: #6f5ba6; }
+[data-type='plain'] { --type-edge: #d3d0cb; --type-panel: #eeece8; --type-deep: #dddad4; --type-energy: #f4f2ee; }

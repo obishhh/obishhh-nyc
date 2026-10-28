@@ -1,0 +1,15 @@
+.colophon {
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 40px;
+}
+
+.colophon__link {
+  font: 500 12px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--page-muted);
+  text-decoration: none;
+}
+
+.colophon__link:hover { color: var(--ink-900); }

@@ -1,0 +1,26 @@
+.sealed {
+  width: 252px;
+  height: 352px;
+  user-select: none;
+}
+
+.sealed__card {
+  opacity: 0.5;
+  filter: blur(7px) saturate(0.7);
+}
+
+.sealed__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 1px 2px rgb(13 10 5 / 0.12), 0 8px 18px -8px rgb(13 10 5 / 0.25);
+  font: 700 11px/1 var(--font-display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-900);
+  transform: translate(-50%, -50%) rotate(calc(var(--tilt) * -1));
+}

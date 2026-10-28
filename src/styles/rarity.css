@@ -1,0 +1,12 @@
+.rarity {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  color: var(--ink-900);
+}
+
+.rarity svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

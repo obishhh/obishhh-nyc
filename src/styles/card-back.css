@@ -1,0 +1,49 @@
+.card-back {
+  position: relative;
+  width: 252px;
+  height: 352px;
+  border-radius: 12px;
+  background: url('/assets/card-back.webp') center / 100% 100% no-repeat;
+  box-shadow: 0 1px 2px rgb(13 10 5 / 0.22), 0 8px 14px -4px rgb(13 10 5 / 0.16);
+}
+
+.card-back__logo {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+.card-back__word {
+  font: 400 54px/1 var(--font-logo);
+  letter-spacing: 0.01em;
+  text-anchor: middle;
+  fill: var(--back-gold);
+  stroke: var(--back-border);
+  stroke-width: 7px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
+
+.card-back__word--shadow {
+  fill: var(--back-ink);
+  stroke: var(--back-ink);
+  stroke-width: 12px;
+}
+
+.card-back__word--edge {
+  fill: var(--back-gold-deep);
+  stroke: var(--back-border);
+}
+
+.card-back__tagline {
+  font: italic 700 9.5px/1 var(--font-display);
+  letter-spacing: 0.24em;
+  text-anchor: middle;
+  fill: #ffffff;
+  stroke: var(--back-ink);
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
