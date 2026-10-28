@@ -90,7 +90,7 @@ export function editor({ cards, art: artOptions, onSave, onDelete }) {
     section('Small print',
       text('dex', 'Dex strip', { placeholder: 'Essay. Length: 640 words. Filed: Oct 28, 2026.', maxlength: 64 }),
       text('stats.reads', 'Reads', { placeholder: '1.2k', maxlength: 8 }),
-      text('stats.replies', 'Replies', { placeholder: '14', maxlength: 8 }),
+      text('stats.replies', 'Bookmarked', { placeholder: '14', maxlength: 8 }),
       text('stats.filed', 'Filed under', { placeholder: 'type', maxlength: 12 }),
       textarea('flavor', 'Flavor', { placeholder: 'Optional', maxlength: 80 }),
     ),

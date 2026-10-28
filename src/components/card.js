@@ -46,7 +46,7 @@ function stat(label, value) {
 function stats({ reads, replies, filed }) {
   return h('dl', { class: 'card__stats' },
     stat('reads', reads),
-    stat('replies', replies),
+    stat('bookmarked', replies),
     stat('filed under', filed),
   );
 }
