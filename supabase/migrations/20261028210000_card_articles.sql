@@ -6,6 +6,7 @@ alter table public.cards
 
 update public.cards
 set slug = 'about',
+    minutes = 1,
     body = E'Hi, I’m obishhh. This is my website.\n\nIt’s basically a blog dressed up as Pokémon cards. Every card is a post, and it could be about anything. Quite likely Pokémon.\n\nThe blurry ones aren’t finished yet. They’ll turn over when they are.\n\nThanks for stopping by.'
 where number = '001/120' and title = 'About';
 
