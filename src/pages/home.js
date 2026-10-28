@@ -6,6 +6,7 @@ import { loadBinder } from '../lib/cards.js';
 import { h } from '../lib/dom.js';
 import { enableFlip } from '../lib/flip.js';
 import { trackPointer } from '../lib/pointer.js';
+import { revealWhenReady } from '../lib/reveal.js';
 
 async function binderPage() {
   let cards;
@@ -31,3 +32,4 @@ document.body.append(
 );
 
 main.append(await binderPage());
+revealWhenReady(document.body);

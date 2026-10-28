@@ -12,6 +12,9 @@
 
 .sealed__card.is-ready { opacity: 0.5; }
 
+/* Cards that are ready before the page shows arrive with it, not after. */
+.is-waiting .sealed__card { transition: none; }
+
 .sealed__label {
   position: absolute;
   top: 50%;

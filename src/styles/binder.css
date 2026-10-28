@@ -10,11 +10,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  animation: binder-in 0.5s var(--ease-out);
-}
-
-@keyframes binder-in {
-  from { opacity: 0; transform: translateY(6px); }
 }
 
 .binder__pocket {
@@ -106,7 +101,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .binder { animation: none; }
   .binder__flip { transition: none; }
   .binder__pocket:hover > .binder__flip { --lift: 0px; --turn: var(--tilt); }
 }

@@ -48,7 +48,8 @@ export function door({ onSignedIn }) {
     const remembered = rememberedEmail();
     email.value = remembered ?? '';
     emailField.hidden = Boolean(remembered);
-    lede.replaceChildren(...(remembered ? ['Welcome back. ', notMe] : ['Sign in to edit the cards.']));
+    lede.replaceChildren('Welcome back. ', notMe);
+    lede.hidden = !remembered;
   }
 
   form.addEventListener('submit', async (event) => {

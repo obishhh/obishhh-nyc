@@ -101,6 +101,8 @@ html:not(:has(#app:not([hidden]))) body { background: var(--page); }
   letter-spacing: -0.01em;
 }
 
+.door__lede[hidden] + .door__form { margin-top: 22px; }
+
 .door__lede {
   margin: 6px 0 22px;
   font-size: 14px;
