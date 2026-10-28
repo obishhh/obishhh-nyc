@@ -1,9 +1,24 @@
+/* Fade between pages, and stay white while the sign-in loads instead of flashing the editor's background. */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
+
+html:not(:has(#app:not([hidden]))) body { background: var(--page); }
+
 .door {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 32px 16px 64px;
+  animation: door-in 0.4s var(--ease-out);
+}
+
+@keyframes door-in {
+  from { opacity: 0; }
 }
 
 .door__back {
@@ -42,6 +57,12 @@
   transform-origin: top center;
   transform: translateX(-50%) scale(var(--card-scale)) rotate(-1.5deg);
   transition: transform 0.6s var(--ease-out);
+  animation: card-in 0.7s var(--ease-out);
+}
+
+/* The card rises out of the sleeve as the page appears. */
+@keyframes card-in {
+  from { translate: 0 40px; }
 }
 
 .door__pocket:focus-within .door__card {
@@ -132,5 +153,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .door, .door__card { animation: none; }
   .door__card { transition: none; }
 }
