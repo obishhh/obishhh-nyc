@@ -45,7 +45,7 @@ export function reader(data) {
           h('footer', { class: 'reader__footer' },
             h('dl', { class: 'reader__stats' },
               stat('reads', data.stats.reads),
-              stat('replies', data.stats.replies),
+              stat('bookmarked', data.stats.replies),
               stat('filed under', data.stats.filed),
             ),
             h('p', { class: 'reader__credit' }, `Illus. ${data.art.illustrator} · ©2026 obishhh.nyc`),

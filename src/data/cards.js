@@ -106,7 +106,7 @@ export const cards = [
     dex: 'Page. Click a card to read more.',
     move: { name: 'New Website', text: 'Not sure what I’ll be putting here, but it seemed fun to have.', score: 30 },
     stats: { reads: '3', replies: 0, filed: 'me' },
-    flavor: 'Made this website. Sorry.',
+    flavor: 'S/o the artists. Credits at bottom of the page.',
     slug: 'about',
     body: [
       'Hi, I’m obishhh. This is my website.',
