@@ -1,5 +1,6 @@
 import { cardBack } from '../../src/components/card-back.js';
 import { h, svg } from '../../src/lib/dom.js';
+import { fadeOut } from '../../src/lib/fade.js';
 import { forgetEmail, rememberedEmail, signIn } from '../lib/auth.js';
 import { ARROW_LEFT } from '../lib/icons.js';
 
@@ -39,7 +40,7 @@ export function door({ onSignedIn }) {
   );
 
   const root = h('main', { class: 'door', hidden: true },
-    h('a', { class: 'door__back', href: '/' }, svg(ARROW_LEFT), 'Back to the binder'),
+    fadeOut(h('a', { class: 'door__back', href: '/' }, svg(ARROW_LEFT), 'Back to the binder')),
     pocket,
   );
 

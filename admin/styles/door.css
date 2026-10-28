@@ -1,11 +1,4 @@
-/* Fade between pages, and stay white while the sign-in loads instead of flashing the editor's background. */
-@view-transition { navigation: auto; }
-
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.3s;
-}
-
+/* Stay white while the sign-in loads instead of flashing the editor's background. */
 html:not(:has(#app:not([hidden]))) body { background: var(--page); }
 
 .door {
