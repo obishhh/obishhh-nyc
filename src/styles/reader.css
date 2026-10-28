@@ -1,4 +1,18 @@
+/* Locking the page scroll mustn't nudge the binder sideways. */
+html { scrollbar-gutter: stable; }
 .is-reading { overflow: hidden; }
+
+/* The card in flight between the binder and an article. */
+.reader-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: 252px;
+  height: 352px;
+  pointer-events: none;
+  will-change: transform;
+}
 
 .reader {
   position: fixed;
@@ -12,9 +26,7 @@
 .reader__backdrop {
   position: absolute;
   inset: 0;
-  background: rgb(255 255 255 / 0.7);
-  backdrop-filter: blur(12px) saturate(0.9);
-  -webkit-backdrop-filter: blur(12px) saturate(0.9);
+  background: rgb(255 255 255 / 0.88);
 }
 
 .reader__sheet {
@@ -28,6 +40,7 @@
     linear-gradient(var(--type-panel), rgb(255 255 255 / 0) 320px),
     var(--page);
   box-shadow: 0 0 0 1px rgb(13 10 5 / 0.06), 0 40px 80px -30px rgb(13 10 5 / 0.4);
+  will-change: transform, opacity;
 }
 
 .reader__bar {

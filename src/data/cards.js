@@ -110,8 +110,8 @@ export const cards = [
     slug: 'about',
     body: [
       'Hi, I’m obishhh. This is my website.',
-      'It’s a binder. Every card in it is something I’ve written: a post, a note, a link I didn’t want to lose. The blurry ones aren’t finished yet. They’ll turn over when they are.',
-      'There’s no feed and no algorithm. Just cards, added whenever I have something worth keeping.',
+      'It’s basically a blog dressed up as Pokémon cards. Every card is a post, and it could be about anything. Quite likely Pokémon.',
+      'The blurry ones aren’t finished yet. They’ll turn over when they are.',
       'Thanks for stopping by.',
     ],
     art: {

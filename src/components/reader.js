@@ -62,5 +62,12 @@ export function reader(data) {
     flip.click();
   });
 
-  return { root, close, sheet: root.querySelector('.reader__sheet'), pocket: root.querySelector('.reader__pocket'), backdrop: root.querySelector('.reader__backdrop') };
+  return {
+    root,
+    close,
+    backdrop: root.querySelector('.reader__backdrop'),
+    sheet: root.querySelector('.reader__sheet'),
+    pocket: root.querySelector('.reader__pocket'),
+    text: root.querySelector('.reader__text'),
+  };
 }
