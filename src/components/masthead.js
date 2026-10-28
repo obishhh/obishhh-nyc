@@ -7,7 +7,7 @@ const DOOR = `<svg class="masthead__door-icon" viewBox="0 0 14 14" aria-hidden="
 </svg>`;
 
 export function masthead({ heading = false, door = false } = {}) {
-  const name = h('a', { class: 'masthead__name', href: '/' }, 'obishhh');
+  const name = h('a', { class: 'masthead__name', href: '/' }, 'obishhh.nyc');
   return h('header', { class: 'masthead' },
     heading ? h('h1', { class: 'masthead__heading' }, name) : name,
     door && h('a', { class: 'masthead__door', href: '/admin/' }, svg(DOOR), 'Editor’s room'),
