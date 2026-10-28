@@ -107,6 +107,13 @@ export const cards = [
     move: { name: 'New Website', text: 'Shuffle the old site into your deck. Draw a fresh one.', score: 30 },
     stats: { reads: '3', replies: 0, filed: 'me' },
     flavor: 'Made this website. Sorry.',
+    slug: 'about',
+    body: [
+      'Hi, I’m obishhh. This is my website.',
+      'It’s a binder. Every card in it is something I’ve written: a post, a note, a link I didn’t want to lose. The blurry ones aren’t finished yet. They’ll turn over when they are.',
+      'There’s no feed and no algorithm. Just cards, added whenever I have something worth keeping.',
+      'Thanks for stopping by.',
+    ],
     art: {
       src: '/assets/art/sprite-fright-crossing.webp',
       alt: 'Small figures crossing a fallen log at sunset',
