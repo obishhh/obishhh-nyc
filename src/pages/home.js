@@ -5,6 +5,7 @@ import { cards } from '../data/cards.js';
 import { h } from '../lib/dom.js';
 import { enableFlip } from '../lib/flip.js';
 import { trackPointer } from '../lib/pointer.js';
+import { revealWhenReady } from '../lib/reveal.js';
 
 const page = binder(cards, { label: 'Binder page 1' });
 
@@ -16,3 +17,5 @@ document.body.append(
   h('main', { class: 'page' }, page),
   colophon(),
 );
+
+revealWhenReady(document.body);
