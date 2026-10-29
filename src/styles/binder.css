@@ -30,6 +30,11 @@
   transform: translate(-50%, -50%) translateY(var(--lift)) rotate(var(--turn)) scale(var(--scale)) rotateY(var(--flip));
 }
 
+/* Sealed cards never flip, so they stay flat: a 3D transform would put their blur on the GPU. */
+.binder__pocket > .sealed {
+  transform: translate(-50%, -50%) rotate(var(--tilt)) scale(var(--scale));
+}
+
 .binder__pocket > *::before {
   content: '';
   position: absolute;

@@ -4,16 +4,20 @@
   user-select: none;
 }
 
-.sealed__card {
+/* The fade lives a layer above the blur, with room for the blur to spread, so Safari never clips it to the card's edge. */
+.sealed__face {
+  margin: -24px;
+  padding: 24px;
   opacity: 0;
-  filter: blur(7px) saturate(0.7);
   transition: opacity 0.5s var(--ease-out);
 }
 
-.sealed__card.is-ready { opacity: 0.5; }
+.sealed__face.is-ready { opacity: 0.5; }
+
+.sealed__blur { filter: blur(7px) saturate(0.7); }
 
 /* Cards that are ready before the page shows arrive with it, not after. */
-.is-waiting .sealed__card { transition: none; }
+.is-waiting .sealed__face { transition: none; }
 
 .sealed__label {
   position: absolute;
@@ -32,5 +36,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sealed__card { transition: none; }
+  .sealed__face { transition: none; }
 }
