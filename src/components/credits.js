@@ -1,12 +1,13 @@
 import { licenses } from '../data/licenses.js';
 import { h } from '../lib/dom.js';
+import { safeLink } from '../lib/markdown.js';
 
 function entry({ label, src, title, author, license, source, changes = 'cropped' }) {
   return h('li', { class: 'credits__entry' },
     h('img', { class: 'credits__thumb', src, alt: '', width: 202, height: 128, loading: 'lazy', decoding: 'async' }),
     h('div', { class: 'credits__text' },
       h('p', { class: 'credits__card' }, label),
-      h('p', { class: 'credits__work' }, h('a', { href: source }, title), ` by ${author}`),
+      h('p', { class: 'credits__work' }, safeLink(source) ? h('a', { href: source }, title) : title, ` by ${author}`),
       h('p', { class: 'credits__license' }, h('a', { href: licenses[license] }, license), ` · ${changes}`),
     ),
   );

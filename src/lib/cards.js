@@ -11,12 +11,7 @@ const SEALED_FACE = {
   flavor: null,
 };
 
-// An article's text is stored with a blank line between paragraphs. No text, no article.
-const paragraphs = (text = '') => text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
-
+// A published card with no text has no article, so it just flips.
 export const loadBinder = async () =>
-  (await rpc('binder')).map((data) => {
-    if (data.sealed) return { ...SEALED_FACE, ...data };
-    const body = paragraphs(data.body);
-    return { ...data, body: body.length ? body : undefined };
-  });
+  (await rpc('binder')).map((data) =>
+    data.sealed ? { ...SEALED_FACE, ...data } : { ...data, body: data.body?.trim() || undefined });

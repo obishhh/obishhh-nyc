@@ -148,80 +148,9 @@ html { scrollbar-gutter: stable; }
 
 .reader__flip > .card-back { transform: rotateY(180deg); }
 
-
 .reader__text {
   max-width: 34em;
   padding-top: 20px;
-}
-
-.reader__stage {
-  margin: 0 0 6px;
-  font: italic 700 14px/1 var(--font-body);
-  color: var(--ink-600);
-}
-
-.reader__title {
-  margin: 0;
-  font: 700 64px/0.95 var(--font-display);
-  letter-spacing: -0.02em;
-}
-
-.reader__byline {
-  margin: 14px 0 32px;
-  font-size: 14px;
-  color: var(--ink-600);
-}
-
-
-
-
-
-
-
-.reader__body p {
-  margin: 0 0 1.1em;
-  font-size: 19px;
-  line-height: 1.65;
-}
-
-.reader__end {
-  display: inline-block;
-  margin-left: 6px;
-  vertical-align: 1px;
-}
-
-
-.reader__footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 36px;
-  padding-top: 16px;
-  border-top: 1px solid var(--page-line);
-}
-
-.reader__stats {
-  display: flex;
-  gap: 28px;
-  margin: 0;
-}
-
-.reader__stat dt {
-  font: 500 11px/1.2 var(--font-display);
-  color: var(--page-muted);
-}
-
-.reader__stat dd {
-  margin: 0;
-  font: 700 15px/1.3 var(--font-body);
-}
-
-.reader__credit {
-  margin: 0;
-  font: 500 12px/1 var(--font-display);
-  color: var(--page-muted);
 }
 
 @media (max-width: 819px) {
@@ -243,8 +172,6 @@ html { scrollbar-gutter: stable; }
   .reader__card { position: static; padding-top: 4px; }
   .reader__pocket { width: calc(252px * 0.78); height: calc(352px * 0.78); }
   .reader__flip { transform: scale(0.78) translateX(126px) rotateY(var(--flip, 0deg)) translateX(-126px); }
-  .reader__title { font-size: 46px; }
-  .reader__body p { font-size: 17.5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
