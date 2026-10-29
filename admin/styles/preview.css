@@ -12,6 +12,26 @@
 
 .preview__stage { padding: 10px; }
 
+.preview__stage.is-article {
+  align-self: stretch;
+  max-height: calc(100vh - 210px);
+  padding: 4px 2px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.preview__article .article__title { font-size: 36px; }
+.preview__article .article__byline { margin-bottom: 20px; }
+.preview__article .prose { --prose-size: 15px; }
+.preview__article .article__footer { margin-top: 24px; }
+
+.preview__empty {
+  margin: 40px 0;
+  font-size: 14px;
+  color: var(--page-muted);
+  text-align: center;
+}
+
 .preview__views {
   display: flex;
   gap: 18px;

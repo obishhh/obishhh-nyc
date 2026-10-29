@@ -1,5 +1,5 @@
 :root {
-  --line-strong: #dcd9d1;
+  --line-strong: var(--page-rule);
   --line-hover: #bdb9af;
 }
 

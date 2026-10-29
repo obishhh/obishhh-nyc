@@ -1,0 +1,36 @@
+.composer__tools {
+  display: flex;
+  gap: 2px;
+  margin: 2px 0 4px -6px;
+}
+
+.composer__tool {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: 15px/1 var(--font-body);
+  color: var(--page-muted);
+  cursor: pointer;
+}
+
+.composer__tool:hover { background: var(--page-line); color: var(--ink-900); }
+.composer__tool:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 1px; }
+.composer__tool.is-busy { cursor: progress; animation: composer-busy 1s ease-in-out infinite alternate; }
+
+.composer__field {
+  min-height: 220px;
+  line-height: 1.6;
+}
+
+@keyframes composer-busy {
+  to { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer__tool.is-busy { animation: none; opacity: 0.5; }
+}

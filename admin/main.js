@@ -6,19 +6,19 @@ import { editor } from './components/editor.js';
 import { shelf } from './components/shelf.js';
 import { topbar } from './components/topbar.js';
 import { currentSession, isAdmin, signOut } from './lib/auth.js';
-import { deleteCard, listCards, listUploads, reorderCards, saveCard, uploadArt } from './lib/cards.js';
+import { deleteCard, listCards, listUploads, reorderCards, saveCard, uploadImage } from './lib/cards.js';
 import { prepareImage } from './lib/image.js';
 
 let cards = [];
 
-async function upload(file) {
+async function upload(file, options) {
   let image;
   try {
     image = await prepareImage(file);
   } catch {
     throw new Error('That file didn’t read as an image. Try a JPG or PNG.');
   }
-  return uploadArt(image);
+  return uploadImage(image, options);
 }
 
 const entrance = door({ onSignedIn: enter });
@@ -28,9 +28,10 @@ const workbench = editor({
   art: {
     library,
     loadUploads: listUploads,
-    upload,
+    upload: (file) => upload(file),
     creditFor: (src) => cards.find(({ art }) => art.src === src)?.art,
   },
+  uploadPhoto: (file) => upload(file, { folder: 'posts' }),
   onSave: save,
   onDelete: remove,
 });

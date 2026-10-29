@@ -4,6 +4,7 @@ import { readForm, writeForm } from '../lib/form.js';
 import { formatDate } from '../lib/format.js';
 import { ARROW_LEFT } from '../lib/icons.js';
 import { artPicker } from './art-picker.js';
+import { composer } from './composer.js';
 import { checkbox, dropdown, number, row, section, select, text, textarea } from './fields.js';
 import { preview } from './preview.js';
 
@@ -49,7 +50,7 @@ function button(label, variant, onClick) {
 }
 
 // Edit one card. Every field redraws the preview as you type.
-export function editor({ cards, art: artOptions, onSave, onDelete }) {
+export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }) {
   const state = h('p', { class: 'editor__state', role: 'status', 'aria-live': 'polite' });
   let flashTimer;
 
@@ -84,7 +85,12 @@ export function editor({ cards, art: artOptions, onSave, onDelete }) {
       costRow(),
     ),
     section('Article',
-      textarea('body', 'Text', { rows: 10, placeholder: 'Leave a blank line between paragraphs.', hint: 'Tapping a published card opens this. Leave it empty and the card just flips.' }),
+      row('Text', composer('body', {
+        rows: 12,
+        placeholder: 'Leave a blank line between paragraphs.',
+        uploadPhoto,
+        onError: (error) => flash(`Photo upload failed. ${error.message}`, true),
+      }), 'Tapping a published card opens this. Leave it empty and the card just flips.'),
       text('slug', 'Address', { placeholder: 'from the title', maxlength: 60, hint: 'The end of its link: obishhh.nyc/?card=…' }),
     ),
     section('Small print',
