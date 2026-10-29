@@ -91,12 +91,17 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
     }
   });
 
-  loadUploads().then((sources) => sources.reverse().forEach(addUpload), () => {});
+  // Uploads are listed once signed in, the first time a card opens. A failed list tries again next time.
+  let uploads = null;
+  function listUploads() {
+    uploads ??= loadUploads().then((sources) => sources.reverse().forEach(addUpload), () => (uploads = null));
+  }
 
   return {
     rows,
     // Before the form is filled: make sure the card's art and license have options to select.
     prepare({ src, license: name }) {
+      listUploads();
       if (src && !find(src)) addUpload(src);
       if (name && ![...license.options].some((choice) => choice.value === name)) {
         license.append(h('option', { value: name }, name));
