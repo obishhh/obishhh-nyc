@@ -25,7 +25,7 @@ export function number(name, label, { hint, unit, ...attrs } = {}) {
 export const textarea = (name, label, { hint, rows = 2, ...attrs } = {}) =>
   row(label, h('textarea', { class: 'input', name, rows, ...attrs }), hint);
 
-export const options = (choices) => choices.map(({ value, label }) => h('option', { value }, label));
+const options = (choices) => choices.map(({ value, label }) => h('option', { value }, label));
 
 export const dropdown = (name, choices, attrs = {}) => h('select', { class: 'input', name, ...attrs }, options(choices));
 
