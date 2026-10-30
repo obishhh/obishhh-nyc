@@ -1,26 +1,16 @@
 import { card } from '../../src/components/card.js';
 import { h, svg } from '../../src/lib/dom.js';
-import { seeded } from '../../src/lib/seeded.js';
+import { plural } from '../../src/lib/words.js';
 import { GRIP } from '../lib/icons.js';
 import { sortable } from '../lib/sortable.js';
+import { tile } from './tile.js';
 
-const MAX_TILT = 0.8;
-const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
-
-function tile(data) {
+function cardTile(data) {
   const title = data.title || 'Untitled';
-  const tilt = (seeded(data.number) * 2 - 1) * MAX_TILT;
-  const live = data.status === 'published';
-  return h('li', { class: 'tile', dataset: { id: data.id, title, status: data.status }, style: { '--tilt': `${tilt.toFixed(2)}deg` } },
-    h('a', { class: 'tile__open', href: `#/card/${data.id}`, draggable: 'false', 'aria-label': `Edit ${title}${live ? '' : ' (draft)'}` },
-      h('div', { class: 'binder__pocket' }, card(data)),
-    ),
-    h('div', { class: 'tile__meta' },
-      h('span', { class: 'tile__title' }, title),
-      h('span', { class: 'tile__status' }, live ? 'Live' : 'Draft'),
-      h('button', { class: 'tile__grip', type: 'button', 'aria-label': `Move ${title}. Use the arrow keys.` }, svg(GRIP)),
-    ),
-  );
+  return tile({
+    href: `#/card/${data.id}`, name: title, status: data.status, card: card(data), seed: data.number, data: { id: data.id, title },
+    extra: h('button', { class: 'tile__grip', type: 'button', 'aria-label': `Move ${title}. Use the arrow keys.` }, svg(GRIP)),
+  });
 }
 
 const newTile = () =>
@@ -63,7 +53,7 @@ export function shelf({ onSort }) {
     update(cards) {
       const live = cards.filter(({ status: state }) => state === 'published').length;
       summary.textContent = `${plural(cards.length, 'card')}, ${live} live. Drag to reorder. Drafts show up sealed on the site.`;
-      grid.replaceChildren(...cards.map(tile), newTile());
+      grid.replaceChildren(...cards.map(cardTile), newTile());
     },
   };
 }

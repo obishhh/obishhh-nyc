@@ -1,4 +1,5 @@
 import { h } from '../lib/dom.js';
+import { safeImage } from '../lib/markdown.js';
 import { energy } from './energy.js';
 import { rarity } from './rarity.js';
 
@@ -16,8 +17,9 @@ function nameBar({ title, minutes, type }) {
 }
 
 function artwork({ src, alt, position }) {
+  const picture = safeImage(src ?? '');
   return h('figure', { class: 'card__art' },
-    src && h('img', { src, alt, width: 202, height: 128, decoding: 'async', style: position && { 'object-position': position } }),
+    picture && h('img', { src: picture, alt, width: 202, height: 128, decoding: 'async', style: position && { 'object-position': position } }),
   );
 }
 

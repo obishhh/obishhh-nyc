@@ -1,5 +1,5 @@
 /* The binder's size lives on the page, so the footer can line up with the cards' edges.
-   --fit, set by the page, shrinks the cards so a whole page of them fits the window. */
+   --fit, set by the page on a computer, sizes the cards so two rows and a bit of the third fit the window. */
 :root {
   --scale: min(1, var(--fit, 1));
   --columns: 3;
@@ -89,14 +89,20 @@
 
 .binder__flip > .card-back { transform: rotateY(180deg); }
 
-.binder__pocket:hover > .binder__flip {
-  --lift: -6px;
-  --turn: 0deg;
+/* Only for a real pointer: a finger's tap leaves :hover stuck, which would leave the card lifted. */
+@media (hover: hover) {
+  .binder__pocket:hover > .binder__flip {
+    --lift: -6px;
+    --turn: 0deg;
+  }
+
+  .binder__pocket:hover > .binder__flip > * {
+    box-shadow: 0 2px 4px rgb(13 10 5 / 0.18), 0 22px 32px -10px rgb(13 10 5 / 0.28);
+  }
 }
 
-.binder__pocket:hover > .binder__flip > * {
-  box-shadow: 0 2px 4px rgb(13 10 5 / 0.18), 0 22px 32px -10px rgb(13 10 5 / 0.28);
-}
+/* Out reading: the card's gone from its pocket, but the sleeve stays where it was. */
+.binder__flip.is-out > * { visibility: hidden; }
 
 @media (min-width: 1400px) {
   :root { --scale: min(1.15, var(--fit, 1.15)); }

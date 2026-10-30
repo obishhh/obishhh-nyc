@@ -10,7 +10,11 @@
 
 .dividers { -webkit-tap-highlight-color: transparent; }
 
-.dividers__sheet { position: relative; }
+/* Its own layer, so the underline's multiply mixes with the photo and nothing else on the page. */
+.dividers__sheet {
+  position: relative;
+  isolation: isolate;
+}
 
 .dividers__photo {
   display: block;

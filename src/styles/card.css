@@ -36,7 +36,9 @@
   pointer-events: none;
 }
 
-.card:hover::after { opacity: 1; }
+@media (hover: hover) {
+  .card:hover::after { opacity: 1; }
+}
 
 .card[data-finish='reverse'],
 .card[data-finish='holo'] {

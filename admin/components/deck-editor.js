@@ -5,15 +5,21 @@ import { TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { formatDate } from '../lib/format.js';
 import { ARROW_LEFT } from '../lib/icons.js';
-import { row, section, select, text, textarea } from './fields.js';
+import { button, row, section, select, text, textarea } from './fields.js';
 import { focusPicker } from './focus-picker.js';
 
 const STATUS = { new: 'New', draft: 'Draft', published: 'Live' };
 const NAMES = { note: 'note', snapshot: 'Snapshot' };
 // Notes are the whole card, so they get more room than a Snapshot's caption.
 const MAX_TEXT = { note: 140, snapshot: 110 };
+// The preview's handwriting waits for a pause in the typing, rather than redrawing on every key.
+const PREVIEW_PAUSE = 60;
+// What the form edits; the rest of a record (its id, status and times) is the server's.
+const EDITABLE = ['kind', 'number', 'type', 'title', 'text', 'place', 'photo', 'date'];
 
 const today = () => new Date().toLocaleDateString('en-CA');
+const editable = (data) => JSON.stringify(EDITABLE.map((key) => data[key]));
+const trim = (value) => (typeof value === 'string' ? value.trim() : value);
 
 // A fresh card for the deck: today's date and the next number along.
 function blankDeckCard(kind, deck) {
@@ -23,18 +29,41 @@ function blankDeckCard(kind, deck) {
   return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', place: '', photo: { src: '', alt: '', position: '' }, date: today() };
 }
 
-function tidy(values) {
-  const trim = (value) => (typeof value === 'string' ? value.trim() : value);
+// The photo: upload one, then pick what stays in frame.
+function photoRows({ uploadPhoto, onError }) {
+  const focus = focusPicker('photo.position');
+  const src = h('input', { type: 'hidden', name: 'photo.src' });
+  const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
+  const label = h('span', {}, 'Upload a photo…');
+  const focusRow = row('Focus', focus.root);
+  let uploading = false;
+  file.addEventListener('change', async () => {
+    const [picked] = file.files;
+    if (!picked) return;
+    uploading = true;
+    label.textContent = 'Uploading…';
+    try {
+      src.value = await uploadPhoto(picked);
+      focus.clear();
+      src.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (error) {
+      onError(error);
+    } finally {
+      uploading = false;
+      label.textContent = src.value ? 'Upload a different photo…' : 'Upload a photo…';
+      file.value = '';
+    }
+  });
   return {
-    ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, trim(value)])),
-    photo: Object.fromEntries(Object.entries(values.photo ?? {}).map(([key, value]) => [key, trim(value)])),
+    file,
+    focus,
+    rows: [row('Photo', h('div', {}, h('label', { class: 'button button--quiet art__upload' }, file, label), src)), focusRow],
+    show(value) {
+      focusRow.hidden = !value;
+      focus.show(value);
+      if (!uploading) label.textContent = value ? 'Upload a different photo…' : 'Upload a photo…';
+    },
   };
-}
-
-function button(label, variant, onClick) {
-  const element = h('button', { class: `button ${variant}`.trim(), type: 'button' }, label);
-  element.addEventListener('click', onClick);
-  return element;
 }
 
 // Write or edit one card in the deck box. The preview redraws as you type.
@@ -48,12 +77,14 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
   const publish = button('Publish', 'button--primary', () => commit('published', 'Published. It’s in the box.'));
   const actions = [remove, unpublish, save, publish];
   let flashTimer;
+  let previewTimer;
   let record = null;
-  let kind = 'note';
+  let kind = null;
   let snapshot = '';
   let dirty = false;
+  let saving = false;
   let counter;
-  let focus;
+  let photo;
 
   trackPointer(preview, '.card');
 
@@ -81,45 +112,11 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
     flashTimer = setTimeout(renderState, bad ? 6000 : 2500);
   }
 
-  // The photo: upload one, then pick what stays in frame.
-  function photoRows() {
-    focus = focusPicker('photo.position');
-    const src = h('input', { type: 'hidden', name: 'photo.src' });
-    const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
-    const label = h('span', {}, 'Upload a photo…');
-    const focusRow = row('Focus', focus.root);
-    file.addEventListener('change', async () => {
-      const [picked] = file.files;
-      if (!picked) return;
-      label.textContent = 'Uploading…';
-      try {
-        src.value = await uploadPhoto(picked);
-        focus.clear();
-        src.dispatchEvent(new Event('input', { bubbles: true }));
-      } catch (error) {
-        flash(`Upload failed. ${error.message}`, true);
-      } finally {
-        label.textContent = 'Upload a different photo…';
-        file.value = '';
-      }
-    });
-    return {
-      rows: [row('Photo', h('div', {}, h('label', { class: 'button button--quiet art__upload' }, file, label), src)), focusRow],
-      sync(value) {
-        focusRow.hidden = !value;
-        focus.show(value);
-        focus.sync();
-        label.textContent = value ? 'Upload a different photo…' : 'Upload a photo…';
-      },
-    };
-  }
-
-  let photo;
-
+  // The form for one kind of card. Only rebuilt when the kind changes, so saving never yanks it out from under you.
   function build() {
     counter = h('span');
     const words = { rows: 3, maxlength: MAX_TEXT[kind], hint: counter };
-    photo = kind === 'snapshot' ? photoRows() : null;
+    photo = kind === 'snapshot' ? photoRows({ uploadPhoto, onError: (error) => flash(`Upload failed. ${error.message}`, true) }) : null;
     form.replaceChildren(
       kind === 'note'
         ? section('Note',
@@ -134,13 +131,20 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
           text('place', 'Place', { placeholder: 'Union Sq', maxlength: 24 }),
         ),
       section('Small print',
-        text('date', 'Posted', { type: 'date' }),
+        text('date', 'Posted', { type: 'date', hint: 'Left blank, it’s today.' }),
         text('number', 'Number', { placeholder: '012/100', maxlength: 9 }),
       ),
     );
   }
 
-  const current = () => ({ ...record, ...tidy({ kind, photo: { src: '', alt: '', position: '' }, ...readForm(form) }) });
+  // What's in the form, tidied: trimmed, with a blank date read as today.
+  function current() {
+    const values = { photo: { src: '', alt: '', position: '' }, ...readForm(form) };
+    const data = { ...record, ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, trim(value)])), kind };
+    data.photo = Object.fromEntries(Object.entries(values.photo).map(([key, value]) => [key, trim(value)]));
+    data.date ||= today();
+    return data;
+  }
 
   function renderState() {
     clearTimeout(flashTimer);
@@ -158,36 +162,52 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
     save.classList.toggle('button--primary', status === 'published');
   }
 
-  function refresh() {
+  function drawPreview() {
+    clearTimeout(previewTimer);
+    preview.replaceChildren(deckCard(current()));
+  }
+
+  function refresh({ now = false } = {}) {
     const data = current();
-    preview.replaceChildren(deckCard(data));
     counter.textContent = `${data.text.length} of ${MAX_TEXT[kind]}.${kind === 'note' ? ' Shorter gets written bigger.' : ''}`;
-    photo?.sync(data.photo.src);
-    dirty = JSON.stringify(data) !== snapshot;
+    photo?.show(data.photo.src);
+    dirty = editable(data) !== snapshot;
     renderState();
+    clearTimeout(previewTimer);
+    if (now) drawPreview();
+    else previewTimer = setTimeout(drawPreview, PREVIEW_PAUSE);
   }
 
   function ready(data) {
     const missing = kind === 'note'
-      ? !data.text && ['text', 'Write something before publishing.']
-      : (!data.photo.src && ['photo.src', 'Add a photo before publishing.']) || (!data.title && ['title', 'Add a title before publishing.']);
+      ? !data.text && [form.elements.namedItem('text'), 'Write something before publishing.']
+      : (!data.photo.src && [photo.file, 'Add a photo before publishing.']) || (!data.title && [form.elements.namedItem('title'), 'Add a title before publishing.']);
     if (!missing) return true;
     flash(missing[1], true);
-    form.elements.namedItem(missing[0])?.focus?.();
+    missing[0]?.focus();
     return false;
+  }
+
+  function busy(on) {
+    actions.forEach((action) => (action.disabled = on));
   }
 
   async function commit(status, message) {
     const data = current();
-    if (status === 'published' && !ready(data)) return;
-    actions.forEach((action) => (action.disabled = true));
+    if (saving || (status === 'published' && !ready(data))) return;
+    saving = true;
+    busy(true);
     try {
-      load(await onSave(data, status, record?.id));
+      // The form already shows what's being saved, and may have moved on since: leave it be, and note what's saved.
+      record = await onSave(data, status, record?.id);
+      snapshot = editable(data);
+      refresh({ now: true });
       flash(message);
     } catch (error) {
       flash(error.message, true);
     } finally {
-      actions.forEach((action) => (action.disabled = false));
+      saving = false;
+      busy(false);
     }
   }
 
@@ -198,25 +218,32 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
 
   async function destroy() {
     if (!record || !confirm('Take this card out of the deck for good? This can’t be undone.')) return;
+    busy(true);
     try {
       await onDelete(record);
     } catch (error) {
       flash(error.message, true);
+    } finally {
+      busy(false);
     }
   }
 
   function load(next, newKind = 'note') {
     record = next;
-    kind = next?.kind ?? newKind;
-    build();
+    const wanted = next?.kind ?? newKind;
+    if (wanted !== kind) {
+      kind = wanted;
+      build();
+    }
     const data = next ? structuredClone(next) : blankDeckCard(kind, deck());
     data.photo = { src: '', alt: '', position: '', ...data.photo };
     writeForm(form, data);
-    snapshot = JSON.stringify(current());
-    refresh();
+    photo?.focus.sync();
+    snapshot = editable(current());
+    refresh({ now: true });
   }
 
-  form.addEventListener('input', refresh);
+  form.addEventListener('input', () => refresh());
   form.addEventListener('submit', (event) => event.preventDefault());
 
   return {

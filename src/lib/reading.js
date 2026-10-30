@@ -13,6 +13,15 @@ addEventListener('pointerdown', () => (usingKeyboard = false), true);
 
 const slugInUrl = () => new URLSearchParams(location.search).get('card');
 
+// The address with ?card= set or cleared, keeping anything else in it (like the open tab).
+function withCard(slug) {
+  const query = new URLSearchParams(location.search);
+  if (slug) query.set('card', slug);
+  else query.delete('card');
+  const search = query.toString();
+  return search ? `?${search}` : location.pathname;
+}
+
 // Where a card sits on screen: its centre, scale and tilt. The centre holds still
 // under a tilt, where the corners don't.
 function place(element, scale, turn = 0) {
@@ -47,7 +56,11 @@ export function enableReading(binder, cards) {
   let current = null;
 
   const find = (slug) => cards.find((data) => data.slug === slug && data.body);
-  const pocketOf = (data) => binder.querySelector(`[data-slug="${data.slug}"]`);
+  // A card behind another tab has no spot on screen to fly from, so it just fades in.
+  const pocketOf = (data) => {
+    const pocket = binder.querySelector(`[data-slug="${data.slug}"]`);
+    return pocket?.getClientRects().length ? pocket : null;
+  };
   // In the binder: its pocket's scale (the pocket shrinks with the page; the card inside doesn't) and its tilt.
   // In the article: its holder's width.
   const inBinder = (pocket) => place(pocket, pocket.closest('.binder__pocket').offsetWidth / CARD.width, number(pocket, '--turn'));
@@ -92,7 +105,7 @@ export function enableReading(binder, cards) {
     } else {
       // The card leaves its pocket and lands in the article; the real one appears when it lands.
       view.pocket.style.visibility = 'hidden';
-      pocket.style.visibility = 'hidden';
+      pocket.classList.add('is-out');
       state.opening = fly(pocket.querySelector('.card'), from, to, 540).then(() => (view.pocket.style.visibility = ''));
     }
     state.opening.then(() => current === state && !state.closing && view.close.focus({ preventScroll: true }));
@@ -121,7 +134,7 @@ export function enableReading(binder, cards) {
     }
     await Promise.all([flight, ...fades.map((animation) => animation.finished)]);
     view.root.remove();
-    if (pocket) pocket.style.visibility = '';
+    pocket?.classList.remove('is-out');
     outside.forEach((element) => (element.inert = false));
     document.documentElement.classList.remove('is-reading');
     if (usingKeyboard) (pocket ?? returnFocus)?.focus?.({ preventScroll: true });
@@ -136,7 +149,7 @@ export function enableReading(binder, cards) {
     if (!current || current.closing) return;
     if (current.pushed) history.back();
     else {
-      history.replaceState(null, '', location.pathname);
+      history.replaceState(null, '', withCard(null));
       current.close();
     }
   }
@@ -149,7 +162,7 @@ export function enableReading(binder, cards) {
     if (current) return;
     const data = find(target.dataset.slug);
     if (!data) return;
-    history.pushState({ card: data.slug }, '', `?card=${data.slug}`);
+    history.pushState({ card: data.slug }, '', withCard(data.slug));
     show(data, { pushed: true });
   });
 

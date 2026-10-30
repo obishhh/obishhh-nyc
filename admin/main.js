@@ -1,6 +1,7 @@
 import { notice } from '../src/components/notice.js';
 import { library } from '../src/data/art.js';
 import { h } from '../src/lib/dom.js';
+import { handwriting } from '../src/lib/scrawl.js';
 import { deckEditor } from './components/deck-editor.js';
 import { deckShelf } from './components/deck-shelf.js';
 import { door } from './components/door.js';
@@ -8,7 +9,7 @@ import { editor } from './components/editor.js';
 import { shelf } from './components/shelf.js';
 import { topbar } from './components/topbar.js';
 import { currentSession, isAdmin, signOut } from './lib/auth.js';
-import { deleteCard, listCards, listUploads, reorderCards, saveCard, uploadImage } from './lib/cards.js';
+import { deleteCard, deleteImage, listCards, listUploads, reorderCards, saveCard, uploadImage } from './lib/cards.js';
 import { deleteDeckCard, listDeck, saveDeckCard } from './lib/deck.js';
 import { prepareImage } from './lib/image.js';
 import { paintSealed, sealedKey } from './lib/sealed-image.js';
@@ -127,8 +128,13 @@ async function remove({ id }) {
   binder.flash('Deleted.');
 }
 
+// A photo nothing points at any more shouldn't stay online. Tidying up never gets in the way of the save itself.
+const letGo = (src) => deleteImage(src).catch(() => {});
+
 async function saveToDeck(data, status, id) {
+  const before = deck.find((other) => other.id === id)?.photo?.src;
   const saved = await saveDeckCard(id, data, status);
+  if (before && before !== saved.photo?.src) letGo(before);
   deck = (id ? deck.map((other) => (other.id === id ? saved : other)) : [saved, ...deck])
     .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
   shown = `#/deck/${saved.id}`;
@@ -136,8 +142,9 @@ async function saveToDeck(data, status, id) {
   return saved;
 }
 
-async function removeFromDeck({ id }) {
+async function removeFromDeck({ id, photo }) {
   await deleteDeckCard(id);
+  if (photo?.src) letGo(photo.src);
   deck = deck.filter((other) => other.id !== id);
   go('#/');
   binder.flash('Taken out of the deck.');
@@ -157,9 +164,6 @@ async function reorder(ids) {
   }
 }
 
-// Notes are written in marker, so its font has to be in before they're drawn (but don't wait forever).
-const handwriting = () => Promise.race([document.fonts.load('40px "Reenie Beanie"'), new Promise((resolve) => setTimeout(resolve, 3000))]);
-
 async function enter() {
   if (!(await isAdmin())) {
     await signOut();
@@ -170,6 +174,7 @@ async function enter() {
   room.hidden = false;
   view.replaceChildren(notice('Loading the cards…'));
   try {
+    // Notes are written in marker, so its font comes in with the cards.
     [cards, deck] = await Promise.all([listCards(), listDeck(), handwriting()]);
   } catch (error) {
     view.replaceChildren(notice(`Couldn’t load the cards: ${error.message}`));

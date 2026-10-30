@@ -1,11 +1,6 @@
-import { supabase } from './supabase.js';
+import { supabase, unwrap } from './supabase.js';
 
 const BUCKET = 'card-art';
-
-export function unwrap({ data, error }) {
-  if (error) throw error;
-  return data;
-}
 
 const cards = () => supabase.from('cards');
 const art = () => supabase.storage.from(BUCKET);
@@ -34,6 +29,13 @@ export const listUploads = async () =>
   unwrap(await art().list('', { limit: 200, sortBy: { column: 'created_at', order: 'desc' } }))
     .filter(({ id, name }) => id && !name.startsWith('.'))
     .map(({ name }) => publicUrl(name));
+
+// Takes an uploaded image back out of storage. Only ever one of ours: anything else, like library art, is left alone.
+export async function deleteImage(url) {
+  const ours = publicUrl('');
+  if (!url?.startsWith(ours)) return;
+  unwrap(await art().remove([decodeURIComponent(url.slice(ours.length))]));
+}
 
 // Card art sits at the top of the bucket, where the art picker lists it; post photos and sealed cards go in folders.
 export async function uploadImage(image, { folder, name = crypto.randomUUID() } = {}) {

@@ -1,6 +1,13 @@
 import { seeded } from './seeded.js';
 
 export const INK = [30, 27, 38];
+// The marker hand everything's written in.
+export const HAND = 'Reenie Beanie';
+
+// Waits for a hand to load before writing with it, but never for long, and never fails: a slow or missing
+// font writes in the fallback rather than holding the page up.
+export const handwriting = (hand = HAND) =>
+  Promise.race([document.fonts.load(`40px "${hand}"`).catch(() => {}), new Promise((resolve) => setTimeout(resolve, 3000))]);
 const DEG = Math.PI / 180;
 
 // The same wobble (-1 to 1) for the same text every time, so handwriting doesn't change on reload.
@@ -18,6 +25,13 @@ export function random(seed) {
 
 // Size the word is written at; it's scaled to fit its spot afterwards.
 export const EM = 64;
+
+let measurer;
+const measure = (font) => {
+  measurer ??= document.createElement('canvas').getContext('2d');
+  measurer.font = font;
+  return measurer;
+};
 
 // Crops a sheet down to the ink on it, so the word can be measured and fitted exactly.
 function trim(sheet) {
@@ -44,11 +58,14 @@ export function scrawl(text, { hand }) {
   const wobble = wobbler(text);
   const letters = [...text];
   const grow = letters.map((_, index) => 1 + wobble(`grow:${index}`) * 0.17);
-  const sheet = Object.assign(document.createElement('canvas'), { width: EM * (letters.length + 3), height: EM * 3 });
-  const pen = sheet.getContext('2d');
-  pen.font = `${EM}px "${hand}"`;
-  const spans = letters.map((char, index) => pen.measureText(char).width * grow[index] + EM * (0.04 + wobble(`gap:${index}`) * 0.05));
+  const font = `${EM}px "${hand}"`;
+  const ruler = measure(font);
+  const spans = letters.map((char, index) => ruler.measureText(char).width * grow[index] + EM * (0.04 + wobble(`gap:${index}`) * 0.05));
   const total = spans.reduce((sum, width) => sum + width, 0);
+  // Just big enough for the word, its leaning letters and its tilt, so there's little empty sheet to trim.
+  const sheet = Object.assign(document.createElement('canvas'), { width: Math.ceil(total + EM * 2), height: Math.ceil(EM * 2 + total * 0.1) });
+  const pen = sheet.getContext('2d');
+  pen.font = font;
 
   pen.translate(sheet.width / 2, sheet.height / 2);
   pen.rotate(wobble('tilt') * 5 * DEG);
@@ -92,18 +109,54 @@ export function swipe(pen, { length, at, weight, wobble }) {
   }
 }
 
+// Written notes, kept so the same note isn't written twice. A canvas can only sit in one place, so callers get a copy.
+const written = new Map();
+const KEEP = 40;
+
+function copy(sheet) {
+  const twin = Object.assign(document.createElement('canvas'), { width: sheet.width, height: sheet.height });
+  twin.getContext('2d').drawImage(sheet, 0, 0);
+  twin.style.width = sheet.style.width;
+  return twin;
+}
+
 // Writes a few lines in marker, wrapped to a width, on a clear canvas at the screen's resolution. Lay it on with multiply.
-export function scribble(text, { hand, size, width }) {
+export function scribble(text, options) {
+  const key = JSON.stringify([text, options.hand, options.size, options.width, devicePixelRatio > 1]);
+  if (!written.has(key)) {
+    if (written.size >= KEEP) written.delete(written.keys().next().value);
+    written.set(key, write(text, options));
+  }
+  return copy(written.get(key));
+}
+
+function write(text, { hand, size, width }) {
   const ratio = devicePixelRatio > 1 ? 2 : 1;
   const scale = size / EM;
-  const pen = document.createElement('canvas').getContext('2d');
-  pen.font = `${EM}px "${hand}"`;
+  const pen = measure(`${EM}px "${hand}"`);
   // Letters come out a little wider than the font sets them, so wrap a little early.
+  const fits = (words) => pen.measureText(words).width * 1.12 * scale <= width;
+  // A word too long for a line of its own breaks wherever it runs out of room.
+  const pieces = (word) => {
+    const broken = [''];
+    for (const char of word) {
+      if (broken.at(-1) && !fits(broken.at(-1) + char)) broken.push('');
+      broken[broken.length - 1] += char;
+    }
+    return broken;
+  };
+  // Each line typed is kept; within one, words wrap.
   const lines = [];
-  for (const word of text.split(' ')) {
-    const line = lines.at(-1);
-    if (line && pen.measureText(`${line} ${word}`).width * 1.12 * scale <= width) lines[lines.length - 1] = `${line} ${word}`;
-    else lines.push(word);
+  for (const typed of text.split('\n')) {
+    let line = '';
+    for (const word of typed.split(/\s+/).filter(Boolean).flatMap(pieces)) {
+      if (line && fits(`${line} ${word}`)) line = `${line} ${word}`;
+      else {
+        if (line) lines.push(line);
+        line = word;
+      }
+    }
+    lines.push(line);
   }
   const leading = size * 0.95;
   const sheet = Object.assign(document.createElement('canvas'), {
@@ -145,20 +198,35 @@ export function roughen(ink, next, [red, green, blue]) {
   const rows = Math.ceil(height / cell) + 2;
   const shiftX = Float32Array.from({ length: columns * rows }, () => next() * 2 - 1);
   const shiftY = Float32Array.from({ length: columns * rows }, () => next() * 2 - 1);
-  const smooth = (field, gx, gy) => {
-    const x0 = Math.floor(gx);
-    const y0 = Math.floor(gy);
-    const fx = gx - x0;
-    const fy = gy - y0;
-    const at = (cx, cy) => field[cy * columns + cx];
-    return (at(x0, y0) * (1 - fx) + at(x0 + 1, y0) * fx) * (1 - fy) + (at(x0, y0 + 1) * (1 - fx) + at(x0 + 1, y0 + 1) * fx) * fy;
-  };
+
+  // Edges only shift by under a pixel, so only pixels touching ink can pick any up: mark those, skip the rest.
+  const size = width * height;
+  const near = new Uint8Array(size);
+  const across = new Uint8Array(size);
+  for (let index = 0; index < size; index += 1) near[index] = drawn[index * 4 + 3] ? 1 : 0;
+  for (let index = 0; index < size; index += 1) {
+    const x = index % width;
+    across[index] = near[index] | (x > 0 ? near[index - 1] : 0) | (x < width - 1 ? near[index + 1] : 0);
+  }
+  for (let index = 0; index < size; index += 1) {
+    near[index] = across[index] | (index >= width ? across[index - width] : 0) | (index < size - width ? across[index + width] : 0);
+  }
+
   for (let y = 0; y < height; y += 1) {
+    const gy = y / cell;
+    const y0 = Math.floor(gy);
+    const fy = gy - y0;
+    const top = y0 * columns;
+    const below = top + columns;
     for (let x = 0; x < width; x += 1) {
+      if (!near[y * width + x]) continue;
       const gx = x / cell;
-      const gy = y / cell;
-      const sx = Math.min(width - 1, Math.max(0, Math.round(x + smooth(shiftX, gx, gy) * 0.9)));
-      const sy = Math.min(height - 1, Math.max(0, Math.round(y + smooth(shiftY, gx, gy) * 0.9)));
+      const x0 = Math.floor(gx);
+      const fx = gx - x0;
+      const shift = (field) =>
+        (field[top + x0] * (1 - fx) + field[top + x0 + 1] * fx) * (1 - fy) + (field[below + x0] * (1 - fx) + field[below + x0 + 1] * fx) * fy;
+      const sx = Math.min(width - 1, Math.max(0, Math.round(x + shift(shiftX) * 0.9)));
+      const sy = Math.min(height - 1, Math.max(0, Math.round(y + shift(shiftY) * 0.9)));
       const alpha = drawn[(sy * width + sx) * 4 + 3];
       if (!alpha) continue;
       const out = (y * width + x) * 4;

@@ -1,44 +1,55 @@
 /* A photo of a real deck box, cut out roughly and stuck on a block of blue. The newest card sits inside,
-   between the blue and the box's front, and rises out past the top of the block when you go for it. */
+   between the blue and the box's front, and rises out past the top of the block when you go for it.
+   Its own layer, so the marker's multiply only ever mixes with the box. */
 .deck-box {
   --peek-scale: 0.5;
 
   position: relative;
-  display: block;
   aspect-ratio: 688 / 860;
-  padding: 0;
-  border: 0;
   background: rgb(40 160 255);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.deck-box:focus-visible {
-  outline: 2px solid var(--ink-900);
-  outline-offset: 4px;
+  isolation: isolate;
 }
 
 .deck-box__front,
 .deck-box__ink {
   position: absolute;
+  pointer-events: none;
+}
+
+.deck-box__front {
   inset: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
 }
 
 /* Marker on yellow plastic. */
 .deck-box__ink { mix-blend-mode: multiply; }
 
+/* The whole box is the button; it sits over the picture. */
+.deck-box__open {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deck-box__open:focus-visible {
+  outline: 2px solid var(--ink-900);
+  outline-offset: 4px;
+}
+
 .deck-box__peek {
   position: absolute;
   top: 2.5%;
   left: 27%;
-  width: 46%;
   aspect-ratio: 252 / 352;
-  transform: rotate(-3deg);
+  transform: translateY(0) rotate(-3deg);
   transform-origin: 50% 100%;
   transition: transform 0.45s var(--ease-out);
+  will-change: transform;
 }
 
 .deck-box__peek > .card {
@@ -49,11 +60,20 @@
   transform-origin: 0 0;
 }
 
-.deck-box:hover .deck-box__peek,
-.deck-box:focus-visible .deck-box__peek { transform: translateY(-34%) rotate(-7deg); }
+/* Rises for a real pointer, a keyboard, or a finger pressing it; never left up by a tap elsewhere. */
+@media (hover: hover) {
+  .deck-box:hover .deck-box__peek { transform: translateY(-34%) rotate(-7deg); }
+}
 
-/* The deck box: off the binder's right edge on a computer, mirroring the tabs; in the header's corner otherwise. */
-.tabbed > .deck-box { position: absolute; }
+.deck-box:has(> .deck-box__open:focus-visible) .deck-box__peek,
+.deck-box:has(> .deck-box__open:active) .deck-box__peek { transform: translateY(-34%) rotate(-7deg); }
+
+/* The deck box: off the binder's right edge on a computer, mirroring the tabs; in the header's corner otherwise.
+   It arrives a moment after the binder, so it fades in rather than popping up. */
+.tabbed > .deck-box {
+  position: absolute;
+  animation: page-in 0.3s var(--ease-out);
+}
 
 @media (min-width: 1040px) {
   .tabbed > .deck-box {
@@ -65,31 +85,31 @@
 
 /* Narrower: in the header's corner, hanging down over the end of the tab strip, where the last tabs are blank. */
 @media (max-width: 1039px) {
-  .tabbed > .deck-box {
-    --box-width: 124px;
+  .tabbed { --box-width: 124px; }
 
+  .tabbed > .deck-box {
     top: calc(max(var(--binder-width), 560px) * 94 / 1240 + 4px - var(--box-width) * 860 / 688);
     right: 0;
     width: var(--box-width);
   }
+
+  /* The box sits over the end of the tab strip, so let the strip scroll its last tabs out from under it. */
+  .tabbed:has(> .deck-box) .dividers__sheet { margin-right: var(--box-width); }
 }
 
 @media (max-width: 699px) {
-  .tabbed > .deck-box { --box-width: 104px; }
+  .tabbed { --box-width: 104px; }
 }
 
 /* Phones: bigger, and hanging off past the cards into the gutter, short of the screen's edge. */
 @media (max-width: 519px) {
-  .tabbed > .deck-box {
-    --box-width: 96px;
-
-    right: calc(-1 * min(28px, (100vw - var(--binder-width)) / 2 - 8px));
-  }
+  .tabbed { --box-width: 96px; }
+  .tabbed > .deck-box { right: calc(-1 * min(28px, (100vw - var(--binder-width)) / 2 - 8px)); }
 }
 
 /* Opened: the cards tipped out over the page. */
 .deck-spread {
-  --note-scale: 0.8;
+  --note-scale: 1;
 
   width: 100%;
   height: 100%;
@@ -104,14 +124,17 @@
   overscroll-behavior: contain;
 }
 
-.deck-spread::backdrop {
-  background: rgb(255 255 255 / 0.84);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
+/* Plain, not blurred: a blur under this much white barely shows, and costs the whole screen every frame. */
+.deck-spread::backdrop { background: rgb(255 255 255 / 0.9); }
 
-.deck-spread[open],
-.deck-spread[open]::backdrop { animation: page-in 0.25s var(--ease-out); }
+/* In: the desk fades up and the cards tip out on their own. Out: everything's put away quickly. */
+.deck-spread[open]::backdrop,
+.deck-spread[open] .deck-spread__bar { animation: page-in 0.25s var(--ease-out); }
+
+.deck-spread.is-closing::backdrop,
+.deck-spread.is-closing .deck-spread__bar { animation: put-away 0.18s ease-in forwards; }
+
+.deck-spread.is-closing .deck-spread__card { animation: put-back 0.18s ease-in forwards; }
 
 html:has(.deck-spread[open]) { overflow: hidden; }
 
@@ -174,33 +197,69 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   list-style: none;
 }
 
+/* A card coming forward jumps to the top at once; one going back stays on top until it has settled. */
 .deck-spread__card {
   --shift: var(--dx);
 
   position: relative;
   width: calc(252px * var(--note-scale));
   height: calc(352px * var(--note-scale));
+  border-radius: 14px;
   transform: translate(var(--shift), var(--dy)) rotate(var(--tilt));
-  transition: transform 0.3s var(--ease-out);
+  transition: transform 0.3s var(--ease-out), z-index 0s 0.3s;
   animation: tip-out 0.5s var(--ease-out) backwards;
-  animation-delay: calc(var(--index) * 45ms);
+  animation-delay: calc(min(var(--index), 8) * 45ms);
 }
 
-.deck-spread__card:hover,
-.deck-spread__card.is-picked {
+/* Past the first screenful, cards are just there: no point animating what's off screen. */
+.deck-spread__card:nth-child(n + 13) { animation: none; }
+
+/* Picked: on top of the pile, tilt and all. */
+.deck-spread__card.is-picked,
+.deck-spread__card:focus-visible {
   z-index: 1;
-  transform: translate(var(--shift), calc(var(--dy) - 8px)) rotate(0deg) scale(1.03);
+  transition: transform 0.3s var(--ease-out), z-index 0s;
 }
 
-.deck-spread__card:hover { z-index: 2; }
+@media (hover: hover) {
+  .deck-spread__card:hover {
+    z-index: 2;
+    transform: translate(var(--shift), calc(var(--dy) - 8px)) rotate(0deg) scale(1.03);
+    transition: transform 0.3s var(--ease-out), z-index 0s;
+  }
+}
 
-.deck-spread__card > .card {
+.deck-spread__card:focus-visible {
+  outline: 2px solid var(--ink-900);
+  outline-offset: 6px;
+}
+
+/* The card at full size, shrunk to fit; inside it, the card and its back, turned as one. */
+.deck-spread__flip {
   position: absolute;
   top: 0;
   left: 0;
+  width: 252px;
+  height: 352px;
   transform: scale(var(--note-scale));
   transform-origin: 0 0;
+  perspective: 1400px;
 }
+
+.deck-spread__turn {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.deck-spread__turn > * {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.deck-spread__turn > .card-back { transform: rotateY(180deg); }
 
 @keyframes tip-out {
   from {
@@ -209,10 +268,19 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   }
 }
 
+@keyframes put-back {
+  to {
+    opacity: 0;
+    transform: translate(var(--shift), calc(var(--dy) + 18px)) rotate(var(--tilt)) scale(0.97);
+  }
+}
+
+@keyframes put-away {
+  to { opacity: 0; }
+}
+
 @media (max-width: 519px) {
   .deck-spread {
-    --note-scale: 1;
-
     padding-top: 24px;
     overflow-x: clip;
   }
@@ -227,5 +295,8 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   .deck-box__peek,
   .deck-spread__card { transition: none; }
 
-  .deck-spread__card { animation: none; }
+  .tabbed > .deck-box,
+  .deck-spread__card,
+  .deck-spread[open]::backdrop,
+  .deck-spread[open] .deck-spread__bar { animation: none; }
 }

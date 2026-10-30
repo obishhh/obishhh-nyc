@@ -1,6 +1,6 @@
-import { MAX_TABS } from '../../src/components/dividers.js';
 import { h, svg } from '../../src/lib/dom.js';
-import { sections } from '../../src/lib/sections.js';
+import { MAX_TABS, sections } from '../../src/lib/sections.js';
+import { plural } from '../../src/lib/words.js';
 import { blankCard, FINISHES, RARITIES, STAGES, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { formatDate } from '../lib/format.js';
@@ -8,11 +8,10 @@ import { ARROW_LEFT } from '../lib/icons.js';
 import { recall, store } from '../lib/prefs.js';
 import { artPicker } from './art-picker.js';
 import { composer } from './composer.js';
-import { checkbox, dropdown, number, row, section, select, text, textarea } from './fields.js';
+import { button, checkbox, dropdown, number, row, section, select, text, textarea } from './fields.js';
 import { preview } from './preview.js';
 
 const STATUS = { new: 'New card', draft: 'Draft', published: 'Live' };
-const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 const WRITING_KEY = 'obishhh.editor.writing';
 
 function trim(value) {
@@ -58,12 +57,6 @@ function whereFiled(value, live, others) {
     : company ? `it goes behind the “${value}” tab, with ${plural(company, 'other card')}`
     : `it gets a “${value}” tab to itself`;
   return live ? `${where[0].toUpperCase()}${where.slice(1)}.` : `Once it’s live, ${where}.`;
-}
-
-function button(label, variant, onClick) {
-  const element = h('button', { class: `button ${variant}`.trim(), type: 'button' }, label);
-  element.addEventListener('click', onClick);
-  return element;
 }
 
 // Edit one card. Every field redraws the preview as you type.
@@ -234,9 +227,13 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
     actions.forEach((action) => (action.disabled = on));
   }
 
+  // One save at a time: a second ⌘S while the first is out would save a new card twice.
+  let saving = false;
+
   async function commit(status, message) {
     const data = current();
-    if (status === 'published' && !ready(data)) return;
+    if (saving || (status === 'published' && !ready(data))) return;
+    saving = true;
     busy(true);
     try {
       load(await onSave(data, status, record?.id));
@@ -244,6 +241,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
     } catch (error) {
       flash(error.code === '23505' ? 'Another card already uses that address.' : error.message, true);
     } finally {
+      saving = false;
       busy(false);
     }
   }

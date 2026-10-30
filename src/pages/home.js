@@ -11,6 +11,7 @@ import { enableFlip } from '../lib/flip.js';
 import { enableReading } from '../lib/reading.js';
 import { trackPointer } from '../lib/pointer.js';
 import { revealWhenReady } from '../lib/reveal.js';
+import { handwriting } from '../lib/scrawl.js';
 import { sections } from '../lib/sections.js';
 
 const POCKETS = 9;
@@ -18,6 +19,8 @@ const POCKETS = 9;
 const ROWS_SHOWN = 2.25;
 // The smallest the cards get to fit a short window.
 const SMALLEST = 0.5;
+// The All tab's value: blank, which no section can be, so a section called "all" can't clash with it.
+const ALL = '';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 const sleeve = () =>
@@ -26,47 +29,49 @@ const sleeve = () =>
 // Hangs the tabs off the binder: All, then one per section. Picking one hides every other card, sealed ones included,
 // and empty sleeves fill out the page so it's as tall as the tabs.
 function tabbed(page, cards) {
-  const tabs = [{ value: 'all', label: 'All', count: cards.length }, ...sections(cards)];
+  const tabs = [{ value: ALL, label: 'All', count: cards.length }, ...sections(cards)];
   const asked = new URLSearchParams(location.search).get('filed');
   const pockets = [...page.children];
   const sleeves = Array.from({ length: POCKETS - 1 }, sleeve);
   page.append(...sleeves);
 
   function show(value) {
-    pockets.forEach((pocket, index) => (pocket.hidden = value !== 'all' && (cards[index].sealed || cards[index].stats.filed !== value)));
+    pockets.forEach((pocket, at) => (pocket.hidden = value !== ALL && (cards[at].sealed || String(cards[at].stats?.filed ?? '') !== value)));
     const empty = (POCKETS - (pockets.filter((pocket) => !pocket.hidden).length % POCKETS)) % POCKETS;
-    sleeves.forEach((each, index) => (each.hidden = index >= empty));
+    sleeves.forEach((each, at) => (each.hidden = at >= empty));
   }
 
-  const start = tabs.some((tab) => tab.value === asked) ? asked : 'all';
-  const index = dividers(tabs, {
+  const start = tabs.some((tab) => tab.value === asked) ? asked : ALL;
+  const strip = dividers(tabs, {
     active: start,
     onSelect(value) {
-      index.select(value);
+      strip.select(value);
       show(value);
       if (!reducedMotion.matches) page.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' });
       const query = new URLSearchParams(location.search);
-      if (value === 'all') query.delete('filed');
+      if (value === ALL) query.delete('filed');
       else query.set('filed', value);
       const search = query.toString();
       history.replaceState(history.state, '', search ? `?${search}` : location.pathname);
     },
   });
   show(start);
-  return h('div', { class: 'tabbed' }, index.root, page);
+  return { root: h('div', { class: 'tabbed' }, strip.root, page), ready: strip.ready };
 }
 
 // On a computer, size the cards so two rows and a bit of the third fill the window. Narrower screens just scroll.
+// Sized to the window's own height, so a toolbar sliding in and out doesn't rescale the binder mid-scroll.
 function fitToWindow(page) {
   const root = document.documentElement;
   const wide = matchMedia(WIDE);
+  const full = Math.floor(ROWS_SHOWN);
   const fit = () => {
-    root.style.removeProperty('--fit');
-    if (!wide.matches) return;
+    if (!wide.matches) return root.style.removeProperty('--fit');
+    // The cards' top doesn't move with their size, so it's safe to read with --fit already set.
     const top = page.getBoundingClientRect().top + scrollY;
-    const full = Math.floor(ROWS_SHOWN);
-    const scale = (innerHeight - top) / (full * (352 + 28) + (ROWS_SHOWN - full) * 352);
-    root.style.setProperty('--fit', Math.max(SMALLEST, scale).toFixed(3));
+    const scale = (root.clientHeight - top) / (full * (352 + 28) + (ROWS_SHOWN - full) * 352);
+    const value = Math.max(SMALLEST, scale).toFixed(3);
+    if (root.style.getPropertyValue('--fit') !== value) root.style.setProperty('--fit', value);
   };
   let frame;
   addEventListener('resize', () => {
@@ -76,33 +81,31 @@ function fitToWindow(page) {
   fit();
 }
 
-// The deck box only turns up once something's in it. A deck that won't load just stays away.
+// The deck box only turns up once something's in it. A deck that won't load, or won't draw, just stays away.
 async function deck() {
-  const entries = await loadDeck().catch(() => []);
-  if (!entries.length) return null;
-  // Notes are written in marker, so wait for its font (but not forever).
-  await Promise.race([document.fonts.load('40px "Reenie Beanie"'), new Promise((resolve) => setTimeout(resolve, 3000))]);
-  return deckBox(entries, { make: deckCard });
+  try {
+    const entries = await loadDeck();
+    if (!entries.length) return null;
+    await handwriting();
+    return deckBox(entries, { make: deckCard });
+  } catch {
+    return null;
+  }
 }
 
 async function binderPage() {
-  const decking = deck();
   let cards;
   try {
     cards = await loadBinder();
   } catch {
-    return notice('The binder is stuck shut. Refresh to try again.');
+    return { root: notice('The binder is stuck shut. Refresh to try again.') };
   }
-  if (!cards.length) return notice('The binder is empty. Fresh cards soon.');
+  if (!cards.length) return { root: notice('The binder is empty. Fresh cards soon.') };
 
   const page = binder(cards, { label: 'Binder page 1' });
   trackPointer(page, '.card');
-  enableReading(page, cards);
   enableFlip(page, '.binder__flip');
-  const holder = tabbed(page, cards);
-  const box = await decking;
-  if (box) holder.append(box);
-  return holder;
+  return { ...tabbed(page, cards), page, cards };
 }
 
 const main = h('main', { class: 'page' });
@@ -113,7 +116,13 @@ document.body.append(
   colophon(),
 );
 
-main.append(await binderPage());
-const page = main.querySelector('.binder');
-if (page) fitToWindow(page);
-revealWhenReady(document.body);
+const decking = deck();
+const shelf = await binderPage();
+main.append(shelf.root);
+if (shelf.page) {
+  fitToWindow(shelf.page);
+  decking.then((box) => box && shelf.root.append(box));
+}
+await revealWhenReady(document.body, [shelf.ready]);
+// Once it's all on screen and sized, so a ?card= link flies its card from the right spot.
+if (shelf.page) enableReading(shelf.page, shelf.cards);

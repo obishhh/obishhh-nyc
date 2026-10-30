@@ -11,15 +11,24 @@ function face(data) {
   return h('div', { class: 'sealed__blur' }, card(data));
 }
 
-// A little "not yet" wobble. On top of the card's own tilt, so it shakes from wherever it sits.
-const NOT_YET = [
-  { translate: '0', rotate: '0deg' },
-  { translate: '-5px', rotate: '-1.2deg' },
-  { translate: '4px', rotate: '1deg' },
-  { translate: '-3px', rotate: '-0.6deg' },
-  { translate: '2px', rotate: '0.3deg' },
-  { translate: '0', rotate: '0deg' },
-];
+// A little "not yet" head-shake, never quite the same twice: which way it starts, how far, how much it
+// twists and how many times it goes back and forth all change. Added on top of the card's own tilt and
+// size, so it shakes about its middle rather than swinging from where the box sits.
+function notYet() {
+  const way = Math.random() < 0.5 ? 1 : -1;
+  const reach = 3.5 + Math.random() * 3;
+  const twist = 0.6 + Math.random() * 1.2;
+  const swings = 3 + Math.floor(Math.random() * 3);
+  const frames = [{ transform: 'translateX(0px) rotate(0deg)' }];
+  for (let swing = 0; swing < swings; swing += 1) {
+    const fade = 1 - swing / swings;
+    const side = (swing % 2 ? -1 : 1) * way;
+    frames.push({ transform: `translateX(${(side * reach * fade).toFixed(2)}px) rotate(${(side * twist * fade).toFixed(2)}deg)` });
+  }
+  frames.push({ transform: 'translateX(0px) rotate(0deg)' });
+  return { frames, duration: 340 + swings * 30 + Math.random() * 60 };
+}
+
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 // The blur says it's not out yet; screen readers get it said out loud. Tap it and it shakes its head.
@@ -30,7 +39,9 @@ export function sealed(data) {
   Promise.race([art, new Promise((resolve) => setTimeout(resolve, ART_WAIT))]).then(() => wrapper.classList.add('is-ready'));
   const root = h('div', { class: 'sealed', role: 'img', 'aria-label': 'Sealed card. Not printed yet.' }, wrapper);
   root.addEventListener('click', () => {
-    if (!reducedMotion.matches) root.animate(NOT_YET, { duration: 420, easing: 'ease-out' });
+    if (reducedMotion.matches || root.getAnimations().length) return;
+    const { frames, duration } = notYet();
+    root.animate(frames, { duration, easing: 'ease-out', composite: 'add' });
   });
   return root;
 }

@@ -34,6 +34,12 @@ export const select = (name, label, choices, { hint } = {}) => row(label, dropdo
 export const checkbox = (name, label, text, { hint } = {}) =>
   row(label, h('label', { class: 'check' }, h('input', { type: 'checkbox', name }), text), hint);
 
+export function button(label, variant, onClick) {
+  const element = h('button', { class: `button ${variant}`.trim(), type: 'button' }, label);
+  element.addEventListener('click', onClick);
+  return element;
+}
+
 export const section = (title, ...rows) =>
   h('details', { class: 'form-section', open: true },
     h('summary', { class: 'form-section__title' }, h('h2', { class: 'form-section__name' }, title)),
