@@ -28,7 +28,7 @@ async function binderPage() {
 const main = h('main', { class: 'page' });
 
 document.body.append(
-  masthead({ heading: true, door: true }),
+  masthead({ heading: true }),
   main,
   colophon(),
 );

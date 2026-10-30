@@ -1,12 +1,19 @@
-.binder {
+/* The binder's size lives on the page, so the footer can line up with the cards' edges. */
+:root {
   --scale: 1;
+  --columns: 3;
+  --binder-gap: calc(22px * var(--scale));
+  --binder-width: calc(var(--columns) * 252px * var(--scale) + (var(--columns) - 1) * var(--binder-gap));
+}
+
+.binder {
   --pocket-width: calc(252px * var(--scale));
   --pocket-height: calc(352px * var(--scale));
 
   display: grid;
-  grid-template-columns: repeat(3, var(--pocket-width));
+  grid-template-columns: repeat(var(--columns), var(--pocket-width));
   justify-content: center;
-  gap: calc(28px * var(--scale)) calc(22px * var(--scale));
+  gap: calc(28px * var(--scale)) var(--binder-gap);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -81,28 +88,28 @@
 }
 
 @media (min-width: 1400px) {
-  .binder { --scale: 1.15; }
+  :root { --scale: 1.15; }
 }
 
 @media (max-width: 899px) {
-  .binder { --scale: 0.8; }
+  :root { --scale: 0.8; }
 }
 
 @media (max-width: 699px) {
-  .binder { --scale: 0.62; }
+  :root { --scale: 0.62; }
 }
 
 @media (max-width: 519px) {
-  .binder {
+  :root {
     --scale: 1.25;
-    grid-template-columns: var(--pocket-width);
+    --columns: 1;
   }
 
   .binder__pocket:has(.binder__flip) { order: -1; }
 }
 
 @media (max-width: 359px) {
-  .binder { --scale: 1.1; }
+  :root { --scale: 1.1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

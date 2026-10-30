@@ -1,7 +1,10 @@
 .colophon {
   display: flex;
-  justify-content: center;
-  padding: 0 16px 40px;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(var(--binder-width, 100%), calc(100% - 32px));
+  margin: 0 auto;
+  padding-bottom: 40px;
 }
 
 .colophon__link {
@@ -13,3 +16,4 @@
 }
 
 .colophon__link:hover { color: var(--ink-900); }
+.colophon__link:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 4px; }
