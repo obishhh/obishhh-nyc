@@ -3,12 +3,14 @@ import { blankCard, FINISHES, RARITIES, STAGES, TYPES } from '../data/options.js
 import { readForm, writeForm } from '../lib/form.js';
 import { formatDate } from '../lib/format.js';
 import { ARROW_LEFT } from '../lib/icons.js';
+import { recall, store } from '../lib/prefs.js';
 import { artPicker } from './art-picker.js';
 import { composer } from './composer.js';
 import { checkbox, dropdown, number, row, section, select, text, textarea } from './fields.js';
 import { preview } from './preview.js';
 
 const STATUS = { new: 'New card', draft: 'Draft', published: 'Live' };
+const WRITING_KEY = 'obishhh.editor.writing';
 
 function trim(value) {
   if (typeof value === 'string') return value.trim();
@@ -64,6 +66,16 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   const art = artPicker({ ...artOptions, onError: (error) => flash(`Upload failed. ${error.message}`, true) });
   const view = preview();
 
+  const articleSection = section('Article',
+    row('Text', composer('body', {
+      rows: 12,
+      placeholder: 'Leave a blank line between paragraphs.',
+      uploadPhoto,
+      onError: (error) => flash(`Photo upload failed. ${error.message}`, true),
+    }), 'Tapping a published card opens this. Leave it empty and the card just flips.'),
+    text('slug', 'Address', { placeholder: 'from the title', maxlength: 60, hint: 'The end of its link: obishhh.nyc/?card=…' }),
+  );
+
   const form = h('form', { class: 'editor__form', novalidate: true },
     section('Card',
       text('title', 'Title', { placeholder: 'Bodega Cat #14', maxlength: 32 }),
@@ -84,15 +96,6 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
       textarea('move.text', 'Text', { placeholder: 'Write 600 words about one font. If heads, write 600 more.', maxlength: 80, hint: 'About 70 characters fit.' }),
       costRow(),
     ),
-    section('Article',
-      row('Text', composer('body', {
-        rows: 12,
-        placeholder: 'Leave a blank line between paragraphs.',
-        uploadPhoto,
-        onError: (error) => flash(`Photo upload failed. ${error.message}`, true),
-      }), 'Tapping a published card opens this. Leave it empty and the card just flips.'),
-      text('slug', 'Address', { placeholder: 'from the title', maxlength: 60, hint: 'The end of its link: obishhh.nyc/?card=…' }),
-    ),
     section('Small print',
       text('dex', 'Dex strip', { placeholder: 'Essay. Length: 640 words. Filed: Oct 28, 2026.', maxlength: 64 }),
       text('stats.reads', 'Reads', { placeholder: '1.2k', maxlength: 8 }),
@@ -100,6 +103,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
       text('stats.filed', 'Filed under', { placeholder: 'type', maxlength: 12 }),
       textarea('flavor', 'Flavor', { placeholder: 'Optional', maxlength: 80 }),
     ),
+    articleSection,
     h('datalist', { id: 'editor-stages' }, STAGES.map((value) => h('option', { value }))),
   );
 
@@ -108,11 +112,13 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   const save = button('Save draft', '', keep);
   const publish = button('Publish', 'button--primary', () => commit('published', 'Published.'));
   const actions = [remove, unpublish, save, publish];
+  const focusToggle = h('button', { class: 'button button--quiet', type: 'button', 'aria-pressed': 'false' }, 'Just the article');
 
   const root = h('div', { class: 'editor' },
     h('div', { class: 'editor__bar' },
       h('a', { class: 'editor__back', href: '#/' }, svg(ARROW_LEFT), 'All cards'),
       state,
+      focusToggle,
       h('div', { class: 'editor__actions' }, actions),
     ),
     h('div', { class: 'editor__body' },
@@ -127,6 +133,25 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   let shownType = '';
 
   const current = () => tidy(readForm(form));
+
+  // Writing mode folds every section but the article, and is remembered between visits.
+  const otherSections = () => [...form.querySelectorAll('.form-section')].filter((each) => each !== articleSection);
+
+  function syncFocusToggle() {
+    const on = otherSections().every((each) => !each.open);
+    focusToggle.setAttribute('aria-pressed', String(on));
+    focusToggle.textContent = on ? 'Show card details' : 'Just the article';
+  }
+
+  function writing(on, { remember = true } = {}) {
+    otherSections().forEach((each) => (each.open = !on));
+    articleSection.open = true;
+    view.setView(on ? 'article' : 'revealed');
+    if (remember) store(WRITING_KEY, on);
+    syncFocusToggle();
+  }
+
+  const unfold = (element) => (element.closest('.form-section').open = true);
 
   function renderState() {
     clearTimeout(flashTimer);
@@ -152,7 +177,8 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   }
 
   function load(next) {
-    if (!next || next.id !== record?.id) view.reset();
+    const fresh = !next || next.id !== record?.id;
+    if (fresh) view.reset();
     record = next;
     const data = structuredClone(next ?? blankCard(cards()));
     data.move.cost ??= [data.type, 'plain'];
@@ -162,16 +188,19 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
     shownType = data.type;
     snapshot = JSON.stringify(current());
     refresh();
+    if (fresh) writing(recall(WRITING_KEY), { remember: false });
   }
 
   function ready(data) {
     if (!data.title) {
       flash('Add a title before publishing.', true);
+      unfold(form.elements.namedItem('title'));
       form.elements.namedItem('title').focus();
       return false;
     }
     if (!data.art.src) {
       flash('Pick an image before publishing.', true);
+      unfold(art.rows[0]);
       art.focus();
       return false;
     }
@@ -224,6 +253,15 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   });
 
   form.addEventListener('submit', (event) => event.preventDefault());
+  form.addEventListener('toggle', syncFocusToggle, true);
+
+  focusToggle.addEventListener('click', () => {
+    const on = focusToggle.getAttribute('aria-pressed') !== 'true';
+    writing(on);
+    if (!on) return;
+    articleSection.scrollIntoView({ block: 'start' });
+    form.elements.namedItem('body').focus({ preventScroll: true });
+  });
 
   return {
     root,

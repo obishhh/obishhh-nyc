@@ -121,12 +121,46 @@ select.input {
   border-top: 0;
 }
 
+.form-section:not([open]) { padding-bottom: 24px; }
+
 .form-section__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin: 0 0 8px;
+  list-style: none;
   font: 500 12px/1 var(--font-display);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-900);
+  cursor: pointer;
+}
+
+.form-section:not([open]) > .form-section__title { margin-bottom: 0; color: var(--page-muted); }
+.form-section__title::-webkit-details-marker { display: none; }
+.form-section__title:hover { color: var(--ink-900); }
+.form-section__title:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 4px; }
+
+.form-section__title::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s var(--ease-out);
+}
+
+.form-section:not([open]) > .form-section__title::after { transform: rotate(-45deg); }
+
+.form-section__name {
+  margin: 0;
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form-section__title::after { transition: none; }
 }
 
 .row {

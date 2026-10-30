@@ -53,6 +53,7 @@
 }
 
 .editor__form { max-width: 600px; }
+.editor__form .form-section { scroll-margin-top: 80px; }
 
 .editor__preview {
   position: sticky;

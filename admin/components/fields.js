@@ -35,4 +35,7 @@ export const checkbox = (name, label, text, { hint } = {}) =>
   row(label, h('label', { class: 'check' }, h('input', { type: 'checkbox', name }), text), hint);
 
 export const section = (title, ...rows) =>
-  h('section', { class: 'form-section' }, h('h2', { class: 'form-section__title' }, title), rows);
+  h('details', { class: 'form-section', open: true },
+    h('summary', { class: 'form-section__title' }, h('h2', { class: 'form-section__name' }, title)),
+    rows,
+  );

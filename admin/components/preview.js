@@ -75,6 +75,10 @@ export function preview() {
       data = next;
       render();
     },
+    setView(next) {
+      show(next);
+      if (data) render();
+    },
     // Face up and unsealed, for a different card.
     reset() {
       show('revealed');
