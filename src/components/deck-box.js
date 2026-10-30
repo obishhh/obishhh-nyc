@@ -82,10 +82,13 @@ function spread(entries, make, title, onClose) {
   );
   let openedAt = 0;
   let pressedOnDesk = false;
+  let byKey = false;
 
-  // A quick put-away, then shut. Esc goes the same way.
-  function putBack() {
+  // A quick put-away, then shut. Esc goes the same way. `withKey`: put away from the keyboard, so focus goes back to
+  // the box for the next key; put away with a pointer, it doesn't, or the box would show focused and stay fanned up.
+  function putBack({ withKey = false } = {}) {
     if (!dialog.open || dialog.classList.contains('is-closing')) return;
+    byKey = withKey;
     dialog.classList.add('is-closing');
     setTimeout(() => {
       dialog.classList.remove('is-closing');
@@ -95,10 +98,11 @@ function spread(entries, make, title, onClose) {
   }
 
   const onDesk = (target) => !target.closest('.deck-spread__card, .deck-spread__bar');
-  close.addEventListener('click', putBack);
+  // A click with no pointer behind it (detail 0) came from Enter or Space.
+  close.addEventListener('click', (event) => putBack({ withKey: event.detail === 0 }));
   dialog.addEventListener('cancel', (event) => {
     event.preventDefault();
-    putBack();
+    putBack({ withKey: true });
   });
   // Only a press and release both on the desk put the cards back, so dragging across a caption doesn't.
   dialog.addEventListener('pointerdown', (event) => (pressedOnDesk = onDesk(event.target)));
@@ -125,7 +129,7 @@ function spread(entries, make, title, onClose) {
     event.preventDefault();
     pick(card);
   });
-  dialog.addEventListener('close', onClose);
+  dialog.addEventListener('close', () => onClose({ byKey }));
 
   return {
     open() {
@@ -181,7 +185,11 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
   let view;
   const ready = () => {
     fillPeeks();
-    return (view ??= spread(entries, make, title, () => open.focus({ preventScroll: true })));
+    return (view ??= spread(entries, make, title, ({ byKey }) => {
+      // The dialog hands focus back to the box on its own as it shuts; keep it only for the keyboard.
+      if (byKey) open.focus({ preventScroll: true });
+      else open.blur();
+    }));
   };
   box.addEventListener('pointerenter', fillPeeks, { once: true });
   open.addEventListener('focus', fillPeeks, { once: true });

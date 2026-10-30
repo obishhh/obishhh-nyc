@@ -12,9 +12,16 @@
   box-shadow: 0 0.75px 1.25px rgb(0 0 0 / 0.38), inset 0 -1.5px 1.5px rgb(0 0 0 / 0.22);
 }
 
+/* Whole pixels, with the same whole-pixel gap all round: a fraction gets rounded wherever the card is drawn, and
+   rounded differently once it's scaled into the reader, which nudges the symbol off its coin's middle. */
 .energy svg {
-  width: 68%;
-  height: 68%;
+  width: 16px;
+  height: 16px;
+}
+
+.energy[data-size='small'] svg {
+  width: 11px;
+  height: 11px;
 }
 
 .energy[data-size='small'] {

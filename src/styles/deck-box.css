@@ -186,8 +186,8 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   flex: none;
   width: 36px;
   height: 36px;
-  /* Its bottom on the title's baseline, 18px down a 22px line. */
-  margin-top: -18px;
+  /* In the middle of the heading's two lines. */
+  align-self: center;
   padding: 0;
   border: 1px solid var(--page-rule);
   border-radius: 50%;
@@ -300,12 +300,6 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   .deck-spread {
     padding-top: 20px;
     overflow-x: clip;
-  }
-
-  /* Narrow, the heading's two lines stand taller than the button, so it sits in the middle of them instead. */
-  .deck-spread__close {
-    align-self: center;
-    margin-top: 0;
   }
 
   /* One column would just be a queue, so zigzag down it, each card landing over the last one's foot. */

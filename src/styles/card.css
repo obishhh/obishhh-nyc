@@ -175,6 +175,11 @@
   height: 28px;
 }
 
+.card__hp .energy svg {
+  width: 20px;
+  height: 20px;
+}
+
 .card__art {
   position: relative;
   flex: none;
