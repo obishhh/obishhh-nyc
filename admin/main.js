@@ -8,6 +8,7 @@ import { topbar } from './components/topbar.js';
 import { currentSession, isAdmin, signOut } from './lib/auth.js';
 import { deleteCard, listCards, listUploads, reorderCards, saveCard, uploadImage } from './lib/cards.js';
 import { prepareImage } from './lib/image.js';
+import { paintSealed, sealedKey } from './lib/sealed-image.js';
 
 let cards = [];
 
@@ -78,8 +79,20 @@ addEventListener('hashchange', () => {
   render();
 });
 
+// The sealed look is painted once per art, crop, type and finish, and reused until one of them changes.
+async function withSealedImage(data, id) {
+  const previous = cards.find((card) => card.id === id)?.art.sealed;
+  const key = await sealedKey(data);
+  if (previous?.includes(key)) return { ...data.art, sealed: previous };
+  try {
+    return { ...data.art, sealed: await uploadImage(await paintSealed(data), { folder: 'sealed', name: key }) };
+  } catch {
+    return previous ? { ...data.art, sealed: previous } : data.art;
+  }
+}
+
 async function save(data, status, id) {
-  const saved = await saveCard(id, data, status);
+  const saved = await saveCard(id, { ...data, art: await withSealedImage(data, id) }, status);
   cards = id ? cards.map((other) => (other.id === id ? saved : other)) : [...cards, saved];
   shown = `#/card/${saved.id}`;
   history.replaceState(null, '', shown);

@@ -16,6 +16,14 @@
 
 .sealed__blur { filter: blur(7px) saturate(0.7); }
 
+.sealed__image {
+  display: block;
+  width: 300px;
+  height: 400px;
+  max-width: none;
+  margin: -24px;
+}
+
 /* Cards that are ready before the page shows arrive with it, not after. */
 .is-waiting .sealed__face { transition: none; }
 

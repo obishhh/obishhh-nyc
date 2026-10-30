@@ -5,7 +5,7 @@ const SAFE_LINK = /^(https?:\/\/|mailto:|\/(?!\/)|#|\?)/i;
 const SAFE_IMAGE = /^(https:\/\/|\/(?!\/))/i;
 
 export const safeLink = (url) => (SAFE_LINK.test(url) ? url : null);
-const safeImage = (url) => (SAFE_IMAGE.test(url) ? url : null);
+export const safeImage = (url) => (SAFE_IMAGE.test(url) ? url : null);
 
 // Spans are capped in length so a stray marker can't send a pattern searching the whole post.
 const INLINE = [

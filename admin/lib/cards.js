@@ -35,10 +35,10 @@ export const listUploads = async () =>
     .filter(({ id, name }) => id && !name.startsWith('.'))
     .map(({ name }) => publicUrl(name));
 
-// Card art sits at the top of the bucket, where the art picker lists it; photos in posts go in a folder.
-export async function uploadImage(image, { folder } = {}) {
-  const file = `${crypto.randomUUID()}.${image.type.split('/')[1]}`;
-  const name = folder ? `${folder}/${file}` : file;
-  unwrap(await art().upload(name, image, { contentType: image.type, cacheControl: '31536000' }));
-  return publicUrl(name);
+// Card art sits at the top of the bucket, where the art picker lists it; post photos and sealed cards go in folders.
+export async function uploadImage(image, { folder, name = crypto.randomUUID() } = {}) {
+  const file = `${name}.${image.type.split('/')[1]}`;
+  const path = folder ? `${folder}/${file}` : file;
+  unwrap(await art().upload(path, image, { contentType: image.type, cacheControl: '31536000', upsert: true }));
+  return publicUrl(path);
 }

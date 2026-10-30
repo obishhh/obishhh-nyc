@@ -14,11 +14,13 @@ function entry({ label, src, title, author, license, source, changes = 'cropped'
 }
 
 // One entry per licensed work, in binder order. Your own photos need no credit.
+// Sealed cards only share their blurred picture, so that stands in as the thumbnail.
 function cardWorks(cards) {
   const works = new Map();
   for (const { title, sealed, art } of cards) {
-    if (art.src && art.license && !works.has(art.src)) {
-      works.set(art.src, { label: sealed ? 'Sealed card' : title, ...art });
+    const key = art.source || art.src;
+    if (key && art.license && !works.has(key)) {
+      works.set(key, { label: sealed ? 'Sealed card' : title, ...art, src: art.src || art.sealed });
     }
   }
   return [...works.values()];
