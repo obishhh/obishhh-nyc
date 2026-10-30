@@ -123,16 +123,17 @@
 
 .card__name {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 6px;
-  height: 24px;
+  height: 28px;
+  margin-top: -4px;
 }
 
 .card__title {
   min-width: 0;
   overflow: hidden;
-  font: 700 21px/24px var(--font-display);
+  font: 700 21px/1 var(--font-display);
   letter-spacing: -0.01em;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -140,25 +141,31 @@
 
 .card__hp {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   flex: none;
   color: var(--hp-600);
 }
 
-.card__hp-value { font: 700 18px/20px var(--font-display); }
+/* The title, the minutes and the icon all sit on one line, right above the art: the words' baseline on the icon's
+   foot. This display face drops 0.15em below its baseline. */
+/* Past `.card h2`'s reset. */
+.card__name .card__title { margin-bottom: -0.15em; }
+
+.card__hp-value {
+  margin-bottom: -0.15em;
+  font: 700 21px/1 var(--font-display);
+}
 
 .card__hp-unit {
-  margin: 0 4px 0 1.5px;
+  margin: 0 4px -0.15em 1.5px;
   font: 700 9px/1 var(--font-display);
   letter-spacing: 0.02em;
 }
 
-/* Bigger than the minutes beside it, as on the real cards. It hangs a little past the row rather than pushing the art down. */
+/* Bigger than the minutes beside it, as on the real cards, and sitting on the same line as the words. */
 .card__hp .energy {
-  align-self: center;
   width: 28px;
   height: 28px;
-  margin: -2px 0;
 }
 
 .card__art {
@@ -212,10 +219,12 @@
   font: 500 7px/8px var(--font-display);
 }
 
+/* The move floats in the middle of whatever room the art and the stats leave it; the stats sit at the bottom. */
 .card__move {
   display: flex;
   align-items: center;
   flex: none;
+  margin: auto 0;
   gap: 6px;
   height: 45px;
   padding: 3px 0 2px;
