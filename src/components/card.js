@@ -1,5 +1,6 @@
 import { h } from '../lib/dom.js';
 import { safeImage } from '../lib/markdown.js';
+import { retreatOf, typeName, weaknessOf } from '../data/types.js';
 import { energy } from './energy.js';
 import { rarity } from './rarity.js';
 
@@ -41,15 +42,26 @@ function move({ type, move: { name, text, score, cost = [type, 'plain'] } }) {
   );
 }
 
-function stat(label, value) {
-  return h('div', { class: 'card__stat' }, h('dt', {}, label), h('dd', {}, String(value)));
+// Where it's filed, on the silver badge a real card keeps for its stage. The binder's tabs go by the same thing.
+function stageLine({ stats }) {
+  return h('p', { class: 'card__stage' }, stats.filed && h('span', { class: 'card__stage-badge', title: 'Filed under' }, stats.filed));
 }
 
-function stats({ reads, replies, filed }) {
-  return h('dl', { class: 'card__stats' },
-    stat('reads', reads),
-    stat('bookmarked', replies),
-    stat('filed under', filed),
+function stat(label, ...value) {
+  return h('div', { class: 'card__stat' }, h('dt', {}, label), h('dd', {}, ...value));
+}
+
+// Weakness, resistance and retreat, in icons like the real ones. Also used under the article.
+export function battleStats(data, { size = 'small', prefix = 'card' } = {}) {
+  const weak = weaknessOf(data);
+  const resist = data.stats.resistance;
+  const retreat = retreatOf(data.minutes);
+  const icon = (kind) => energy(kind, size);
+  return h('dl', { class: `${prefix}__stats` },
+    stat('weakness', h('span', { class: 'card__stat-value', title: `Weak to ${typeName(weak)}` }, icon(weak), '×2')),
+    stat('resistance', resist && h('span', { class: 'card__stat-value', title: `Resists ${typeName(resist)}` }, icon(resist), '−30')),
+    stat('retreat', h('span', { class: 'card__stat-value', title: retreat ? `${retreat} to retreat` : 'Free to retreat' },
+      ...Array.from({ length: retreat }, () => icon('plain')))),
   );
 }
 
@@ -64,13 +76,13 @@ function footer({ art, number, rarity: level }) {
 export function card(data) {
   return h('article', { class: 'card', dataset: { type: data.type, finish: data.finish }, 'aria-label': data.title },
     h('div', { class: 'card__panel' },
-      h('p', { class: 'card__stage' }, data.stage),
+      stageLine(data),
       nameBar(data),
       artwork(data.art),
       dexStrip(data),
       move(data),
       h('hr', { class: 'card__rule' }),
-      stats(data.stats),
+      battleStats(data),
       data.flavor && h('p', { class: 'card__flavor' }, data.flavor),
     ),
     footer(data),

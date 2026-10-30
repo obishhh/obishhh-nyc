@@ -39,12 +39,12 @@
   margin: 0;
 }
 
-.article__stat dt {
+.article__stats dt {
   font: 500 11px/1.2 var(--font-display);
   color: var(--page-muted);
 }
 
-.article__stat dd {
+.article__stats dd {
   margin: 0;
   font: 700 15px/1.3 var(--font-body);
 }

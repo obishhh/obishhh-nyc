@@ -1,7 +1,7 @@
 import { h, svg } from '../../src/lib/dom.js';
 import { MAX_TABS, sections } from '../../src/lib/sections.js';
 import { plural } from '../../src/lib/words.js';
-import { blankCard, FINISHES, RARITIES, STAGES, TYPES } from '../data/options.js';
+import { blankCard, FINISHES, RARITIES, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { formatDate } from '../lib/format.js';
 import { ARROW_LEFT } from '../lib/icons.js';
@@ -90,7 +90,6 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     section('Card',
       text('title', 'Title', { placeholder: 'Bodega Cat #14', maxlength: 32 }),
       text('stats.filed', 'Filed under', { list: 'editor-sections', placeholder: 'nyc', maxlength: 12, hint: filedHint }),
-      text('stage', 'Stage', { list: 'editor-stages', placeholder: 'Basic Post', maxlength: 24 }),
       text('number', 'Number', { placeholder: '012/120', maxlength: 9 }),
       number('minutes', 'Read time', { min: 0, max: 999, unit: 'min' }),
     ),
@@ -109,12 +108,11 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     ),
     section('Small print',
       text('dex', 'Dex strip', { placeholder: 'Essay. Length: 640 words. Filed: Oct 28, 2026.', maxlength: 64 }),
-      text('stats.reads', 'Reads', { placeholder: '1.2k', maxlength: 8 }),
-      text('stats.replies', 'Bookmarked', { placeholder: '14', maxlength: 8 }),
+      select('stats.weakness', 'Weakness', [{ value: '', label: 'Usual for its type' }, ...TYPES]),
+      select('stats.resistance', 'Resistance', [{ value: '', label: 'None' }, ...TYPES], { hint: 'Retreat comes from the read time.' }),
       textarea('flavor', 'Flavor', { placeholder: 'Optional', maxlength: 80 }),
     ),
     articleSection,
-    h('datalist', { id: 'editor-stages' }, STAGES.map((value) => h('option', { value }))),
     sectionList,
   );
 

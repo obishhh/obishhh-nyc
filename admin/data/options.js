@@ -12,8 +12,6 @@ export const RARITIES = [
   { value: 'rare', label: 'Rare' },
 ];
 
-export const STAGES = ['Basic Post', 'Basic Note', 'Basic Link', 'Featured Post', 'Standing Page'];
-
 // A fresh card takes the next number in the set.
 export function blankCard(cards) {
   const numbers = cards.map(({ number }) => parseInt(number, 10)).filter(Number.isFinite);
@@ -22,7 +20,6 @@ export function blankCard(cards) {
   return {
     number: `${next}/${set}`,
     title: '',
-    stage: 'Basic Post',
     type: 'plain',
     finish: 'standard',
     rarity: 'common',
@@ -30,7 +27,7 @@ export function blankCard(cards) {
     firstPrint: true,
     dex: '',
     move: { name: '', text: '', score: 10, cost: ['plain', 'plain'] },
-    stats: { reads: '0', replies: '0', filed: '' },
+    stats: { weakness: '', resistance: '', filed: '' },
     flavor: null,
     slug: '',
     body: '',
