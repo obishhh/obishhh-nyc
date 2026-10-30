@@ -6,6 +6,8 @@ import { rarity } from './rarity.js';
 import { wear } from './wear.js';
 
 const COPYRIGHT = '©2026 obishhh.nyc';
+// Letters that reach above the lowercase ones, so a word centres on its capitals rather than its x-height.
+const TALL = /[A-Z0-9bdfhkl]/;
 
 function nameBar({ title, minutes, type }) {
   return h('header', { class: 'card__name' },
@@ -45,7 +47,8 @@ function move({ type, move: { name, text, score, cost = [type, 'plain'] } }) {
 
 // Where it's filed, on the silver badge a real card keeps for its stage. The binder's tabs go by the same thing.
 function stageLine({ stats }) {
-  return h('p', { class: 'card__stage' }, stats.filed && h('span', { class: 'card__stage-badge', title: 'Filed under' }, stats.filed));
+  return h('p', { class: 'card__stage' }, stats.filed && h('span', { class: 'card__stage-badge', title: 'Filed under' },
+    h('span', { class: 'card__stage-word', dataset: { tall: String(TALL.test(stats.filed)) } }, stats.filed)));
 }
 
 function stat(label, ...value) {
