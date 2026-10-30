@@ -61,8 +61,10 @@ function spread(entries, make, title, onClose) {
   const close = h('button', { class: 'deck-spread__close', type: 'button', 'aria-label': 'Put the cards back' }, svg(CLOSE));
   const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title' },
     h('header', { class: 'deck-spread__bar' },
-      h('h2', { class: 'deck-spread__title', id: 'deck-spread-title' }, title),
-      h('p', { class: 'deck-spread__count' }, 'Newest first'),
+      h('div', { class: 'deck-spread__heading' },
+        h('h2', { class: 'deck-spread__title', id: 'deck-spread-title' }, title),
+        h('p', { class: 'deck-spread__count' }, 'Newest first'),
+      ),
       close,
     ),
     h('ol', { class: 'deck-spread__cards' },

@@ -5,6 +5,7 @@ import { safeImage } from '../lib/markdown.js';
 import { HAND, scribble } from '../lib/scrawl.js';
 import { seeded } from '../lib/seeded.js';
 import { energy } from './energy.js';
+import { wear } from './wear.js';
 
 const COPYRIGHT = '©2026 obishhh.nyc';
 
@@ -92,6 +93,7 @@ export function snapshotCard({ title, photo, text, place, date, number }) {
       h('p', { class: 'snapshot__rule' }, 'Play as many Snapshots as you like. Nobody’s counting.'),
     ),
     footer(['Photo.', place && ` ${place},`, when && ` ${when}.`].filter(Boolean).join(''), number),
+    wear(number || title),
   );
 }
 

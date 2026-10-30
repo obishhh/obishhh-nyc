@@ -3,6 +3,7 @@ import { safeImage } from '../lib/markdown.js';
 import { retreatOf, typeName, weaknessOf } from '../data/types.js';
 import { energy } from './energy.js';
 import { rarity } from './rarity.js';
+import { wear } from './wear.js';
 
 const COPYRIGHT = '©2026 obishhh.nyc';
 
@@ -86,5 +87,6 @@ export function card(data) {
       data.flavor && h('p', { class: 'card__flavor' }, data.flavor),
     ),
     footer(data),
+    wear(data.number || data.title),
   );
 }

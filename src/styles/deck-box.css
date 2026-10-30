@@ -147,18 +147,23 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 
 .deck-spread__bar {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 14px;
   margin-bottom: 32px;
 }
 
+.deck-spread__heading {
+  margin-left: auto;
+  text-align: right;
+}
+
 .deck-spread__title {
-  margin: 0 0 0 auto;
+  margin: 0;
   font: 700 22px/1 var(--font-display);
 }
 
 .deck-spread__count {
-  margin: 0;
+  margin: 6px 0 0;
   color: var(--page-muted);
   font: 500 12px/1 var(--font-display);
   letter-spacing: 0.06em;
@@ -168,9 +173,11 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 .deck-spread__close {
   display: grid;
   place-items: center;
-  align-self: center;
+  flex: none;
   width: 36px;
   height: 36px;
+  /* Its bottom on the title's baseline, 18px down a 22px line. */
+  margin-top: -18px;
   padding: 0;
   border: 1px solid var(--page-rule);
   border-radius: 50%;
