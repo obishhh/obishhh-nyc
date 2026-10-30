@@ -79,7 +79,7 @@ function footer({ art, number, rarity: level }) {
 }
 
 export function card(data) {
-  return h('article', { class: 'card', dataset: { type: data.type, finish: data.finish }, 'aria-label': data.title },
+  return h('article', { class: 'card card--post', dataset: { type: data.type, finish: data.finish }, 'aria-label': data.title },
     h('div', { class: 'card__panel' },
       stageLine(data),
       nameBar(data),
@@ -89,8 +89,9 @@ export function card(data) {
       h('hr', { class: 'card__rule' }),
       battleStats(data),
       data.flavor && h('p', { class: 'card__flavor' }, data.flavor),
+      // The small print sits inside the panel, just above the bottom border, as on a real card.
+      footer(data),
     ),
-    footer(data),
     wear(data.number || data.title),
   );
 }

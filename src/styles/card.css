@@ -64,7 +64,7 @@
 
 /* Soft light over the post the way real cards have it: a glow behind the art, a faint sheen across, and the type's
    own colour gathering in the bottom corner. */
-.card:not(.note-card, .snapshot) .card__panel::before {
+.card--post .card__panel::before {
   background:
     radial-gradient(ellipse 80% 45% at 50% 30%, rgb(255 255 255 / 0.45), rgb(255 255 255 / 0) 70%),
     linear-gradient(120deg, rgb(255 255 255 / 0) 25%, rgb(255 255 255 / 0.22) 40%, rgb(255 255 255 / 0) 55%, rgb(255 255 255 / 0.12) 72%, rgb(255 255 255 / 0) 85%),
@@ -313,9 +313,8 @@
   font: italic 700 8.5px/11px var(--font-body);
 }
 
-/* A little clear of the stats, and down into the panel's bottom margin, nearer the edge as on a real card.
-   (Past `.card p`'s reset.) */
-.card__panel .card__flavor { margin: 3px 0 -4px; }
+/* A little clear of the stats. (Past `.card p`'s reset.) */
+.card__panel .card__flavor { margin-top: 3px; }
 
 .card__footer {
   display: flex;
@@ -366,3 +365,8 @@
 .wear[data-scratched='true'] { --wear-scratch-img: var(--wear-scuffs); }
 .wear[data-crease='corner'] { --wear-crease-img: var(--wear-crease-corner); }
 .wear[data-crease='tip'] { --wear-crease-img: var(--wear-crease-tip); }
+
+/* A post's small print is inside its panel, so the panel runs the card's full height and the yellow is even all round. */
+.card--post { padding-bottom: 10px; }
+.card--post .card__panel { height: 330px; padding-bottom: 4px; }
+.card--post .card__footer { margin-top: 1px; padding: 0; }
