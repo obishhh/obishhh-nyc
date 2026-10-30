@@ -153,7 +153,13 @@
   letter-spacing: 0.02em;
 }
 
-.card__hp .energy { align-self: center; }
+/* Bigger than the minutes beside it, as on the real cards. It hangs a little past the row rather than pushing the art down. */
+.card__hp .energy {
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  margin: -2px 0;
+}
 
 .card__art {
   position: relative;
