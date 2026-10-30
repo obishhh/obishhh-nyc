@@ -336,6 +336,12 @@
   font: 700 8px/9px var(--font-body);
 }
 
+/* Trimmed to the digits, so the rarity mark centres on them whatever the browser's line spacing. */
+.card__digits {
+  display: block;
+  text-box: trim-both cap alphabetic;
+}
+
 /* Handled: grain everywhere, edges and corners rubbed pale, a fade from one side, and on some cards
    scratches or a crease. Each card picks its own mix (see wear.js), so no two are worn the same. */
 .wear {

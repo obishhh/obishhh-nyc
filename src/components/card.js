@@ -74,7 +74,7 @@ function footer({ art, number, rarity: level }) {
   return h('footer', { class: 'card__footer' },
     h('span', {}, `Illus. ${art.illustrator}`),
     h('span', {}, COPYRIGHT),
-    h('span', { class: 'card__number' }, number, rarity(level)),
+    h('span', { class: 'card__number' }, h('span', { class: 'card__digits' }, number), rarity(level)),
   );
 }
 

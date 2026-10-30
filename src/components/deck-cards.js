@@ -50,7 +50,7 @@ function footer(left, number) {
   return h('footer', { class: 'card__footer' },
     h('span', {}, left),
     h('span', {}, COPYRIGHT),
-    h('span', { class: 'card__number' }, number),
+    h('span', { class: 'card__number' }, h('span', { class: 'card__digits' }, number)),
   );
 }
 
