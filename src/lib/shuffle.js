@@ -8,6 +8,8 @@ const DEAL = 300;
 const STAGGER = 40;
 // Past this many, the rest are dealt together, so a big tab doesn't keep you waiting.
 const MOST_STAGGERED = 8;
+// How far past the window's edges a pocket still counts as on screen.
+const MARGIN = 200;
 
 let running = null;
 
@@ -20,19 +22,35 @@ export function shuffle({ cards, fill = [] }, change) {
   // A tab picked mid-shuffle cuts straight to the next one.
   running?.skipTransition();
   const root = document.documentElement;
-  const named = [...cards, ...fill];
+  const pockets = [...cards, ...fill];
   const showing = () => new Set(cards.filter((card) => !card.hidden));
+  // Only pockets on screen, before or after, take part: one far off either way has nothing to show, and every one
+  // that takes part is captured as a picture, which adds up in a big binder.
+  const named = new Set();
+  const nameOnScreen = () => pockets.forEach((pocket, at) => {
+    if (pocket.hidden || named.has(pocket)) return;
+    const { top, bottom } = pocket.getBoundingClientRect();
+    if (bottom < -MARGIN || top > innerHeight + MARGIN) return;
+    pocket.style.setProperty('view-transition-name', `shuffle-${at}`);
+    named.add(pocket);
+  });
+  // Names left by a shuffle that was cut short go first, so only this one's pockets take part.
+  pockets.forEach((pocket) => pocket.style.removeProperty('view-transition-name'));
   const before = showing();
-  named.forEach((each, at) => each.style.setProperty('view-transition-name', `shuffle-${at}`));
+  nameOnScreen();
   root.classList.add('is-shuffling');
 
-  const transition = document.startViewTransition(change);
+  const transition = document.startViewTransition(() => {
+    change();
+    nameOnScreen();
+  });
   running = transition;
   transition.ready
     .then(() => {
       const after = showing();
       let dealt = 0;
       cards.forEach((card, at) => {
+        if (!named.has(card)) return;
         const name = `shuffle-${at}`;
         if (before.has(card) && !after.has(card)) {
           root.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(10px) scale(0.96)' }], {
