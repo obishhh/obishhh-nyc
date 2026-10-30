@@ -1,20 +1,22 @@
 /* Cards for the deck box: notes written on blank energy cards, photos as trainer-style Snapshots. */
 
-/* Laid out like a basic energy card: the type's colour, brightest in the middle where the writing goes. */
+/* Laid out like a basic energy card: the type's colour, glowing out from an orb in the upper
+   middle, with a lighter patch below it where the writing goes. */
 .note-card .card__panel {
   gap: 0;
   padding: 4px 4px 5px;
   border-width: 2px;
   border-color: color-mix(in srgb, var(--type-energy) 70%, #000000);
   background:
-    radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.92) 0, rgb(255 255 255 / 0.62) 26%, rgb(255 255 255 / 0) 58%),
-    radial-gradient(circle at 50% 50%, var(--type-energy) 34%, color-mix(in srgb, var(--type-energy) 62%, #000000) 100%);
+    radial-gradient(ellipse 62% 40% at 50% 72%, rgb(255 255 255 / 0.74), rgb(255 255 255 / 0) 100%),
+    radial-gradient(circle at 50% 33%, rgb(255 255 255 / 0.9) 0, rgb(255 255 255 / 0.4) 14%, rgb(255 255 255 / 0) 36%),
+    radial-gradient(circle at 50% 33%, var(--type-energy) 30%, color-mix(in srgb, var(--type-energy) 58%, #000000) 100%);
 }
 
 /* The silver bar across the top, with the type's symbol where a real card says ENERGY's. */
 .note-card__bar {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -38,30 +40,85 @@
   box-shadow: 0 0 0 2px #ffffff, 0 1px 3px rgb(0 0 0 / 0.4), inset 0 -1.5px 1.5px rgb(0 0 0 / 0.28);
 }
 
-/* The type's symbol, big and faint behind the writing, like a blank card's printing. */
-.note-card__symbol {
+/* The orb and its light, behind everything else in the middle of the card. */
+.note-card__energy {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  overflow: hidden;
+  border-radius: 3px;
   pointer-events: none;
 }
 
-.note-card__symbol svg {
-  width: 168px;
-  height: 168px;
-  opacity: 0.13;
+.note-card__orb {
+  position: absolute;
+  top: 33%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0) 42%),
+    radial-gradient(circle at 50% 60%, var(--type-energy) 55%, color-mix(in srgb, var(--type-energy) 70%, #000000) 100%);
+  box-shadow:
+    0 0 0 2px rgb(255 255 255 / 0.35),
+    0 0 26px 10px rgb(255 255 255 / 0.55),
+    inset 0 -4px 6px rgb(0 0 0 / 0.25);
+  transform: translate(-50%, -50%);
 }
 
+.note-card__orb svg {
+  width: 64%;
+  height: 64%;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.35));
+}
+
+.note-card__trace {
+  position: absolute;
+  inset: 0;
+}
+
+/* Sun & Moon: a white wisp rising off the orb, with sparks. */
+.note-card__wisp {
+  position: absolute;
+  top: calc(33% - 108px);
+  left: calc(50% - 10px);
+  width: 74px;
+  height: 110px;
+  filter: drop-shadow(0 0 4px rgb(255 255 255 / 0.95)) drop-shadow(0 0 10px rgb(255 255 255 / 0.5));
+}
+
+/* XY: a beam of light fanning down from the orb to the bottom of the card. */
+.note-card[data-look='beam'] .note-card__trace {
+  background: linear-gradient(rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.45) 55%, rgb(255 255 255 / 0.12));
+  clip-path: polygon(46% 33%, 54% 33%, 100% 100%, 0 100%);
+  filter: blur(1.5px);
+}
+
+/* Classic: rays all the way round the orb. */
+.note-card[data-look='rays'] .note-card__trace {
+  background: repeating-conic-gradient(from 0deg at 50% 33%, rgb(255 255 255 / 0.32) 0deg 5deg, rgb(255 255 255 / 0) 5deg 15deg);
+  mask-image: radial-gradient(circle at 50% 33%, #000000 10%, rgb(0 0 0 / 0) 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 33%, #000000 10%, rgb(0 0 0 / 0) 72%);
+}
+
+/* The writing sits under the orb, sized down to fit what's left. */
 .note-card__writing {
   position: relative;
+  z-index: 1;
   display: grid;
   flex: 1;
   place-items: center;
+  min-height: 0;
+  margin-top: 112px;
+  padding: 0 4px 4px;
 }
 
 /* The silver strip along the bottom, with the date it went up. */
 .note-card__base {
+  position: relative;
+  z-index: 1;
   flex: none;
   height: 13px;
   border-radius: 2px;
@@ -72,10 +129,20 @@
   text-align: center;
 }
 
-/* Laid on with multiply, so it reads as marker on the card. */
+/* No maker's mark on the left of a note, so the copyright needs centring on its own. */
+.note-card .card__footer {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.note-card .card__number { justify-self: end; }
+
+/* Laid on with multiply, so it reads as marker on the card. Long notes shrink to fit. */
 .note-card__ink {
   display: block;
   max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
   mix-blend-mode: multiply;
 }
