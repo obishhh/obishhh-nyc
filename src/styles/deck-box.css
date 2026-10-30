@@ -133,6 +133,8 @@
   overscroll-behavior: contain;
 }
 
+.deck-spread:focus { outline: none; }
+
 /* Plain, not blurred: a blur under this much white barely shows, and costs the whole screen every frame. */
 .deck-spread::backdrop { background: rgb(255 255 255 / 0.9); }
 
@@ -184,8 +186,8 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   flex: none;
   width: 36px;
   height: 36px;
-  /* Its bottom on the title's baseline, 18px down a 22px line. */
-  margin-top: -18px;
+  /* In the middle of the heading's two lines. */
+  align-self: center;
   padding: 0;
   border: 1px solid var(--page-rule);
   border-radius: 50%;

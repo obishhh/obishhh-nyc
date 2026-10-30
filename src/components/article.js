@@ -1,5 +1,4 @@
 import { h } from '../lib/dom.js';
-import { battleStats } from './battle-stats.js';
 import { prose } from './prose.js';
 import { rarity } from './rarity.js';
 import { COPYRIGHT } from './small-print.js';
@@ -12,7 +11,6 @@ export function article(data, { heading = 'h1', titleId } = {}) {
     h('p', { class: 'article__byline' }, `${data.minutes} min read`),
     prose(data.body ?? '', { end: h('span', { class: 'article__end' }, rarity(data.rarity)) }),
     h('footer', { class: 'article__footer' },
-      battleStats(data, { size: 'regular', className: 'article__stats' }),
       h('p', { class: 'article__credit' }, `Illus. ${data.art.illustrator} · ${COPYRIGHT}`),
     ),
   );

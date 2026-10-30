@@ -21,7 +21,6 @@ const ROWS_SHOWN = 2.25;
 const SMALLEST = 0.5;
 // The All tab's value: blank, which no section can be, so a section called "all" can't clash with it.
 const ALL = '';
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 const sleeve = () =>
   h('li', { class: 'binder__pocket', 'aria-hidden': 'true', style: { '--tilt': '0deg' } }, h('span', { class: 'binder__sleeve' }));
@@ -47,7 +46,6 @@ function tabbed(page, cards) {
     onSelect(value) {
       strip.select(value);
       show(value);
-      if (!reducedMotion.matches) page.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' });
       const query = new URLSearchParams(location.search);
       if (value === ALL) query.delete('filed');
       else query.set('filed', value);
