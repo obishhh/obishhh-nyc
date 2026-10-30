@@ -1,30 +1,32 @@
+// Type symbols: black shapes, with their cut-outs in the colour of the orb they sit on.
 export const energyGlyphs = {
-  ink: `<svg viewBox="0 0 15 15" aria-hidden="true">
-    <path d="M7.44 1.364L11.532 6.448L9.052 13.392H5.828L3.348 6.448L7.44 1.364Z" fill="#fff"/>
-    <path d="M7.44 5.952V10.168" stroke="#3c4fc4" stroke-width="0.992" stroke-linecap="round"/>
-    <circle cx="7.44" cy="5.704" r="0.992" fill="#3c4fc4"/>
-  </svg>`,
-  spark: `<svg viewBox="0 0 15 15" aria-hidden="true">
-    <path d="M7.44 0.744C7.998 4.712 10.106 6.82 14.136 7.44C10.106 8.06 7.998 10.168 7.44 14.136C6.882 10.168 4.774 8.06 0.744 7.44C4.774 6.82 6.882 4.712 7.44 0.744Z" fill="#4a3600"/>
-  </svg>`,
-  stone: `<svg viewBox="0 0 15 15" aria-hidden="true">
-    <path d="M2.728 9.176C2.232 6.262 4.278 3.658 7.502 3.348C10.726 3.038 13.02 5.208 12.648 8.122C12.338 10.912 9.672 12.338 6.758 12.028C4.65 11.842 3.1 10.912 2.728 9.176Z" fill="#fff4e0"/>
-  </svg>`,
   wire: `<svg viewBox="0 0 15 15" aria-hidden="true">
-    <path d="M5.332 1.612V4.588M9.548 1.612V4.588" stroke="#fff" stroke-width="1.488" stroke-linecap="round"/>
-    <path d="M3.472 4.464H11.408V7.192C11.408 9.362 9.672 10.912 7.44 10.912C5.208 10.912 3.472 9.362 3.472 7.192V4.464Z" fill="#fff"/>
-    <path d="M7.44 10.788V13.392" stroke="#fff" stroke-width="1.612" stroke-linecap="round"/>
+    <path d="M7.5 1.4C11 3 12.7 6.1 11.9 9.2C11.3 11.4 9.5 12.7 7.5 12.9C5.5 12.7 3.7 11.4 3.1 9.2C2.3 6.1 4 3 7.5 1.4Z" fill="#1a1712"/>
+    <path d="M7.5 12.5V14.2" stroke="#1a1712" stroke-width="1.3" stroke-linecap="round"/>
+    <path class="glyph-cut" d="M7.5 4.2V11.8M7.5 7.2L9.7 5.5M7.5 7.2L5.3 5.5M7.5 9.6L10.1 7.8M7.5 9.6L4.9 7.8" fill="none" stroke-width="0.85" stroke-linecap="round"/>
   </svg>`,
   ember: `<svg viewBox="0 0 15 15" aria-hidden="true">
-    <path d="M7.44 1.116C8.432 4.216 11.904 5.518 11.904 9.052C11.904 11.78 9.858 13.764 7.44 13.764C5.022 13.764 2.976 11.904 2.976 9.362C2.976 7.192 4.464 6.2 5.146 4.526C5.828 6.138 6.448 6.758 7.068 6.82C6.696 4.898 6.758 3.038 7.44 1.116Z" fill="#fff"/>
+    <path d="M7.7 1C8.5 3.5 11 4.6 11.8 7.4C12.6 10.5 10.5 13.8 7.5 13.8C4.5 13.8 2.4 11.3 3.1 8.4C3.5 6.6 4.8 5.5 5.2 4C6 5.3 6.4 6.6 6.4 7.6C7.7 6 8.2 3.7 7.7 1Z" fill="#1a1712"/>
+    <path class="glyph-cut" d="M7.5 13.1C6.2 13.1 5.4 12.1 5.6 10.9C5.8 9.9 6.6 9.3 6.8 8.3C7.6 9.1 8.5 9.5 8.9 10.7C9.4 12 8.7 13.1 7.5 13.1Z"/>
+  </svg>`,
+  ink: `<svg viewBox="0 0 15 15" aria-hidden="true">
+    <path d="M7.5 1.3C9.7 4.6 12.1 7.2 12.1 9.6C12.1 12.1 10.1 13.9 7.5 13.9C4.9 13.9 2.9 12.1 2.9 9.6C2.9 7.2 5.3 4.6 7.5 1.3Z" fill="#1a1712"/>
+    <path class="glyph-cut" d="M5.3 9.5C5.3 11 6.2 12 7.6 12.3" fill="none" stroke-width="1.1" stroke-linecap="round"/>
+  </svg>`,
+  spark: `<svg viewBox="0 0 15 15" aria-hidden="true">
+    <path d="M9.1 1L3.3 8.5H7L5.7 14L11.8 6.1H8.1L9.1 1Z" fill="#1a1712"/>
+  </svg>`,
+  stone: `<svg viewBox="0 0 15 15" aria-hidden="true">
+    <path d="M1.3 12.2L5.3 5.1L7.4 8L9.5 3.8L13.7 12.2Z" fill="#1a1712"/>
+    <path class="glyph-cut" d="M4.5 9.9H8.2M9.2 9.9H11.1M3.4 11.2H6.4M7.4 11.2H12.1M8.6 6.8L9.9 7.7" fill="none" stroke-width="0.75" stroke-linecap="round"/>
   </svg>`,
   ghost: `<svg viewBox="0 0 15 15" aria-hidden="true">
-    <path d="M3.1 13.144V6.82C3.1 4.03 5.022 1.736 7.44 1.736C9.858 1.736 11.78 4.03 11.78 6.82V13.144L10.354 11.904L8.866 13.144L7.44 11.904L6.014 13.144L4.526 11.904L3.1 13.144Z" fill="#fff"/>
-    <circle cx="5.828" cy="6.572" r="0.93" fill="#6f5ba6"/>
-    <circle cx="9.052" cy="6.572" r="0.93" fill="#6f5ba6"/>
+    <path d="M1.2 7.5C3 4.5 5.1 3.2 7.5 3.2C9.9 3.2 12 4.5 13.8 7.5C12 10.5 9.9 11.8 7.5 11.8C5.1 11.8 3 10.5 1.2 7.5Z" fill="#1a1712"/>
+    <circle class="glyph-cut" cx="7.5" cy="7.5" r="2.7"/>
+    <circle cx="7.5" cy="7.5" r="1.35" fill="#1a1712"/>
   </svg>`,
   plain: `<svg viewBox="0 0 15 15" aria-hidden="true">
-    <path d="M7.44 2.108L8.866 5.828L12.772 6.014L9.734 8.494L10.788 12.338L7.44 10.168L4.092 12.338L5.146 8.494L2.108 6.014L6.014 5.828L7.44 2.108Z" fill="#2a2722"/>
+    <path d="M7.5 1.7L9.1 5.7L13.4 5.9L10 8.6L11.2 12.8L7.5 10.4L3.8 12.8L5 8.6L1.6 5.9L5.9 5.7L7.5 1.7Z" fill="#1a1712"/>
   </svg>`,
 };
 

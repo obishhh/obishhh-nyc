@@ -1,40 +1,218 @@
 /* Cards for the deck box: notes written on blank energy cards, photos as trainer-style Snapshots. */
 
+/* Laid out like a basic energy card: the type's colour, glowing out from an orb in the middle,
+   with the writing over the top of it. */
 .note-card .card__panel {
+  gap: 0;
+  padding: 4px 4px 5px;
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--type-energy) 70%, #000000);
   background:
-    radial-gradient(circle at 50% 45%, rgb(255 255 255 / 0.45), rgb(255 255 255 / 0) 60%),
-    linear-gradient(var(--type-panel), var(--type-deep));
+    radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.95) 0, rgb(255 255 255 / 0.55) 22%, rgb(255 255 255 / 0) 52%),
+    radial-gradient(circle at 50% 50%, var(--type-energy) 30%, color-mix(in srgb, var(--type-energy) 58%, #000000) 100%);
 }
 
-/* The type's symbol, big and faint behind the writing, like a blank card's printing. */
-.note-card__symbol {
+/* The silver bar across the top, with the type's symbol where a real card says ENERGY's. */
+.note-card__bar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  height: 24px;
+  padding: 0 1px 0 9px;
+  border-radius: 3px 12px 12px 3px;
+  background: linear-gradient(#ffffff, #d7dae0 45%, #b9bdc6 55%, #eef0f3);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35), inset 0 1px 0 #ffffff;
+}
+
+.note-card__label {
+  font: italic 700 13px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5f636d;
+  text-shadow: 0 1px 0 #ffffff;
+}
+
+.note-card__bar .energy {
+  box-shadow: 0 0 0 2px #ffffff, 0 1px 3px rgb(0 0 0 / 0.4), inset 0 -1.5px 1.5px rgb(0 0 0 / 0.28);
+}
+
+/* The orb and its light, behind everything else in the middle of the card. */
+.note-card__energy {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  overflow: hidden;
+  border-radius: 3px;
   pointer-events: none;
 }
 
-.note-card__symbol .energy {
-  width: 214px;
-  height: 214px;
-  border-width: 3px;
-  box-shadow: none;
-  opacity: 0.14;
+.note-card__orb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0) 42%),
+    radial-gradient(circle at 50% 60%, var(--type-energy) 55%, color-mix(in srgb, var(--type-energy) 70%, #000000) 100%);
+  box-shadow:
+    0 0 0 2px rgb(255 255 255 / 0.35),
+    0 0 26px 10px rgb(255 255 255 / 0.55),
+    inset 0 -4px 6px rgb(0 0 0 / 0.25);
+  transform: translate(-50%, -50%);
 }
 
+.note-card__orb svg {
+  width: 64%;
+  height: 64%;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.35));
+}
+
+.note-card__trace {
+  position: absolute;
+  inset: 0;
+}
+
+/* Sun & Moon: a white wisp rising off the orb, with sparks. */
+.note-card__wisp {
+  position: absolute;
+  top: calc(50% - 112px);
+  left: calc(50% - 10px);
+  width: 74px;
+  height: 110px;
+  filter: drop-shadow(0 0 4px rgb(255 255 255 / 0.95)) drop-shadow(0 0 10px rgb(255 255 255 / 0.5));
+}
+
+/* XY: a beam of light fanning down from the orb to the bottom of the card. */
+.note-card[data-look='beam'] .note-card__trace {
+  background: linear-gradient(rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.45) 55%, rgb(255 255 255 / 0.12));
+  clip-path: polygon(46% 50%, 54% 50%, 100% 100%, 0 100%);
+  filter: blur(1.5px);
+}
+
+/* Classic: rays all the way round the orb. */
+.note-card[data-look='rays'] .note-card__trace {
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgb(255 255 255 / 0.32) 0deg 5deg, rgb(255 255 255 / 0) 5deg 15deg);
+  mask-image: radial-gradient(circle at 50% 50%, #000000 10%, rgb(0 0 0 / 0) 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000000 10%, rgb(0 0 0 / 0) 72%);
+}
+
+/* A little wear on every note, a different kind for each type: grain, fading, rubbed edges,
+   scratches. It lifts the colour a touch, which helps the writing read. */
+.note-card__wear {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E %3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E %3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.8 -0.8'/%3E%3C/filter%3E %3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --speckle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E %3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='1' seed='7' stitchTiles='stitch'/%3E %3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 9 -7.2'/%3E%3C/filter%3E %3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E");
+  --scratches: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 252 352' preserveAspectRatio='none'%3E %3Cg fill='none' stroke='%23fff' stroke-linecap='round'%3E %3Cpath d='M18 60 L120 12' stroke-width='0.6' opacity='0.85'/%3E %3Cpath d='M40 170 C90 140 150 120 230 70' stroke-width='0.5' opacity='0.75'/%3E %3Cpath d='M10 250 L95 205' stroke-width='0.7' opacity='0.80'/%3E %3Cpath d='M130 330 C170 300 200 285 245 250' stroke-width='0.5' opacity='0.70'/%3E %3Cpath d='M150 120 L205 95' stroke-width='0.4' opacity='0.80'/%3E %3Cpath d='M60 300 L110 275' stroke-width='0.4' opacity='0.75'/%3E %3Cpath d='M180 200 L236 168' stroke-width='0.6' opacity='0.65'/%3E %3C/g%3E%3C/svg%3E");
+  --crease: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 252 352' preserveAspectRatio='none'%3E %3Cpath d='M168 352 C190 300 214 268 252 246' fill='none' stroke='%23fff' stroke-width='1.2' opacity='0.85'/%3E %3Cpath d='M168 352 C190 300 214 268 252 246' fill='none' stroke='%23000' stroke-width='0.6' opacity='0.15' transform='translate(1.2 1)'/%3E %3C/svg%3E");
+
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  background: var(--grain) 0 0 / 180px 180px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Grass: fine scratches, and a little fade at one corner. */
+.note-card[data-type='wire'] .note-card__wear {
+  background:
+    var(--scratches) center / 100% 100% no-repeat,
+    radial-gradient(circle at 0 0, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 45%),
+    var(--grain) 0 0 / 180px 180px;
+}
+
+/* Fire: bleached by the sun from the top corner. */
+.note-card[data-type='ember'] .note-card__wear {
+  background:
+    linear-gradient(215deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.05) 40%, rgb(255 255 255 / 0) 65%),
+    var(--grain) 40px 20px / 180px 180px;
+}
+
+/* Water: edges rubbed pale from handling. */
+.note-card[data-type='ink'] .note-card__wear {
+  background: var(--grain) 90px 60px / 180px 180px;
+  box-shadow: inset 0 0 14px 2px rgb(255 255 255 / 0.22), inset 0 0 2px 1px rgb(255 255 255 / 0.3);
+}
+
+/* Electric: an even fade, with speckle. */
+.note-card[data-type='spark'] .note-card__wear {
+  background:
+    var(--speckle) 0 0 / 120px 120px,
+    linear-gradient(rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.08)),
+    var(--grain) 30px 100px / 180px 180px;
+}
+
+/* Ground: scuffed the other way, and a bit grittier. */
+.note-card[data-type='stone'] .note-card__wear {
+  background:
+    var(--scratches) center / 100% 100% no-repeat,
+    var(--grain) 0 0 / 120px 120px,
+    var(--grain) 60px 60px / 180px 180px;
+  transform: scaleX(-1);
+}
+
+/* Psychic: a band faded across the middle, like it sat half out of a sleeve. */
+.note-card[data-type='ghost'] .note-card__wear {
+  background:
+    linear-gradient(rgb(255 255 255 / 0) 30%, rgb(255 255 255 / 0.13) 48%, rgb(255 255 255 / 0.13) 58%, rgb(255 255 255 / 0) 76%),
+    var(--grain) 120px 30px / 180px 180px;
+}
+
+/* Normal: a creased corner, and soft rubbed edges. */
+.note-card[data-type='plain'] .note-card__wear {
+  background:
+    var(--crease) center / 100% 100% no-repeat,
+    var(--grain) 70px 140px / 180px 180px;
+  box-shadow: inset 0 0 10px 1px rgb(255 255 255 / 0.2);
+}
+
+/* The writing goes right over the orb, sized down to fit between the bars. */
 .note-card__writing {
+  position: relative;
+  z-index: 1;
   display: grid;
   flex: 1;
   place-items: center;
+  min-height: 0;
+  padding: 4px;
 }
 
-/* Laid on with multiply, so it reads as marker on the card. */
+/* The silver strip along the bottom, with the date it went up. */
+.note-card__base {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  height: 13px;
+  border-radius: 2px;
+  background: linear-gradient(#ffffff, #cfd2d8 60%, #eceef1);
+  box-shadow: 0 -1px 1px rgb(0 0 0 / 0.15);
+  font: italic 700 7.5px/13px var(--font-body);
+  color: #5f636d;
+  text-align: center;
+}
+
+/* No maker's mark on the left of a note, so the copyright needs centring on its own. */
+.note-card .card__footer {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.note-card .card__number { justify-self: end; }
+
+/* Marker over the orb: a faint light halo keeps it legible against the black symbol.
+   Long notes shrink to fit. */
 .note-card__ink {
   display: block;
   max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
-  mix-blend-mode: multiply;
+  filter: drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 1.5px rgb(255 255 255 / 0.95)) drop-shadow(0 0 5px rgb(255 255 255 / 0.55));
 }
 
 /* Snapshots get a silver frame and a cool grey panel, so they don't pass for binder cards. */

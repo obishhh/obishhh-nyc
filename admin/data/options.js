@@ -1,12 +1,4 @@
-export const TYPES = [
-  { value: 'ink', label: 'Ink' },
-  { value: 'spark', label: 'Spark' },
-  { value: 'stone', label: 'Stone' },
-  { value: 'wire', label: 'Wire' },
-  { value: 'ember', label: 'Ember' },
-  { value: 'ghost', label: 'Ghost' },
-  { value: 'plain', label: 'Plain' },
-];
+export { TYPES } from '../../src/data/types.js';
 
 export const FINISHES = [
   { value: 'standard', label: 'Standard' },
