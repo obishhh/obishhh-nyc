@@ -131,7 +131,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
           text('photo.alt', 'Alt text', { placeholder: 'Describe the photo', maxlength: 160 }),
           text('title', 'Title', { placeholder: 'Bodega Cat', maxlength: 24 }),
           textarea('text', 'Caption', { ...words, placeholder: 'Search your deck for a cat. He’s already on the counter.' }),
-          text('place', 'Place', { placeholder: 'Union Sq', maxlength: 13, hint: 'Short, so the copyright stays in the middle.' }),
+          text('place', 'Place', { placeholder: 'Union Sq', maxlength: 18, hint: 'Short, so the copyright stays in the middle.' }),
         ),
       section('Small print',
         text('date', 'Posted', { type: 'date', hint: 'Left blank, it’s today.' }),

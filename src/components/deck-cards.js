@@ -92,7 +92,7 @@ export function snapshotCard({ title, photo: picked, text, place, date, number }
         picture && photo(picture, { alt: alt || title || '', position, look })),
       h('p', { class: 'snapshot__text' }, text),
       h('p', { class: 'snapshot__rule' }, 'Play as many Snapshots as you like. Nobody’s counting.'),
-      smallPrint(['Photo.', place && ` ${place},`, when && ` ${when}.`].filter(Boolean).join(''), number),
+      smallPrint([place, when].filter(Boolean).join(', '), number),
     ),
     wear(number || title),
   );
