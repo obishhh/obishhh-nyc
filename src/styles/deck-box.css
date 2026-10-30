@@ -133,6 +133,8 @@
   overscroll-behavior: contain;
 }
 
+.deck-spread:focus { outline: none; }
+
 /* Plain, not blurred: a blur under this much white barely shows, and costs the whole screen every frame. */
 .deck-spread::backdrop { background: rgb(255 255 255 / 0.9); }
 
@@ -298,6 +300,12 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   .deck-spread {
     padding-top: 20px;
     overflow-x: clip;
+  }
+
+  /* Narrow, the heading's two lines stand taller than the button, so it sits in the middle of them instead. */
+  .deck-spread__close {
+    align-self: center;
+    margin-top: 0;
   }
 
   /* One column would just be a queue, so zigzag down it, each card landing over the last one's foot. */

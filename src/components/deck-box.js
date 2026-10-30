@@ -59,7 +59,7 @@ function label(text) {
 // on top of the one before. Tap one and it comes to the top and gets flipped over and back. Built once, then reused.
 function spread(entries, make, title, onClose) {
   const close = h('button', { class: 'deck-spread__close', type: 'button', 'aria-label': 'Put the cards back' }, svg(CLOSE));
-  const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title' },
+  const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1 },
     h('header', { class: 'deck-spread__bar' },
       h('div', { class: 'deck-spread__heading' },
         h('h2', { class: 'deck-spread__title', id: 'deck-spread-title' }, title),
@@ -132,6 +132,9 @@ function spread(entries, make, title, onClose) {
       if (dialog.open) return;
       if (!dialog.isConnected) document.body.append(dialog);
       dialog.showModal();
+      // The dialog takes focus itself, rather than handing it to the close button: Safari rings a button focused
+      // that way as if it had been tabbed to. Tab still goes straight to it.
+      dialog.focus({ preventScroll: true });
       openedAt = performance.now();
     },
   };
