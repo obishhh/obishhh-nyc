@@ -61,9 +61,10 @@ export function battleStats(data, { size = 'small', prefix = 'card' } = {}) {
   const resist = data.stats.resistance;
   const retreat = retreatOf(data.minutes);
   const icon = (kind) => energy(kind, size);
+  // As on the real cards, what it does goes up with the label, and the icons sit on their own below.
   return h('dl', { class: `${prefix}__stats` },
-    stat('weakness', h('span', { class: 'card__stat-value', title: `Weak to ${typeName(weak)}` }, icon(weak), '×2')),
-    stat('resistance', resist && h('span', { class: 'card__stat-value', title: `Resists ${typeName(resist)}` }, icon(resist), '−30')),
+    stat('weakness ×2', h('span', { class: 'card__stat-value', title: `Weak to ${typeName(weak)}` }, icon(weak))),
+    stat(resist ? 'resistance −30' : 'resistance', resist && h('span', { class: 'card__stat-value', title: `Resists ${typeName(resist)}` }, icon(resist))),
     stat('retreat', h('span', { class: 'card__stat-value', title: retreat ? `${retreat} to retreat` : 'Free to retreat' },
       ...Array.from({ length: retreat }, () => icon('plain')))),
   );
