@@ -55,10 +55,16 @@ function label(text) {
   return canvas;
 }
 
+// How big a card comes up to read: most of the window's height, but never past this many pixels tall.
+const READ_HEIGHT = 0.8;
+const READ_MOST = 640;
+
 // The cards, tipped out of the box onto the desk: roughly in rows, but each landed a little off and
-// on top of the one before. Tap one and it comes to the top and gets flipped over and back. Built once, then reused.
+// on top of the one before. Tap one and it comes up front and centre to read; tap it there and it's flipped over
+// and back; tap anywhere else (or its ✕, or Esc) and it goes back to its spot. Built once, then reused.
 function spread(entries, make, title, onClose) {
   const close = h('button', { class: 'deck-spread__close', type: 'button', 'aria-label': 'Put the cards back' }, svg(CLOSE));
+  const lower = h('button', { class: 'deck-spread__close deck-spread__lower', type: 'button', 'aria-label': 'Put this card down', hidden: true }, svg(CLOSE));
   const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1 },
     h('header', { class: 'deck-spread__bar' },
       h('div', { class: 'deck-spread__heading' },
@@ -79,6 +85,7 @@ function spread(entries, make, title, onClose) {
         }, h('div', { class: 'deck-spread__flip' }, h('div', { class: 'deck-spread__turn' }, make(entry), cardBack())));
       }),
     ),
+    lower,
   );
   let openedAt = 0;
   let pressedOnDesk = false;
@@ -92,6 +99,7 @@ function spread(entries, make, title, onClose) {
     dialog.classList.add('is-closing');
     setTimeout(() => {
       dialog.classList.remove('is-closing');
+      lowerCard({ instantly: true });
       dialog.querySelector('.is-picked')?.classList.remove('is-picked');
       dialog.close();
     }, reducedMotion.matches ? 0 : PUT_BACK);
@@ -102,14 +110,69 @@ function spread(entries, make, title, onClose) {
   close.addEventListener('click', (event) => putBack({ withKey: event.detail === 0 }));
   dialog.addEventListener('cancel', (event) => {
     event.preventDefault();
-    putBack({ withKey: true });
+    if (front) lowerCard();
+    else putBack({ withKey: true });
   });
   // Only a press and release both on the desk put the cards back, so dragging across a caption doesn't.
   dialog.addEventListener('pointerdown', (event) => (pressedOnDesk = onDesk(event.target)));
-  // To the top of the pile, so one half under another can be read, and a flip over and back for fun.
-  function pick(card) {
+  // Up front and centre, big enough to read: the card slides from its spot to the middle of the window and grows,
+  // the rest of the desk dims, and a ✕ sits at its corner. The desk stops scrolling while it's up.
+  let front = null;
+  function raise(card) {
     dialog.querySelector('.is-picked')?.classList.remove('is-picked');
     card.classList.add('is-picked');
+    front = card;
+    place();
+    card.classList.add('is-front');
+    dialog.classList.add('has-front');
+    lower.hidden = false;
+  }
+
+  // Where the raised card goes: worked out from its spot as laid out, without its tilt or nudge.
+  function place() {
+    if (!front) return;
+    // Measured with no transform and no transition, so the reading is the spot itself, not a step on the way.
+    front.style.setProperty('transition', 'none');
+    front.style.setProperty('transform', 'none');
+    const spot = front.getBoundingClientRect();
+    front.style.removeProperty('transform');
+    front.getBoundingClientRect();
+    front.style.removeProperty('transition');
+    // The middle of the desk as shown: the dialog's own box, without any scrollbar.
+    const [wide, tall] = [dialog.clientWidth, dialog.clientHeight];
+    const scale = Math.min(Math.min(tall * READ_HEIGHT, READ_MOST) / spot.height, (wide * 0.92) / spot.width);
+    const [x, y] = [wide / 2 - (spot.left + spot.width / 2), tall / 2 - (spot.top + spot.height / 2)];
+    front.style.setProperty('--front-x', `${x.toFixed(1)}px`);
+    front.style.setProperty('--front-y', `${y.toFixed(1)}px`);
+    front.style.setProperty('--front-scale', scale.toFixed(3));
+    // The ✕ at the raised card's top right corner, just off it, but never off the screen.
+    const left = Math.min(wide / 2 + (spot.width * scale) / 2 - 14, wide - 42);
+    const top = Math.max(tall / 2 - (spot.height * scale) / 2 - 22, 6);
+    lower.style.setProperty('left', `${left.toFixed(1)}px`);
+    lower.style.setProperty('top', `${top.toFixed(1)}px`);
+  }
+
+  // Back to its spot on the desk. It stays on top of the pile until it's landed.
+  function lowerCard({ instantly = false } = {}) {
+    if (!front) return;
+    const card = front;
+    front = null;
+    if (instantly) card.style.setProperty('transition', 'none');
+    card.classList.remove('is-front');
+    dialog.classList.remove('has-front');
+    lower.hidden = true;
+    if (instantly) requestAnimationFrame(() => card.style.removeProperty('transition'));
+  }
+  lower.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const card = front;
+    lowerCard();
+    if (event.detail === 0) card?.focus({ preventScroll: true });
+  });
+  addEventListener('resize', place);
+
+  // Turned over to its back and straight over again, the way you'd flip a card to check it.
+  function flipOver(card) {
     const turn = card.querySelector('.deck-spread__turn');
     if (reducedMotion.matches || turn.getAnimations().length) return;
     const way = Math.random() < 0.5 ? 1 : -1;
@@ -118,16 +181,24 @@ function spread(entries, make, title, onClose) {
     });
   }
 
+  const tap = (card) => (card === front ? flipOver(card) : raise(card));
   dialog.addEventListener('click', (event) => {
     const card = event.target.closest('.deck-spread__card');
-    if (card) pick(card);
+    // With a card up, a tap on it turns it over; a tap anywhere else (another card, the desk) puts it down.
+    if (front) {
+      if (card === front) flipOver(card);
+      else if (!event.target.closest('.deck-spread__bar')) lowerCard();
+      return;
+    }
+    if (card) tap(card);
     else if (pressedOnDesk && onDesk(event.target) && performance.now() - openedAt > SETTLE) putBack();
   });
   dialog.addEventListener('keydown', (event) => {
     const card = event.target.closest('.deck-spread__card');
     if (!card || (event.key !== 'Enter' && event.key !== ' ')) return;
     event.preventDefault();
-    pick(card);
+    if (front && card !== front) lowerCard();
+    tap(card);
   });
   dialog.addEventListener('close', () => onClose({ byKey }));
 
