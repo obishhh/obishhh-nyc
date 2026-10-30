@@ -42,7 +42,7 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border-radius: 3px;
+  border-radius: inherit;
   pointer-events: none;
 }
 
@@ -105,7 +105,7 @@
 .note-card__wear {
   position: absolute;
   inset: 0;
-  border-radius: 3px;
+  border-radius: inherit;
   background: var(--wear-grain) 0 0 / 180px 180px;
   opacity: 0.5;
   pointer-events: none;
