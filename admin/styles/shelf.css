@@ -64,7 +64,18 @@
 }
 
 .tile .binder__pocket > .card {
-  transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+  transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out), opacity 0.3s var(--ease-out), filter 0.3s var(--ease-out);
+}
+
+/* Drafts sit faded, so live and not-live read at a glance across the shelf. */
+.tile:not([data-status='published']) .binder__pocket > .card {
+  opacity: 0.5;
+  filter: saturate(0.35);
+}
+
+.tile:not([data-status='published']):hover .binder__pocket > .card {
+  opacity: 0.85;
+  filter: saturate(0.8);
 }
 
 .tile:hover .binder__pocket > .card,
@@ -85,7 +96,7 @@
 
 .tile__meta {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   min-width: 0;
 }
@@ -100,18 +111,40 @@
 }
 
 .tile__status {
+  display: inline-flex;
+  align-items: center;
   flex: none;
-  font-size: 13px;
+  gap: 6px;
   color: var(--page-muted);
+  font: 500 13px/1 var(--font-display);
+  letter-spacing: 0.02em;
 }
 
-.tile[data-status='published'] .tile__status { color: var(--ink-900); }
+/* Live gets a solid green dot, drafts an empty one. */
+.tile__status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.tile:not([data-status='published']) .tile__title { color: var(--page-muted); }
+
+.tile[data-status='published'] .tile__status {
+  color: #1c6e4e;
+  font-weight: 700;
+}
+
+.tile[data-status='published'] .tile__status::before {
+  border-color: #23946a;
+  background: #23946a;
+}
 
 .tile__grip {
   display: grid;
   place-items: center;
   flex: none;
-  align-self: center;
   width: 28px;
   height: 28px;
   margin-right: -6px;

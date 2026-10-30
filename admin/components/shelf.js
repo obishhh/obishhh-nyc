@@ -10,13 +10,14 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 function tile(data) {
   const title = data.title || 'Untitled';
   const tilt = (seeded(data.number) * 2 - 1) * MAX_TILT;
+  const live = data.status === 'published';
   return h('li', { class: 'tile', dataset: { id: data.id, title, status: data.status }, style: { '--tilt': `${tilt.toFixed(2)}deg` } },
-    h('a', { class: 'tile__open', href: `#/card/${data.id}`, draggable: 'false', 'aria-label': `Edit ${title}` },
+    h('a', { class: 'tile__open', href: `#/card/${data.id}`, draggable: 'false', 'aria-label': `Edit ${title}${live ? '' : ' (draft)'}` },
       h('div', { class: 'binder__pocket' }, card(data)),
     ),
     h('div', { class: 'tile__meta' },
       h('span', { class: 'tile__title' }, title),
-      h('span', { class: 'tile__status' }, data.status === 'published' ? 'Live' : 'Draft'),
+      h('span', { class: 'tile__status' }, live ? 'Live' : 'Draft'),
       h('button', { class: 'tile__grip', type: 'button', 'aria-label': `Move ${title}. Use the arrow keys.` }, svg(GRIP)),
     ),
   );
