@@ -57,35 +57,40 @@
   max-width: 600px;
 }
 
-/* Folds every section but the article, from the top of the form. */
+/* Folds every section but the article. Just a chevron, on its own line, drawn and placed
+   exactly like the sections' own so it sits straight above the Card one. */
 .editor__fold {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin: 0 0 24px;
-  padding: 12px 14px;
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
+  justify-content: flex-end;
+  width: 44px;
+  height: 28px;
+  margin: 0 0 10px auto;
+  padding: 0;
+  border: 0;
   background: none;
-  font: 700 14px/1 var(--font-display);
   color: var(--ink-900);
   cursor: pointer;
 }
 
 .editor__fold::after {
   content: '';
-  width: 7px;
-  height: 7px;
-  margin-right: 2px;
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
-  transform: translateY(2px) rotate(-135deg);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s var(--ease-out);
 }
 
-.editor__fold[aria-pressed='true']::after { transform: translateY(-2px) rotate(45deg); }
-.editor__fold:hover { border-color: var(--ink-900); }
+.editor__fold[aria-pressed='true']::after { transform: rotate(-45deg); }
+.editor__fold:hover { color: #000000; }
 .editor__fold:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .editor__fold::after { transition: none; }
+}
 .editor__form .form-section { scroll-margin-top: 80px; }
 
 .editor__preview {

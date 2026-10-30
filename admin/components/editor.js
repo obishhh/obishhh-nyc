@@ -123,7 +123,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
   const save = button('Save draft', '', () => keep());
   const publish = button('Publish', 'button--primary', () => commit('published', 'Published.'));
   const actions = [remove, unpublish, save, publish];
-  const focusToggle = h('button', { class: 'editor__fold', type: 'button', 'aria-pressed': 'false' }, 'Collapse all but the article');
+  const focusToggle = h('button', { class: 'editor__fold', type: 'button', 'aria-pressed': 'false' });
 
   const root = h('div', { class: 'editor' },
     h('div', { class: 'editor__bar' },
@@ -151,7 +151,9 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
   function syncFocusToggle() {
     const on = otherSections().every((each) => !each.open);
     focusToggle.setAttribute('aria-pressed', String(on));
-    focusToggle.textContent = on ? 'Show all sections' : 'Collapse all but the article';
+    const label = on ? 'Show all sections' : 'Collapse all but the article';
+    focusToggle.setAttribute('aria-label', label);
+    focusToggle.title = label;
   }
 
   function writing(on, { remember = true } = {}) {

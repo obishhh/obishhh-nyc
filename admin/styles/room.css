@@ -9,7 +9,7 @@
 
 .topbar {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 4px;
   width: 100%;
   max-width: 1120px;
