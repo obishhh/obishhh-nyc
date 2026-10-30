@@ -4,12 +4,12 @@
   flex: none;
   width: 22px;
   height: 22px;
-  border: 1px solid var(--ink-900);
   border-radius: 50%;
   background:
     radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0) 55%),
     var(--type-energy);
-  box-shadow: inset 0 -1.5px 1.5px rgb(0 0 0 / 0.28);
+  /* No outline: just a soft shadow underneath, so it sits a little raised off the card like a printed one. */
+  box-shadow: 0 0.75px 1.25px rgb(0 0 0 / 0.38), inset 0 -1.5px 1.5px rgb(0 0 0 / 0.22);
 }
 
 .energy svg {
@@ -20,7 +20,7 @@
 .energy[data-size='small'] {
   width: 13px;
   height: 13px;
-  border-width: 0.75px;
+  box-shadow: 0 0.5px 0.9px rgb(0 0 0 / 0.38), inset 0 -1px 1px rgb(0 0 0 / 0.2);
 }
 
 /* A symbol's cut-outs show the orb's colour through. */

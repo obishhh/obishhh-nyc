@@ -152,7 +152,7 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 }
 
 .deck-spread__title {
-  margin: 0;
+  margin: 0 0 0 auto;
   font: 700 22px/1 var(--font-display);
 }
 
@@ -170,7 +170,6 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   align-self: center;
   width: 36px;
   height: 36px;
-  margin-left: auto;
   padding: 0;
   border: 1px solid var(--page-rule);
   border-radius: 50%;

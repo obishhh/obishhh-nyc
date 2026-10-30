@@ -62,7 +62,7 @@ function spread(entries, make, title, onClose) {
   const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title' },
     h('header', { class: 'deck-spread__bar' },
       h('h2', { class: 'deck-spread__title', id: 'deck-spread-title' }, title),
-      h('p', { class: 'deck-spread__count' }, `${plural(entries.length, 'card')}, newest first`),
+      h('p', { class: 'deck-spread__count' }, 'Newest first'),
       close,
     ),
     h('ol', { class: 'deck-spread__cards' },
@@ -137,7 +137,7 @@ function spread(entries, make, title, onClose) {
 
 // A photo of a real deck box, cut out and stuck on a block of colour, with the newest card tucked inside.
 // Open it to tip the cards out.
-export function deckBox(entries, { make, label: text = 'notes', title = 'The deck' }) {
+export function deckBox(entries, { make, label: text = 'notes', title = 'The Deck' }) {
   const open = h('button', {
     class: 'deck-box__open', type: 'button', 'aria-haspopup': 'dialog',
     'aria-label': `Open the deck box: ${plural(entries.length, 'card')}`,
