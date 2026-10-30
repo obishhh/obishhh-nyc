@@ -10,8 +10,8 @@ import { focusPicker } from './focus-picker.js';
 
 const STATUS = { new: 'New', draft: 'Draft', published: 'Live' };
 const NAMES = { note: 'note', snapshot: 'Snapshot' };
-// Notes are the whole card, so they get more room than a Snapshot's caption.
-const MAX_TEXT = { note: 140, snapshot: 110 };
+// A note is written big in marker, so it fits less; a Snapshot's caption box holds about 200 characters.
+const MAX_TEXT = { note: 140, snapshot: 200 };
 // The preview's handwriting waits for a pause in the typing, rather than redrawing on every key.
 const PREVIEW_PAUSE = 60;
 // What the form edits; the rest of a record (its id, status and times) is the server's.
