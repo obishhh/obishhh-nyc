@@ -34,10 +34,10 @@
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-[data-type='ink'] { --type-edge: #8ea0e0; --type-panel: #d5dbf6; --type-deep: #aeb9ec; --type-energy: #3c4fc4; }
-[data-type='spark'] { --type-edge: #f4da4c; --type-panel: #fbf2b7; --type-deep: #f2e07a; --type-energy: #e8b400; }
-[data-type='stone'] { --type-edge: #c9b08c; --type-panel: #efe3cf; --type-deep: #dcc8a6; --type-energy: #8c6a43; }
-[data-type='wire'] { --type-edge: #86cfa7; --type-panel: #d6f0e0; --type-deep: #ade0c2; --type-energy: #23946a; }
-[data-type='ember'] { --type-edge: #f59a6e; --type-panel: #fddccb; --type-deep: #f9b994; --type-energy: #e0471f; }
-[data-type='ghost'] { --type-edge: #b3a9d2; --type-panel: #e6e1f3; --type-deep: #cdc4e6; --type-energy: #6f5ba6; }
-[data-type='plain'] { --type-edge: #d3d0cb; --type-panel: #eeece8; --type-deep: #dddad4; --type-energy: #f4f2ee; }
+[data-type='ink'] { --type-edge: #8ea0e0; --type-panel: #d5dbf6; --type-deep: #aeb9ec; --type-energy: #2f86d8; }
+[data-type='spark'] { --type-edge: #f4da4c; --type-panel: #fbf2b7; --type-deep: #f2e07a; --type-energy: #f2c418; }
+[data-type='stone'] { --type-edge: #c9b08c; --type-panel: #efe3cf; --type-deep: #dcc8a6; --type-energy: #c08a4e; }
+[data-type='wire'] { --type-edge: #86cfa7; --type-panel: #d6f0e0; --type-deep: #ade0c2; --type-energy: #3aa04a; }
+[data-type='ember'] { --type-edge: #f59a6e; --type-panel: #fddccb; --type-deep: #f9b994; --type-energy: #e5452c; }
+[data-type='ghost'] { --type-edge: #b3a9d2; --type-panel: #e6e1f3; --type-deep: #cdc4e6; --type-energy: #9b55c6; }
+[data-type='plain'] { --type-edge: #d3d0cb; --type-panel: #eeece8; --type-deep: #dddad4; --type-energy: #f1efe9; }

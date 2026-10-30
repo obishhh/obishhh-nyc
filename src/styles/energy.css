@@ -22,3 +22,11 @@
   height: 13px;
   border-width: 0.75px;
 }
+
+/* A symbol's cut-outs show the orb's colour through. */
+.glyph-cut {
+  fill: var(--type-energy);
+  stroke: var(--type-energy);
+}
+
+.glyph-cut[fill='none'] { fill: none; }

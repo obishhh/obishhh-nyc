@@ -1,9 +1,41 @@
 /* Cards for the deck box: notes written on blank energy cards, photos as trainer-style Snapshots. */
 
+/* Laid out like a basic energy card: the type's colour, brightest in the middle where the writing goes. */
 .note-card .card__panel {
+  gap: 0;
+  padding: 4px 4px 5px;
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--type-energy) 70%, #000000);
   background:
-    radial-gradient(circle at 50% 45%, rgb(255 255 255 / 0.45), rgb(255 255 255 / 0) 60%),
-    linear-gradient(var(--type-panel), var(--type-deep));
+    radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.92) 0, rgb(255 255 255 / 0.62) 26%, rgb(255 255 255 / 0) 58%),
+    radial-gradient(circle at 50% 50%, var(--type-energy) 34%, color-mix(in srgb, var(--type-energy) 62%, #000000) 100%);
+}
+
+/* The silver bar across the top, with the type's symbol where a real card says ENERGY's. */
+.note-card__bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  height: 24px;
+  padding: 0 1px 0 9px;
+  border-radius: 3px 12px 12px 3px;
+  background: linear-gradient(#ffffff, #d7dae0 45%, #b9bdc6 55%, #eef0f3);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35), inset 0 1px 0 #ffffff;
+}
+
+.note-card__label {
+  font: italic 700 13px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5f636d;
+  text-shadow: 0 1px 0 #ffffff;
+}
+
+.note-card__bar .energy {
+  box-shadow: 0 0 0 2px #ffffff, 0 1px 3px rgb(0 0 0 / 0.4), inset 0 -1.5px 1.5px rgb(0 0 0 / 0.28);
 }
 
 /* The type's symbol, big and faint behind the writing, like a blank card's printing. */
@@ -15,18 +47,29 @@
   pointer-events: none;
 }
 
-.note-card__symbol .energy {
-  width: 214px;
-  height: 214px;
-  border-width: 3px;
-  box-shadow: none;
-  opacity: 0.14;
+.note-card__symbol svg {
+  width: 168px;
+  height: 168px;
+  opacity: 0.13;
 }
 
 .note-card__writing {
+  position: relative;
   display: grid;
   flex: 1;
   place-items: center;
+}
+
+/* The silver strip along the bottom, with the date it went up. */
+.note-card__base {
+  flex: none;
+  height: 13px;
+  border-radius: 2px;
+  background: linear-gradient(#ffffff, #cfd2d8 60%, #eceef1);
+  box-shadow: 0 -1px 1px rgb(0 0 0 / 0.15);
+  font: italic 700 7.5px/13px var(--font-body);
+  color: #5f636d;
+  text-align: center;
 }
 
 /* Laid on with multiply, so it reads as marker on the card. */

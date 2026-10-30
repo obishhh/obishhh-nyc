@@ -1,11 +1,11 @@
-import { h } from '../lib/dom.js';
+import { typeName } from '../data/types.js';
+import { h, svg } from '../lib/dom.js';
+import { energyGlyphs } from '../lib/glyphs.js';
 import { safeImage } from '../lib/markdown.js';
 import { HAND, scribble } from '../lib/scrawl.js';
 import { energy } from './energy.js';
 
 const COPYRIGHT = '©2026 obishhh.nyc';
-
-const energyName = (type) => `${type[0].toUpperCase()}${type.slice(1)} Energy`;
 // Shorter notes get written bigger, the way you would on a card.
 const markerSize = (text) => (text.length <= 32 ? 40 : text.length <= 72 ? 31 : text.length <= 110 ? 26 : 22);
 // Dates come as 'YYYY-MM-DD'. Midday, so no timezone tips them into the day before.
@@ -19,21 +19,22 @@ function footer(left, number) {
   );
 }
 
-// A note: a blank energy card somebody wrote on in marker. The writing is a picture, so it carries the words for screen readers.
+// A note: a blank energy card somebody wrote on in marker. Silver bars top and bottom, the type's
+// symbol glowing in the middle. The writing is a picture, so it carries the words for screen readers.
 export function noteCard({ type, text, date, number }) {
   const ink = text ? scribble(text, { hand: HAND, size: markerSize(text), width: 200 }) : null;
   ink?.classList.add('note-card__ink');
   ink?.setAttribute('role', 'img');
   ink?.setAttribute('aria-label', text);
   const posted = day(date, { month: 'short', day: 'numeric', year: 'numeric' });
-  return h('article', { class: 'card note-card', dataset: { type, finish: 'standard' } },
+  return h('article', { class: 'card note-card', dataset: { type, finish: 'standard' }, 'aria-label': `${typeName(type)} Type note` },
     h('div', { class: 'card__panel' },
-      h('p', { class: 'card__stage' }, energyName(type)),
-      h('div', { class: 'note-card__symbol' }, energy(type)),
+      h('header', { class: 'note-card__bar' }, h('span', { class: 'note-card__label' }, 'Basic Note'), energy(type)),
+      h('div', { class: 'note-card__symbol' }, svg(energyGlyphs[type])),
       h('div', { class: 'note-card__writing' }, ink),
-      h('p', { class: 'card__dex' }, posted && `Posted ${posted}.`),
+      h('p', { class: 'note-card__base' }, posted && `Posted ${posted}`),
     ),
-    footer('Basic Note', number),
+    footer('', number),
   );
 }
 
