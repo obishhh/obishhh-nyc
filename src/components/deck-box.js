@@ -137,7 +137,10 @@ function spread(entries, make, title, onClose) {
   };
 }
 
-// A photo of a real deck box, cut out and stuck on a block of colour, with the newest card tucked inside.
+// How many of the newest cards stand in the box.
+const PEEKING = 5;
+
+// A photo of a real deck box, cut out and stuck on a block of colour, with the newest cards tucked inside.
 // Open it to tip the cards out.
 export function deckBox(entries, { make, label: text = 'notes', title = 'The Deck' }) {
   const open = h('button', {
@@ -145,7 +148,16 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
     'aria-label': `Open the deck box: ${plural(entries.length, 'card')}`,
   });
   const box = h('div', { class: 'deck-box' },
-    h('span', { class: 'deck-box__peek', 'aria-hidden': 'true', inert: true, style: { width: `${PEEK * 100}%` } }, make(entries[0])),
+    // The newest few, the newest in front. The ones behind stand to either side of it in turn, further out the
+    // further back they are, so each shows over a shoulder.
+    entries.slice(0, PEEKING).reverse().map((entry, back, shown) => {
+      const behind = shown.length - 1 - back;
+      const lean = Math.ceil(behind / 2) * (behind % 2 ? 1 : -1);
+      return h('span', {
+        class: 'deck-box__peek', 'aria-hidden': 'true', inert: true,
+        style: { width: `${PEEK * 100}%`, '--behind': String(behind), '--lean': String(lean) },
+      }, make(entry));
+    }),
     h('img', { class: 'deck-box__front', src: PHOTO.src, alt: '', width: PHOTO.width, height: PHOTO.height, decoding: 'async' }),
     label(text),
     open,
