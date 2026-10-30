@@ -116,7 +116,8 @@
   max-width: none;
   max-height: none;
   margin: 0;
-  padding: 40px 16px 64px;
+  /* The same top as the masthead's, so the title sits on the same line as the site's name behind it. */
+  padding: 32px 16px 64px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -280,7 +281,7 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 
 @media (max-width: 519px) {
   .deck-spread {
-    padding-top: 24px;
+    padding-top: 20px;
     overflow-x: clip;
   }
 
