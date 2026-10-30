@@ -73,8 +73,8 @@ export function noteCard({ type, text, date, number }) {
       h('span', { class: 'note-card__wear', 'aria-hidden': 'true' }),
       h('div', { class: 'note-card__writing' }, ink),
       h('p', { class: 'note-card__base' }, posted && `Posted ${posted}`),
+      footer('', number),
     ),
-    footer('', number),
   );
 }
 
@@ -91,8 +91,8 @@ export function snapshotCard({ title, photo, text, place, date, number }) {
         picture && h('img', { src: picture, alt: alt || title || '', decoding: 'async', style: position && { 'object-position': position } })),
       h('p', { class: 'snapshot__text' }, text),
       h('p', { class: 'snapshot__rule' }, 'Play as many Snapshots as you like. Nobody’s counting.'),
+      footer(['Photo.', place && ` ${place},`, when && ` ${when}.`].filter(Boolean).join(''), number),
     ),
-    footer(['Photo.', place && ` ${place},`, when && ` ${when}.`].filter(Boolean).join(''), number),
     wear(number || title),
   );
 }

@@ -8,7 +8,8 @@
   gap: 4px;
   width: 252px;
   height: 352px;
-  padding: 10px 10px 5px;
+  /* Even all round: the small print sits inside the panel, just above the bottom border, as on a real card. */
+  padding: 10px;
   border: 1px solid var(--border-700);
   border-radius: 12px;
   background:
@@ -53,8 +54,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  height: 321px;
-  padding: 5px 11px 10px;
+  height: 330px;
+  padding: 5px 11px 1px;
   border-radius: 6px;
   background:
     linear-gradient(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0) 50%, rgb(0 0 0 / 0.04)),
@@ -317,10 +318,13 @@
 .card__panel .card__flavor { margin-top: 3px; }
 
 .card__footer {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: none;
   height: 10px;
+  margin-top: 1px;
   padding: 0 2px;
   font: 500 6.5px/8px var(--font-display);
 }
@@ -365,8 +369,3 @@
 .wear[data-scratched='true'] { --wear-scratch-img: var(--wear-scuffs); }
 .wear[data-crease='corner'] { --wear-crease-img: var(--wear-crease-corner); }
 .wear[data-crease='tip'] { --wear-crease-img: var(--wear-crease-tip); }
-
-/* A post's small print is inside its panel, so the panel runs the card's full height and the yellow is even all round. */
-.card--post { padding-bottom: 10px; }
-.card--post .card__panel { height: 330px; padding-bottom: 4px; }
-.card--post .card__footer { margin-top: 1px; padding: 0; }
