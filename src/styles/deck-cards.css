@@ -100,8 +100,8 @@
   -webkit-mask-image: radial-gradient(circle at 50% 50%, #000000 10%, rgb(0 0 0 / 0) 72%);
 }
 
-/* A little wear on every note, a different kind for each type: grain, fading, rubbed edges,
-   scratches. It lifts the colour a touch, which helps the writing read. */
+/* Under the writing, a different fade for each type: it lifts the colour a touch, which helps the writing read.
+   The scuffs, corners and creases every card picks up go over the top (see wear.js). */
 .note-card__wear {
   position: absolute;
   inset: 0;
@@ -111,10 +111,9 @@
   pointer-events: none;
 }
 
-/* Grass: fine scratches, and a little fade at one corner. */
+/* Grass: a little fade at one corner. */
 .note-card[data-type='wire'] .note-card__wear {
   background:
-    var(--wear-scratches) center / 100% 100% no-repeat,
     radial-gradient(circle at 0 0, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 45%),
     var(--wear-grain) 0 0 / 180px 180px;
 }
@@ -140,13 +139,11 @@
     var(--wear-grain) 30px 100px / 180px 180px;
 }
 
-/* Ground: scuffed the other way, and a bit grittier. */
+/* Ground: a bit grittier. */
 .note-card[data-type='stone'] .note-card__wear {
   background:
-    var(--wear-scratches) center / 100% 100% no-repeat,
     var(--wear-grain) 0 0 / 120px 120px,
     var(--wear-grain) 60px 60px / 180px 180px;
-  transform: scaleX(-1);
 }
 
 /* Psychic: a band faded across the middle, like it sat half out of a sleeve. */
@@ -156,11 +153,9 @@
     var(--wear-grain) 120px 30px / 180px 180px;
 }
 
-/* Normal: a creased corner, and soft rubbed edges. */
+/* Normal: soft rubbed edges. */
 .note-card[data-type='plain'] .note-card__wear {
-  background:
-    var(--wear-crease) center / 100% 100% no-repeat,
-    var(--wear-grain) 70px 140px / 180px 180px;
+  background: var(--wear-grain) 70px 140px / 180px 180px;
   box-shadow: inset 0 0 10px 1px rgb(255 255 255 / 0.2);
 }
 
@@ -200,6 +195,12 @@
 
 .note-card .card__number { justify-self: end; }
 
+/* Normal's grey is too pale under white: dark print there instead. */
+.note-card[data-type='plain'] .card__footer {
+  color: var(--ink-900);
+  text-shadow: 0 0.5px 0 rgb(255 255 255 / 0.4);
+}
+
 /* Marker over the orb: a faint light halo keeps it legible against the black symbol.
    Long notes shrink to fit. */
 .note-card__ink {
@@ -216,7 +217,6 @@
   --border-300: #f4f5f8;
   --border-500: #c3c7d0;
   --border-700: #8e939e;
-  --type-edge: #b7bbc6;
   --type-panel: #f7f7f9;
   --type-deep: #e1e3e9;
 }
@@ -230,7 +230,6 @@
 
 .snapshot__banner {
   align-self: flex-start;
-  margin: -6px 0 0 -8px;
   padding: 3px 18px 3px 9px;
   background: var(--ink-900);
   color: #ffffff;

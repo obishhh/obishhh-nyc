@@ -54,8 +54,11 @@
   transform: var(--rest);
   transform-origin: 50% 100%;
   transition: transform 0.45s var(--ease-out) calc(var(--behind) * 0.04s);
-  will-change: transform;
 }
+
+/* Their own layers only while they're likely to move, not the whole time the page is open. */
+.deck-box:hover .deck-box__peek,
+.deck-box:focus-within .deck-box__peek { will-change: transform; }
 
 .deck-box__peek > .card {
   position: absolute;
@@ -167,7 +170,7 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   font: 700 22px/1 var(--font-display);
 }
 
-.deck-spread__count {
+.deck-spread__order {
   margin: 6px 0 0;
   color: var(--page-muted);
   font: 500 12px/1 var(--font-display);

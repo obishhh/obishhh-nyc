@@ -63,7 +63,7 @@ function spread(entries, make, title, onClose) {
     h('header', { class: 'deck-spread__bar' },
       h('div', { class: 'deck-spread__heading' },
         h('h2', { class: 'deck-spread__title', id: 'deck-spread-title' }, title),
-        h('p', { class: 'deck-spread__count' }, 'Newest first'),
+        h('p', { class: 'deck-spread__order' }, 'Newest first'),
       ),
       close,
     ),
@@ -147,29 +147,41 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
     class: 'deck-box__open', type: 'button', 'aria-haspopup': 'dialog',
     'aria-label': `Open the deck box: ${plural(entries.length, 'card')}`,
   });
+  // The newest few, the newest in front. The ones behind stand to either side of it in turn, further out the
+  // further back they are, so each shows over a shoulder. Only the front one is drawn straight away; the rest are
+  // drawn when the page is idle, or as soon as someone goes for the box.
+  const peeks = entries.slice(0, PEEKING).map((entry, behind) => {
+    const lean = Math.ceil(behind / 2) * (behind % 2 ? 1 : -1);
+    return h('span', {
+      class: 'deck-box__peek', 'aria-hidden': 'true', inert: true,
+      style: { width: `${PEEK * 100}%`, '--behind': String(behind), '--lean': String(lean) },
+    }, behind === 0 && make(entry));
+  });
+  let filled = peeks.length < 2;
+  const fillPeeks = () => {
+    if (filled) return;
+    filled = true;
+    peeks.slice(1).forEach((peek, index) => peek.append(make(entries[index + 1])));
+  };
   const box = h('div', { class: 'deck-box' },
-    // The newest few, the newest in front. The ones behind stand to either side of it in turn, further out the
-    // further back they are, so each shows over a shoulder.
-    entries.slice(0, PEEKING).reverse().map((entry, back, shown) => {
-      const behind = shown.length - 1 - back;
-      const lean = Math.ceil(behind / 2) * (behind % 2 ? 1 : -1);
-      return h('span', {
-        class: 'deck-box__peek', 'aria-hidden': 'true', inert: true,
-        style: { width: `${PEEK * 100}%`, '--behind': String(behind), '--lean': String(lean) },
-      }, make(entry));
-    }),
+    [...peeks].reverse(),
     h('img', { class: 'deck-box__front', src: PHOTO.src, alt: '', width: PHOTO.width, height: PHOTO.height, decoding: 'async' }),
     label(text),
     open,
   );
-  // The peeking card is a real one, shrunk to fit the box whatever size it's drawn at.
+  // The peeking cards are real ones, shrunk to fit the box whatever size it's drawn at.
   new ResizeObserver(([entry]) => {
     box.style.setProperty('--peek-scale', ((entry.contentRect.width * PEEK) / 252).toFixed(4));
   }).observe(box);
 
   // Lay the spread out while nothing else is happening, so opening the box is instant.
   let view;
-  const ready = () => (view ??= spread(entries, make, title, () => open.focus({ preventScroll: true })));
+  const ready = () => {
+    fillPeeks();
+    return (view ??= spread(entries, make, title, () => open.focus({ preventScroll: true })));
+  };
+  box.addEventListener('pointerenter', fillPeeks, { once: true });
+  open.addEventListener('focus', fillPeeks, { once: true });
   if ('requestIdleCallback' in window) requestIdleCallback(ready, { timeout: 2000 });
   else setTimeout(ready, 1200);
   open.addEventListener('click', () => ready().open());

@@ -1,11 +1,12 @@
+import { knownType } from '../data/types.js';
 import { h } from '../lib/dom.js';
 import { safeImage } from '../lib/markdown.js';
-import { retreatOf, typeName, weaknessOf } from '../data/types.js';
+import { battleStats } from './battle-stats.js';
 import { energy } from './energy.js';
 import { rarity } from './rarity.js';
+import { smallPrint } from './small-print.js';
 import { wear } from './wear.js';
 
-const COPYRIGHT = '©2026 obishhh.nyc';
 // Letters that reach above the lowercase ones, so a word centres on its capitals rather than its x-height.
 const TALL = /[A-Z0-9bdfhkl]/;
 
@@ -46,42 +47,15 @@ function move({ type, move: { name, text, score, cost = [type, 'plain'] } }) {
 }
 
 // Where it's filed, on the silver badge a real card keeps for its stage. The binder's tabs go by the same thing.
-function stageLine({ stats }) {
-  return h('p', { class: 'card__stage' }, stats.filed && h('span', { class: 'card__stage-badge', title: 'Filed under' },
-    h('span', { class: 'card__stage-word', dataset: { tall: String(TALL.test(stats.filed)) } }, stats.filed)));
-}
-
-function stat(label, ...value) {
-  return h('div', { class: 'card__stat' }, h('dt', {}, label), h('dd', {}, ...value));
-}
-
-// Weakness, resistance and retreat, in icons like the real ones. Also used under the article.
-export function battleStats(data, { size = 'small', prefix = 'card' } = {}) {
-  const weak = weaknessOf(data);
-  const resist = data.stats.resistance;
-  const retreat = retreatOf(data.minutes);
-  const icon = (kind) => energy(kind, size);
-  // As on the real cards, what it does goes up with the label, and the icons sit on their own below.
-  return h('dl', { class: `${prefix}__stats` },
-    stat('weakness ×2', h('span', { class: 'card__stat-value', title: `Weak to ${typeName(weak)}` }, icon(weak))),
-    stat(resist ? 'resistance −30' : 'resistance', resist && h('span', { class: 'card__stat-value', title: `Resists ${typeName(resist)}` }, icon(resist))),
-    stat('retreat', h('span', { class: 'card__stat-value', title: retreat ? `${retreat} to retreat` : 'Free to retreat' },
-      ...Array.from({ length: retreat }, () => icon('plain')))),
-  );
-}
-
-function footer({ art, number, rarity: level }) {
-  return h('footer', { class: 'card__footer' },
-    h('span', {}, `Illus. ${art.illustrator}`),
-    h('span', {}, COPYRIGHT),
-    h('span', { class: 'card__number' }, h('span', { class: 'card__digits' }, number), rarity(level)),
-  );
+function filedLine({ stats }) {
+  return h('p', { class: 'card__filed' }, stats.filed && h('span', { class: 'card__filed-badge', title: 'Filed under' },
+    h('span', { class: 'card__filed-word', dataset: { tall: String(TALL.test(stats.filed)) } }, stats.filed)));
 }
 
 export function card(data) {
-  return h('article', { class: 'card card--post', dataset: { type: data.type, finish: data.finish }, 'aria-label': data.title },
+  return h('article', { class: 'card card--post', dataset: { type: knownType(data.type), finish: data.finish }, 'aria-label': data.title },
     h('div', { class: 'card__panel' },
-      stageLine(data),
+      filedLine(data),
       nameBar(data),
       artwork(data.art),
       dexStrip(data),
@@ -90,7 +64,7 @@ export function card(data) {
       battleStats(data),
       data.flavor && h('p', { class: 'card__flavor' }, data.flavor),
       // The small print sits inside the panel, just above the bottom border, as on a real card.
-      footer(data),
+      smallPrint(`Illus. ${data.art.illustrator}`, data.number, rarity(data.rarity)),
     ),
     wear(data.number || data.title),
   );

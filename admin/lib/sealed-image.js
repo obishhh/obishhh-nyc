@@ -1,7 +1,7 @@
 // Paints a card the way the binder shows it sealed (blurred, washed out, no words) into a small image,
 // so the site can show one picture instead of blurring a live card.
 
-const VERSION = 2;
+const VERSION = 3;
 const PAD = 24;
 const WIDTH = 252;
 const HEIGHT = 352;
@@ -21,10 +21,10 @@ function palette(type) {
   const style = getComputedStyle(probe);
   const color = (name) => style.getPropertyValue(name).trim();
   const colors = {
-    ink: color('--ink-900'), muted: color('--ink-600'), hp: color('--hp-600'),
+    ink: color('--ink-900'), hp: color('--hp-600'),
     border: [color('--border-300'), color('--border-500'), color('--border-700')],
     foil: [color('--foil-200'), color('--foil-500'), color('--foil-700')],
-    edge: color('--type-edge'), panel: color('--type-panel'), deep: color('--type-deep'), energy: color('--type-energy'),
+    panel: color('--type-panel'), deep: color('--type-deep'), energy: color('--type-energy'),
   };
   probe.remove();
   return colors;
@@ -65,14 +65,17 @@ function bar(ctx, x, y, w, h, color, alpha = 1) {
   ctx.globalAlpha = 1;
 }
 
-function coin(ctx, x, y, radius, fill, ink) {
+// A raised coin, as the energy symbols are drawn: no outline, just a soft shadow under it.
+function coin(ctx, x, y, radius, fill) {
+  ctx.save();
+  ctx.shadowColor = 'rgb(0 0 0 / 0.38)';
+  ctx.shadowBlur = 1.5;
+  ctx.shadowOffsetY = 0.75;
   ctx.fillStyle = fill;
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
-  ctx.stroke();
+  ctx.restore();
 }
 
 function cover(ctx, image, x, y, w, h, position = '') {
@@ -88,7 +91,8 @@ function cover(ctx, image, x, y, w, h, position = '') {
   ctx.restore();
 }
 
-// The card's layout from card.css, with the words drawn as soft bars: under the blur they read the same.
+// The card's layout from card.css, measured off a live card, with the words drawn as soft bars: under the blur they
+// read the same.
 function drawCard(ctx, { type, finish, art }, image) {
   const c = palette(type);
 
@@ -99,57 +103,51 @@ function drawCard(ctx, { type, finish, art }, image) {
   ctx.strokeStyle = c.border[2];
   ctx.stroke();
 
-  const panel = ctx.createLinearGradient(0, 11, 0, 332);
+  // The panel runs the card's height, with the small print inside it along the bottom.
+  const panel = ctx.createLinearGradient(0, 11, 0, 341);
   panel.addColorStop(0, c.panel);
   panel.addColorStop(1, c.deep);
   ctx.fillStyle = panel;
   ctx.beginPath();
-  ctx.roundRect(11, 11, 230, 321, 6);
+  ctx.roundRect(11, 11, 230, 330, 6);
   ctx.fill();
-  if (finish === 'reverse') rainbow(ctx, 11, 11, 230, 321, 0.55);
-  ctx.strokeStyle = c.edge;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.roundRect(12.5, 12.5, 227, 318, 5);
-  ctx.stroke();
+  if (finish === 'reverse') rainbow(ctx, 11, 11, 230, 330, 0.55);
 
-  bar(ctx, 22, 22, 38, 7, c.ink, 0.75);
-  bar(ctx, 22, 38, 74, 17, c.ink, 0.9);
-  bar(ctx, 176, 40, 26, 13, c.hp, 0.85);
-  coin(ctx, 219, 46, 10.5, c.energy, c.ink);
+  // Filed-under badge, then the name line: title, minutes and the type's coin, all down on the art.
+  bar(ctx, 22, 16, 28, 10, '#e6e6e3');
+  bar(ctx, 22, 30, 74, 17, c.ink, 0.9);
+  bar(ctx, 175, 32, 22, 14, c.hp, 0.85);
+  coin(ctx, 216, 32, 14, c.energy);
 
-  ctx.fillStyle = diagonal(ctx, 22, 62, 208, 134, [[0, c.foil[0]], [0.45, c.foil[1]], [1, c.foil[2]]]);
-  ctx.fillRect(22, 62, 208, 134);
-  if (image) cover(ctx, image, 25, 65, 202, 128, art.position);
-  if (finish === 'holo') rainbow(ctx, 25, 65, 202, 128, 0.25);
+  ctx.fillStyle = diagonal(ctx, 22, 50, 208, 134, [[0, c.foil[0]], [0.45, c.foil[1]], [1, c.foil[2]]]);
+  ctx.fillRect(22, 50, 208, 134);
+  if (image) cover(ctx, image, 25, 53, 202, 128, art.position);
+  if (finish === 'holo') rainbow(ctx, 25, 53, 202, 128, 0.25);
 
   const dex = ctx.createLinearGradient(22, 0, 230, 0);
   dex.addColorStop(0, c.foil[0]);
   dex.addColorStop(1, c.foil[1]);
   ctx.fillStyle = dex;
-  ctx.fillRect(22, 200, 208, 15);
-  coin(ctx, 32.5, 207.5, 5.5, c.ink, c.ink);
-  bar(ctx, 42, 205, 92, 6, c.ink, 0.8);
+  ctx.fillRect(22, 188, 208, 15);
+  coin(ctx, 32.5, 195.5, 5.5, c.ink);
+  bar(ctx, 42, 193, 92, 6, c.ink, 0.8);
 
-  coin(ctx, 28.5, 241.5, 6.5, c.energy, c.ink);
-  coin(ctx, 43.5, 241.5, 6.5, '#f4f2ee', c.ink);
-  bar(ctx, 62, 227, 78, 11, c.ink, 0.9);
-  bar(ctx, 62, 243, 124, 6, c.ink, 0.65);
-  bar(ctx, 62, 253, 96, 6, c.ink, 0.65);
-  bar(ctx, 214, 234, 12, 15, c.ink, 0.85);
+  // The move, in the middle of the room between the dex strip and the stats.
+  coin(ctx, 29.5, 249.5, 7.5, c.energy);
+  coin(ctx, 46.5, 249.5, 7.5, '#f4f2ee');
+  bar(ctx, 62, 231, 78, 11, c.ink, 0.9);
+  bar(ctx, 62, 249, 124, 6, c.ink, 0.65);
+  bar(ctx, 62, 259, 96, 6, c.ink, 0.65);
+  bar(ctx, 214, 242, 12, 15, c.ink, 0.85);
 
   ctx.globalAlpha = 0.28;
   ctx.fillStyle = c.ink;
-  ctx.fillRect(22, 268, 208, 1);
+  ctx.fillRect(22, 295, 208, 1);
   ctx.globalAlpha = 1;
-  for (const x of [24, 116, 206]) {
-    bar(ctx, x, 274, 18, 4, c.muted, 0.7);
-    bar(ctx, x + 2, 281, 14, 6, c.ink, 0.8);
-  }
+  for (const [x, w] of [[24, 35], [120, 28], [210, 18]]) bar(ctx, x, 302, w, 5, c.ink, 0.85);
+  coin(ctx, 41.5, 318.5, 7.5, c.energy);
 
-  bar(ctx, 13, 339, 42, 5, c.ink, 0.7);
-  bar(ctx, 98, 339, 52, 5, c.ink, 0.7);
-  bar(ctx, 203, 338, 30, 6, c.ink, 0.8);
+  for (const [x, w] of [[24, 43], [104, 47], [189, 39]]) bar(ctx, x, 334, w, 5, c.ink, 0.7);
 }
 
 // Three box blurs make a Gaussian close to CSS blur(7px). Premultiplied, so the edges don't darken.

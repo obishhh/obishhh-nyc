@@ -5,7 +5,6 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
   width: 252px;
   height: 352px;
   /* Even all round: the small print sits inside the panel, just above the bottom border, as on a real card. */
@@ -64,14 +63,15 @@
 }
 
 /* Soft light over the post the way real cards have it: a glow behind the art, a faint sheen across, and the type's
-   own colour gathering in the bottom corner. */
-.card--post .card__panel::before {
+   own colour gathering in the bottom corner. Part of the panel itself, so a reverse holo's rainbow goes over it. */
+.card--post .card__panel {
   background:
     radial-gradient(ellipse 80% 45% at 50% 30%, rgb(255 255 255 / 0.45), rgb(255 255 255 / 0) 70%),
     linear-gradient(120deg, rgb(255 255 255 / 0) 25%, rgb(255 255 255 / 0.22) 40%, rgb(255 255 255 / 0) 55%, rgb(255 255 255 / 0.12) 72%, rgb(255 255 255 / 0) 85%),
-    radial-gradient(ellipse 90% 60% at 100% 100%, color-mix(in srgb, var(--type-energy) 22%, transparent), transparent 70%);
+    radial-gradient(ellipse 90% 60% at 100% 100%, color-mix(in srgb, var(--type-energy) 22%, transparent), transparent 70%),
+    linear-gradient(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0) 50%, rgb(0 0 0 / 0.04)),
+    linear-gradient(var(--type-panel), var(--type-deep));
 }
-
 
 .card__panel::before,
 .card__panel::after {
@@ -95,15 +95,10 @@
   mix-blend-mode: overlay;
 }
 
-.card p,
-.card h2,
-.card h3,
-.card figure,
-.card dl {
-  margin: 0;
-}
+/* No weight of its own, so each part's own class can still set a margin. */
+:where(.card) :where(p, h2, h3, figure, dl) { margin: 0; }
 
-.card__stage {
+.card__filed {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -112,7 +107,7 @@
 }
 
 /* The silver badge where a real card says BASIC. */
-.card__stage-badge {
+.card__filed-badge {
   display: inline-flex;
   align-items: center;
   height: 11px;
@@ -125,13 +120,13 @@
 
 /* Trimmed to its letters so it centres on them, whatever the browser's line spacing: from the top of its capitals
    (or of its lowercase, when it has nothing taller) down to its baseline. Tails hang below, as on a printed badge. */
-.card__stage-word {
+.card__filed-word {
   display: block;
   font: italic 700 8px/1 var(--font-body);
   text-box: trim-both cap alphabetic;
 }
 
-.card__stage-word[data-tall='false'] { text-box: trim-both ex alphabetic; }
+.card__filed-word[data-tall='false'] { text-box: trim-both ex alphabetic; }
 
 .card__name {
   display: flex;
@@ -160,8 +155,7 @@
 }
 
 /* The title, the minutes and the icon all sit on one line, right above the art: the words' baseline on the icon's
-   foot. This display face drops 0.15em below its baseline. */
-/* Past `.card h2`'s reset. */
+   foot. This display face drops 0.15em below its baseline. (A Snapshot's title stands on its own, so only here.) */
 .card__name .card__title { margin-bottom: -0.15em; }
 
 .card__hp-value {
@@ -286,36 +280,29 @@
   padding: 0 2px;
 }
 
-.card__stat {
+.stat {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.card__stat dt {
-  font: 700 7.5px/9px var(--font-display);
-}
-
-.card__stat dd {
-  min-height: 10px;
-  margin: 2px 0 0;
-  font: 700 8px/10px var(--font-body);
-}
-
-.card__stat-value {
+.stat__value {
   display: flex;
   align-items: center;
   gap: 1.5px;
+  min-height: 10px;
 }
 
+.card__stats .stat__label { font: 700 7.5px/9px var(--font-display); }
+.card__stats .stat__value { margin: 2px 0 0; }
+
 .card__flavor {
+  /* A little clear of the stats. */
+  margin-top: 3px;
   padding: 3px 5px;
   border: 0.75px solid var(--foil-700);
   font: italic 700 8.5px/11px var(--font-body);
 }
-
-/* A little clear of the stats. (Past `.card p`'s reset.) */
-.card__panel .card__flavor { margin-top: 3px; }
 
 .card__footer {
   position: relative;
