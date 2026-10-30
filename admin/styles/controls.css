@@ -74,6 +74,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 textarea.input { resize: vertical; }
+/* Sized to their text by script (fields.js), so never a scrollbar inside. */
+textarea.input--grow { resize: none; overflow: hidden; }
 
 select.input {
   padding-right: 22px;

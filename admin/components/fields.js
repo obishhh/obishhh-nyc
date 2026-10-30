@@ -22,8 +22,26 @@ export function number(name, label, { hint, unit, ...attrs } = {}) {
   return row(label, unit ? h('span', { class: 'inline' }, control, h('span', { class: 'unit' }, unit)) : control, hint);
 }
 
-export const textarea = (name, label, { hint, rows = 2, ...attrs } = {}) =>
-  row(label, h('textarea', { class: 'input', name, rows, ...attrs }), hint);
+// A text box as tall as what's in it, so nothing ever needs scrolling inside it: it grows as you type, when the form
+// fills it in (the 'fit' event), and when it's first shown or its width changes.
+function grow(area) {
+  if (!area.offsetWidth) return;
+  area.style.setProperty('height', 'auto');
+  area.style.setProperty('height', `${area.scrollHeight + area.offsetHeight - area.clientHeight}px`);
+}
+
+export function textarea(name, label, { hint, rows = 2, ...attrs } = {}) {
+  const area = h('textarea', { class: 'input input--grow', name, rows, ...attrs });
+  area.addEventListener('input', () => grow(area));
+  area.addEventListener('fit', () => grow(area));
+  let width = 0;
+  new ResizeObserver(() => {
+    if (area.offsetWidth === width) return;
+    width = area.offsetWidth;
+    grow(area);
+  }).observe(area);
+  return row(label, area, hint);
+}
 
 const options = (choices) => choices.map(({ value, label }) => h('option', { value }, label));
 

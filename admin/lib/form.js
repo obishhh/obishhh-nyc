@@ -46,6 +46,11 @@ export function readForm(form) {
   return values;
 }
 
+// Text boxes that size to their text hear about it: setting a value by hand doesn't fire an input event.
 export function writeForm(form, values) {
-  for (const name of names(form)) write(form.elements.namedItem(name), getPath(values, name));
+  for (const name of names(form)) {
+    const control = form.elements.namedItem(name);
+    write(control, getPath(values, name));
+    if (control instanceof HTMLTextAreaElement) control.dispatchEvent(new Event('fit'));
+  }
 }
