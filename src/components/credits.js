@@ -26,14 +26,15 @@ function cardWorks(cards) {
   return [...works.values()];
 }
 
-export function credits({ cards, back }) {
+export function credits({ cards, back, tabs }) {
   const works = [
     ...cardWorks(cards),
     ...back.map((work) => ({ label: 'Card back', ...work })),
+    { label: 'Binder tabs', ...tabs },
   ];
   return h('section', { class: 'credits' },
     h('h1', { class: 'credits__title' }, 'Credits'),
-    h('p', { class: 'credits__intro' }, 'The card art is cropped from Creative Commons and public-domain works. Thank you to the artists.'),
+    h('p', { class: 'credits__intro' }, 'The card art and the binder tabs are cropped from Creative Commons and public-domain works. Thank you to the artists.'),
     h('ol', { class: 'credits__list' }, works.map(entry)),
   );
 }

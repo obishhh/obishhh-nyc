@@ -1,4 +1,6 @@
+import { MAX_TABS } from '../../src/components/dividers.js';
 import { h, svg } from '../../src/lib/dom.js';
+import { sections } from '../../src/lib/sections.js';
 import { blankCard, FINISHES, RARITIES, STAGES, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { formatDate } from '../lib/format.js';
@@ -10,6 +12,7 @@ import { checkbox, dropdown, number, row, section, select, text, textarea } from
 import { preview } from './preview.js';
 
 const STATUS = { new: 'New card', draft: 'Draft', published: 'Live' };
+const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 const WRITING_KEY = 'obishhh.editor.writing';
 
 function trim(value) {
@@ -45,6 +48,18 @@ function costRow() {
   );
 }
 
+// Which binder tab "filed under" puts the card behind, among the other live cards'. Sealed cards only show under All.
+function whereFiled(value, live, others) {
+  if (!value) return 'Its tab in the binder. Left blank, it only shows under All.';
+  const ranked = sections([...others, { stats: { filed: value } }]);
+  const place = ranked.findIndex((section) => section.value === value);
+  const company = ranked[place].count - 1;
+  const where = place >= MAX_TABS - 1 ? 'it only shows under All, since the binder’s out of tabs'
+    : company ? `it goes behind the “${value}” tab, with ${plural(company, 'other card')}`
+    : `it gets a “${value}” tab to itself`;
+  return live ? `${where[0].toUpperCase()}${where.slice(1)}.` : `Once it’s live, ${where}.`;
+}
+
 function button(label, variant, onClick) {
   const element = h('button', { class: `button ${variant}`.trim(), type: 'button' }, label);
   element.addEventListener('click', onClick);
@@ -63,6 +78,8 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
     flashTimer = setTimeout(renderState, bad ? 6000 : 2500);
   }
 
+  const filedHint = h('span');
+  const sectionList = h('datalist', { id: 'editor-sections' });
   const art = artPicker({ ...artOptions, onError: (error) => flash(`Upload failed. ${error.message}`, true) });
   const view = preview();
 
@@ -79,6 +96,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   const form = h('form', { class: 'editor__form', novalidate: true },
     section('Card',
       text('title', 'Title', { placeholder: 'Bodega Cat #14', maxlength: 32 }),
+      text('stats.filed', 'Filed under', { list: 'editor-sections', placeholder: 'nyc', maxlength: 12, hint: filedHint }),
       text('stage', 'Stage', { list: 'editor-stages', placeholder: 'Basic Post', maxlength: 24 }),
       text('number', 'Number', { placeholder: '012/120', maxlength: 9 }),
       number('minutes', 'Read time', { min: 0, max: 999, unit: 'min' }),
@@ -100,11 +118,11 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
       text('dex', 'Dex strip', { placeholder: 'Essay. Length: 640 words. Filed: Oct 28, 2026.', maxlength: 64 }),
       text('stats.reads', 'Reads', { placeholder: '1.2k', maxlength: 8 }),
       text('stats.replies', 'Bookmarked', { placeholder: '14', maxlength: 8 }),
-      text('stats.filed', 'Filed under', { placeholder: 'type', maxlength: 12 }),
       textarea('flavor', 'Flavor', { placeholder: 'Optional', maxlength: 80 }),
     ),
     articleSection,
     h('datalist', { id: 'editor-stages' }, STAGES.map((value) => h('option', { value }))),
+    sectionList,
   );
 
   const remove = button('Delete', 'button--danger', destroy);
@@ -131,6 +149,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   let snapshot = '';
   let dirty = false;
   let shownType = '';
+  let others = [];
 
   const current = () => tidy(readForm(form));
 
@@ -172,6 +191,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   function refresh() {
     const data = current();
     view.update(data);
+    filedHint.textContent = whereFiled(data.stats.filed, record?.status === 'published', others);
     dirty = JSON.stringify(data) !== snapshot;
     renderState();
   }
@@ -180,6 +200,9 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
     const fresh = !next || next.id !== record?.id;
     if (fresh) view.reset();
     record = next;
+    const rest = cards().filter(({ id }) => id !== next?.id);
+    others = rest.filter(({ status }) => status === 'published');
+    sectionList.replaceChildren(...sections(rest).map(({ value }) => h('option', { value })));
     const data = structuredClone(next ?? blankCard(cards()));
     data.move.cost ??= [data.type, 'plain'];
     art.prepare(data.art);

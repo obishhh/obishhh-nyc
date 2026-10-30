@@ -1,0 +1,107 @@
+/* A cropped photo of real divider tabs, with the section names written into it in marker. */
+
+/* The binder with its tabs hung off it. The cards stay centred either way. */
+.tabbed {
+  position: relative;
+  width: var(--binder-width);
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.dividers { -webkit-tap-highlight-color: transparent; }
+
+.dividers__sheet { position: relative; }
+
+.dividers__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.dividers__tab {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.dividers__tab:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid var(--ink-900);
+  outline-offset: -2px;
+}
+
+/* The selected tab's marker line, straddling the photo's edge. Multiplied, so it reads as ink on the plastic and the page alike. */
+.dividers__mark {
+  position: absolute;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  animation: 0.4s var(--ease-out) both;
+}
+
+@keyframes dividers-swipe-right { from { clip-path: inset(0 100% 0 0); } }
+@keyframes dividers-swipe-up { from { clip-path: inset(100% 0 0 0); } }
+
+/* Wide: down the binder's left edge, outside it, so the cards stay centred. */
+@media (min-width: 1040px) {
+  .dividers {
+    position: absolute;
+    top: calc(-6px * var(--scale));
+    right: calc(100% + 8px * var(--scale));
+    height: calc(1124px * var(--scale));
+    aspect-ratio: 94 / 1240;
+  }
+
+  .dividers__sheet { height: 100%; }
+
+  .dividers__tab {
+    top: var(--from);
+    left: 23%;
+    width: 63%;
+    height: calc(var(--to) - var(--from));
+  }
+
+  .dividers__mark {
+    top: var(--from);
+    left: calc(100% - var(--inside));
+    height: calc(var(--to) - var(--from));
+    animation-name: dividers-swipe-up;
+  }
+}
+
+/* Narrow: along the top of the cards, scrolling sideways. */
+@media (max-width: 1039px) {
+  /* The gap below is padding, not margin, so the underline can hang into it without being scrolled away. */
+  .dividers {
+    padding-bottom: calc(14px * var(--scale));
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .dividers::-webkit-scrollbar { display: none; }
+
+  /* As wide as the cards, but never so narrow the tabs get too small to read. */
+  .dividers__sheet {
+    width: max(100%, 560px);
+    aspect-ratio: 1240 / 94;
+  }
+
+  .dividers__tab {
+    top: 22%;
+    left: var(--from);
+    width: calc(var(--to) - var(--from));
+    height: 63%;
+  }
+
+  .dividers__mark {
+    top: calc(100% - var(--inside));
+    left: var(--from);
+    width: calc(var(--to) - var(--from));
+    animation-name: dividers-swipe-right;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dividers__mark { animation: none; }
+}

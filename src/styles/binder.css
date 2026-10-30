@@ -37,6 +37,16 @@
   transform: translate(-50%, -50%) translateY(var(--lift)) rotate(var(--turn)) scale(var(--scale)) rotateY(var(--flip));
 }
 
+/* An empty pocket, so a short section still fills the page. */
+.binder__sleeve {
+  width: 252px;
+  height: 352px;
+  border-radius: 12px;
+  background:
+    linear-gradient(118deg, rgb(255 255 255 / 0) 30%, rgb(255 255 255 / 0.9) 42%, rgb(255 255 255 / 0) 54%),
+    #f8f7f4;
+}
+
 /* Sealed cards never flip, so they stay flat: a 3D transform would put their blur on the GPU. */
 .binder__pocket > .sealed {
   transform: translate(-50%, -50%) rotate(var(--tilt)) scale(var(--scale));
@@ -106,6 +116,9 @@
   }
 
   .binder__pocket:has(.binder__flip) { order: -1; }
+
+  /* One column has no page to fill. */
+  .binder__pocket:has(> .binder__sleeve) { display: none; }
 }
 
 @media (max-width: 359px) {
