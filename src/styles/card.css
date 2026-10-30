@@ -281,7 +281,7 @@
   display: flex;
   justify-content: space-between;
   flex: none;
-  height: 23px;
+  height: 26px;
   padding: 0 2px;
 }
 
@@ -297,7 +297,7 @@
 
 .card__stat dd {
   min-height: 10px;
-  margin: 0;
+  margin: 2px 0 0;
   font: 700 8px/10px var(--font-body);
 }
 
