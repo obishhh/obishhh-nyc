@@ -1,6 +1,7 @@
 import { knownType, typeName } from '../data/types.js';
 import { h, svg } from '../lib/dom.js';
 import { energyGlyphs } from '../lib/glyphs.js';
+import { photo } from '../lib/looks.js';
 import { safeImage } from '../lib/markdown.js';
 import { HAND, scribble } from '../lib/scrawl.js';
 import { seeded } from '../lib/seeded.js';
@@ -79,16 +80,16 @@ export function noteCard({ type: given, text, date, number }) {
 }
 
 // A Snapshot: a photo as a trainer card. Silver frame, a banner across the top, the caption as its rule.
-export function snapshotCard({ title, photo, text, place, date, number }) {
+export function snapshotCard({ title, photo: picked, text, place, date, number }) {
   const when = day(date, { month: 'short', day: 'numeric' });
-  const { src, alt, position } = photo && typeof photo === 'object' ? photo : {};
+  const { src, alt, position, look } = picked && typeof picked === 'object' ? picked : {};
   const picture = safeImage(src ?? '');
   return h('article', { class: 'card snapshot', dataset: { finish: 'standard' }, 'aria-label': title },
     h('div', { class: 'card__panel' },
       h('p', { class: 'snapshot__banner' }, 'Snapshot'),
       h('h2', { class: 'card__title' }, title),
       h('figure', { class: 'card__art snapshot__art' },
-        picture && h('img', { src: picture, alt: alt || title || '', decoding: 'async', style: position && { 'object-position': position } })),
+        picture && photo(picture, { alt: alt || title || '', position, look })),
       h('p', { class: 'snapshot__text' }, text),
       h('p', { class: 'snapshot__rule' }, 'Play as many Snapshots as you like. Nobody’s counting.'),
       smallPrint(['Photo.', place && ` ${place},`, when && ` ${when}.`].filter(Boolean).join(''), number),

@@ -189,11 +189,16 @@
   box-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
 }
 
-.card__art img {
+.card__art img,
+.card__art .look {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
+/* The pixel looks are drawn small and shown big, every pixel a hard square. */
+.look--pixelated { image-rendering: pixelated; }
 
 .card[data-finish='holo'] .card__art::after {
   content: '';

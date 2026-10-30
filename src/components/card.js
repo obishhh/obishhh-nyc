@@ -1,5 +1,6 @@
 import { knownType } from '../data/types.js';
 import { h } from '../lib/dom.js';
+import { photo } from '../lib/looks.js';
 import { safeImage } from '../lib/markdown.js';
 import { battleStats } from './battle-stats.js';
 import { energy } from './energy.js';
@@ -21,11 +22,9 @@ function nameBar({ title, minutes, type }) {
   );
 }
 
-function artwork({ src, alt, position }) {
+function artwork({ src, alt, position, look }) {
   const picture = safeImage(src ?? '');
-  return h('figure', { class: 'card__art' },
-    picture && h('img', { src: picture, alt, width: 202, height: 128, decoding: 'async', style: position && { 'object-position': position } }),
-  );
+  return h('figure', { class: 'card__art' }, picture && photo(picture, { alt, position, look, width: 202, height: 128 }));
 }
 
 function dexStrip({ dex, firstPrint }) {

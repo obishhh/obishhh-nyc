@@ -1,6 +1,7 @@
 import { licenses } from '../../src/data/licenses.js';
 import { h } from '../../src/lib/dom.js';
-import { dropdown, row, text } from './fields.js';
+import { LOOKS } from '../../src/lib/looks.js';
+import { dropdown, row, select, text } from './fields.js';
 import { focusPicker } from './focus-picker.js';
 
 const NO_CREDIT = { alt: '', illustrator: 'obishhh', title: '', author: '', license: '', source: '' };
@@ -28,11 +29,13 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
   const uploader = h('label', { class: 'button button--quiet art__upload' }, file, uploadLabel);
   const license = dropdown('art.license', LICENSE_CHOICES);
   const focusRow = row('Focus', focus.root);
+  const lookRow = select('art.look', 'Filter', LOOKS, { hint: 'Drawn on the card as it shows.' });
   const root = h('div', { class: 'art' }, grid, uploader);
 
   const rows = [
     row('Image', root),
     focusRow,
+    lookRow,
     text('art.alt', 'Alt text', { placeholder: 'Describe the picture' }),
     text('art.illustrator', 'Illustrator', { placeholder: 'obishhh', maxlength: 40 }),
     text('art.title', 'Work', { placeholder: 'Title of the original' }),
@@ -56,6 +59,7 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
 
   function showFocus(src) {
     focusRow.hidden = !src;
+    lookRow.hidden = !src;
     focus.show(src);
   }
 

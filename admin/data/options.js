@@ -31,6 +31,6 @@ export function blankCard(cards) {
     flavor: null,
     slug: '',
     body: '',
-    art: { src: '', alt: '', illustrator: '', position: '', title: '', author: '', license: '', source: '' },
+    art: { src: '', alt: '', illustrator: '', position: '', look: '', title: '', author: '', license: '', source: '' },
   };
 }
