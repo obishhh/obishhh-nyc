@@ -281,7 +281,7 @@
   display: flex;
   justify-content: space-between;
   flex: none;
-  height: 18px;
+  height: 22px;
   padding: 0 2px;
 }
 
@@ -308,16 +308,15 @@
   gap: 1.5px;
 }
 
-.card__stat-value .energy[data-size='small'] {
-  width: 10px;
-  height: 10px;
-}
-
 .card__flavor {
   padding: 3px 5px;
   border: 0.75px solid var(--foil-700);
   font: italic 700 8.5px/11px var(--font-body);
 }
+
+/* A little clear of the stats, and down into the panel's bottom margin, nearer the edge as on a real card.
+   (Past `.card p`'s reset.) */
+.card__panel .card__flavor { margin: 3px 0 -4px; }
 
 .card__footer {
   display: flex;
