@@ -13,7 +13,6 @@ import { trackPointer } from '../lib/pointer.js';
 import { revealWhenReady } from '../lib/reveal.js';
 import { handwriting } from '../lib/scrawl.js';
 import { sections } from '../lib/sections.js';
-import { shuffle } from '../lib/shuffle.js';
 
 const POCKETS = 9;
 // On a computer the window shows two rows and a peek of the third, so the cards stay a good size.
@@ -46,7 +45,7 @@ function tabbed(page, cards) {
     active: start,
     onSelect(value) {
       strip.select(value);
-      shuffle({ cards: pockets, fill: sleeves }, () => show(value));
+      show(value);
       const query = new URLSearchParams(location.search);
       if (value === ALL) query.delete('filed');
       else query.set('filed', value);
