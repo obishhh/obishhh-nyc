@@ -187,3 +187,12 @@
 @media (prefers-reduced-motion: reduce) {
   .tile .binder__pocket > .card { transition: none; }
 }
+
+/* The deck box, under the binder. */
+.deck-shelf { margin-top: 88px; }
+.deck-shelf .shelf__summary { margin-bottom: 32px; }
+
+.deck-shelf__actions {
+  display: flex;
+  gap: 8px;
+}

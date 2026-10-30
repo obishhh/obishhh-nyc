@@ -11,6 +11,9 @@ const SEALED_FACE = {
   flavor: null,
 };
 
+// The deck box's published notes and Snapshots, newest first.
+export const loadDeck = () => rpc('deck');
+
 // A published card with no text has no article, so it just flips.
 export const loadBinder = async () =>
   (await rpc('binder')).map((data) =>

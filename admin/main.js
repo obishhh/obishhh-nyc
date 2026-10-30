@@ -1,16 +1,20 @@
 import { notice } from '../src/components/notice.js';
 import { library } from '../src/data/art.js';
 import { h } from '../src/lib/dom.js';
+import { deckEditor } from './components/deck-editor.js';
+import { deckShelf } from './components/deck-shelf.js';
 import { door } from './components/door.js';
 import { editor } from './components/editor.js';
 import { shelf } from './components/shelf.js';
 import { topbar } from './components/topbar.js';
 import { currentSession, isAdmin, signOut } from './lib/auth.js';
 import { deleteCard, listCards, listUploads, reorderCards, saveCard, uploadImage } from './lib/cards.js';
+import { deleteDeckCard, listDeck, saveDeckCard } from './lib/deck.js';
 import { prepareImage } from './lib/image.js';
 import { paintSealed, sealedKey } from './lib/sealed-image.js';
 
 let cards = [];
+let deck = [];
 
 async function upload(file, options) {
   let image;
@@ -36,25 +40,41 @@ const workbench = editor({
   onSave: save,
   onDelete: remove,
 });
+const box = deckShelf();
+const deckBench = deckEditor({
+  deck: () => deck,
+  uploadPhoto: (file) => upload(file, { folder: 'deck' }),
+  onSave: saveToDeck,
+  onDelete: removeFromDeck,
+});
 
 const view = h('main', { class: 'room__view' });
 const room = h('div', { class: 'room', hidden: true }, topbar({ onSignOut: leave }), view);
 document.body.append(entrance.root, room);
 
-// Routes: #/ is the binder, #/new a fresh card, #/card/<id> an existing one.
+// Routes: #/ is the binder and the deck box, #/new a fresh card, #/card/<id> an existing one,
+// #/deck/new-note or #/deck/new-snapshot a fresh deck card, #/deck/<id> an existing one.
 let shown = location.hash;
 
 function render() {
   const hash = location.hash;
   const id = hash.match(/^#\/card\/(.+)$/)?.[1];
   const record = id && cards.find((data) => data.id === id);
+  const deckId = hash.match(/^#\/deck\/(.+)$/)?.[1];
+  const fresh = deckId?.match(/^new-(note|snapshot)$/)?.[1];
+  const entry = deckId && deck.find((data) => data.id === deckId);
   if (hash === '#/new' || record) {
     workbench.load(record || null);
     view.replaceChildren(workbench.root);
+  } else if (fresh || entry) {
+    deckBench.load(entry || null, fresh);
+    view.replaceChildren(deckBench.root);
   } else {
     binder.update(cards);
-    view.replaceChildren(binder.root);
+    box.update(deck);
+    view.replaceChildren(binder.root, box.root);
     if (id) binder.flash('That card isn’t in the binder any more.', true);
+    if (deckId) binder.flash('That card isn’t in the deck any more.', true);
   }
   scrollTo(0, 0);
 }
@@ -65,8 +85,9 @@ function go(hash) {
   render();
 }
 
-const editing = () => view.contains(workbench.root);
-const unsaved = () => editing() && workbench.dirty;
+const bench = () => [workbench, deckBench].find((each) => view.contains(each.root));
+const editing = () => Boolean(bench());
+const unsaved = () => Boolean(bench()?.dirty);
 const canLeave = () => !unsaved() || confirm('You have unsaved changes. Ditch them?');
 
 addEventListener('hashchange', () => {
@@ -106,6 +127,22 @@ async function remove({ id }) {
   binder.flash('Deleted.');
 }
 
+async function saveToDeck(data, status, id) {
+  const saved = await saveDeckCard(id, data, status);
+  deck = (id ? deck.map((other) => (other.id === id ? saved : other)) : [saved, ...deck])
+    .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
+  shown = `#/deck/${saved.id}`;
+  history.replaceState(null, '', shown);
+  return saved;
+}
+
+async function removeFromDeck({ id }) {
+  await deleteDeckCard(id);
+  deck = deck.filter((other) => other.id !== id);
+  go('#/');
+  binder.flash('Taken out of the deck.');
+}
+
 async function reorder(ids) {
   const before = cards;
   const byId = new Map(cards.map((data) => [data.id, data]));
@@ -120,6 +157,9 @@ async function reorder(ids) {
   }
 }
 
+// Notes are written in marker, so its font has to be in before they're drawn (but don't wait forever).
+const handwriting = () => Promise.race([document.fonts.load('40px "Reenie Beanie"'), new Promise((resolve) => setTimeout(resolve, 3000))]);
+
 async function enter() {
   if (!(await isAdmin())) {
     await signOut();
@@ -130,7 +170,7 @@ async function enter() {
   room.hidden = false;
   view.replaceChildren(notice('Loading the cards…'));
   try {
-    cards = await listCards();
+    [cards, deck] = await Promise.all([listCards(), listDeck(), handwriting()]);
   } catch (error) {
     view.replaceChildren(notice(`Couldn’t load the cards: ${error.message}`));
     return;
@@ -144,6 +184,7 @@ async function leave() {
   await signOut();
   room.hidden = true;
   cards = [];
+  deck = [];
   view.replaceChildren();
   entrance.show();
 }
@@ -151,7 +192,7 @@ async function leave() {
 document.addEventListener('keydown', (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === 's' && editing()) {
     event.preventDefault();
-    workbench.save();
+    bench().save();
   }
 });
 

@@ -1,6 +1,6 @@
 import { seeded } from './seeded.js';
 
-const INK = [30, 27, 38];
+export const INK = [30, 27, 38];
 const DEG = Math.PI / 180;
 
 // The same wobble (-1 to 1) for the same text every time, so handwriting doesn't change on reload.
@@ -90,6 +90,37 @@ export function swipe(pen, { length, at, weight, wobble }) {
     pen.lineTo(...point((step + 1) / steps));
     pen.stroke();
   }
+}
+
+// Writes a few lines in marker, wrapped to a width, on a clear canvas at the screen's resolution. Lay it on with multiply.
+export function scribble(text, { hand, size, width }) {
+  const ratio = devicePixelRatio > 1 ? 2 : 1;
+  const scale = size / EM;
+  const pen = document.createElement('canvas').getContext('2d');
+  pen.font = `${EM}px "${hand}"`;
+  // Letters come out a little wider than the font sets them, so wrap a little early.
+  const lines = [];
+  for (const word of text.split(' ')) {
+    const line = lines.at(-1);
+    if (line && pen.measureText(`${line} ${word}`).width * 1.12 * scale <= width) lines[lines.length - 1] = `${line} ${word}`;
+    else lines.push(word);
+  }
+  const leading = size * 0.95;
+  const sheet = Object.assign(document.createElement('canvas'), {
+    width: Math.ceil(width * ratio),
+    height: Math.ceil((lines.length * leading + size * 0.5) * ratio),
+  });
+  const ink = sheet.getContext('2d');
+  lines.forEach((line, index) => {
+    const word = scrawl(line, { hand });
+    const fit = Math.min(scale * ratio, sheet.width / word.width);
+    const [w, h] = [word.width * fit, word.height * fit];
+    const drift = (seeded(`${line}:drift`) * 2 - 1) * Math.max(0, sheet.width - w) * 0.3;
+    ink.drawImage(word, (sheet.width - w) / 2 + drift, ((index + 0.5) * leading + size * 0.25) * ratio - h / 2, w, h);
+  });
+  roughen(sheet, random(seeded(text)), INK);
+  sheet.style.width = `${width}px`;
+  return sheet;
 }
 
 // Puts a written word on its tab: as big as it was written, shrunk only if it would run past the tab's face.

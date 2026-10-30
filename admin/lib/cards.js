@@ -2,7 +2,7 @@ import { supabase } from './supabase.js';
 
 const BUCKET = 'card-art';
 
-function unwrap({ data, error }) {
+export function unwrap({ data, error }) {
   if (error) throw error;
   return data;
 }

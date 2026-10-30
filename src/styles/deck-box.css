@@ -1,0 +1,231 @@
+/* A photo of a real deck box, cut out roughly and stuck on a block of blue. The newest card sits inside,
+   between the blue and the box's front, and rises out past the top of the block when you go for it. */
+.deck-box {
+  --peek-scale: 0.5;
+
+  position: relative;
+  display: block;
+  aspect-ratio: 688 / 860;
+  padding: 0;
+  border: 0;
+  background: rgb(40 160 255);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deck-box:focus-visible {
+  outline: 2px solid var(--ink-900);
+  outline-offset: 4px;
+}
+
+.deck-box__front,
+.deck-box__ink {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Marker on yellow plastic. */
+.deck-box__ink { mix-blend-mode: multiply; }
+
+.deck-box__peek {
+  position: absolute;
+  top: 2.5%;
+  left: 27%;
+  width: 46%;
+  aspect-ratio: 252 / 352;
+  transform: rotate(-3deg);
+  transform-origin: 50% 100%;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.deck-box__peek > .card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(var(--peek-scale));
+  transform-origin: 0 0;
+}
+
+.deck-box:hover .deck-box__peek,
+.deck-box:focus-visible .deck-box__peek { transform: translateY(-34%) rotate(-7deg); }
+
+/* The deck box: off the binder's right edge on a computer, mirroring the tabs; in the header's corner otherwise. */
+.tabbed > .deck-box { position: absolute; }
+
+@media (min-width: 1040px) {
+  .tabbed > .deck-box {
+    top: calc(56px * var(--scale));
+    left: calc(100% + 10px + 12px * var(--scale));
+    width: min(calc(280px * var(--scale)), calc((100vw - var(--binder-width)) / 2 - 36px));
+  }
+}
+
+/* Narrower: in the header's corner, hanging down over the end of the tab strip, where the last tabs are blank. */
+@media (max-width: 1039px) {
+  .tabbed > .deck-box {
+    --box-width: 124px;
+
+    top: calc(max(var(--binder-width), 560px) * 94 / 1240 + 4px - var(--box-width) * 860 / 688);
+    right: 0;
+    width: var(--box-width);
+  }
+}
+
+@media (max-width: 699px) {
+  .tabbed > .deck-box { --box-width: 104px; }
+}
+
+/* Phones: bigger, and hanging off past the cards into the gutter, short of the screen's edge. */
+@media (max-width: 519px) {
+  .tabbed > .deck-box {
+    --box-width: 96px;
+
+    right: calc(-1 * min(28px, (100vw - var(--binder-width)) / 2 - 8px));
+  }
+}
+
+/* Opened: the cards tipped out over the page. */
+.deck-spread {
+  --note-scale: 0.8;
+
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 40px 16px 64px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.deck-spread::backdrop {
+  background: rgb(255 255 255 / 0.84);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.deck-spread[open],
+.deck-spread[open]::backdrop { animation: page-in 0.25s var(--ease-out); }
+
+html:has(.deck-spread[open]) { overflow: hidden; }
+
+.deck-spread__bar,
+.deck-spread__cards {
+  width: min(100%, calc(4 * 252px * var(--note-scale) + 72px));
+  margin: 0 auto;
+}
+
+.deck-spread__bar {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.deck-spread__title {
+  margin: 0;
+  font: 700 22px/1 var(--font-display);
+}
+
+.deck-spread__count {
+  margin: 0;
+  color: var(--page-muted);
+  font: 500 12px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.deck-spread__close {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--page-rule);
+  border-radius: 50%;
+  background: var(--page);
+  color: var(--ink-900);
+  cursor: pointer;
+}
+
+.deck-spread__close:hover { background: var(--page-wash); }
+.deck-spread__close:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 2px; }
+
+.deck-spread__icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Tight, so the cards' jitter lands them a little over each other. */
+.deck-spread__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, calc(252px * var(--note-scale)));
+  justify-content: center;
+  gap: 2px 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.deck-spread__card {
+  --shift: var(--dx);
+
+  position: relative;
+  width: calc(252px * var(--note-scale));
+  height: calc(352px * var(--note-scale));
+  transform: translate(var(--shift), var(--dy)) rotate(var(--tilt));
+  transition: transform 0.3s var(--ease-out);
+  animation: tip-out 0.5s var(--ease-out) backwards;
+  animation-delay: calc(var(--index) * 45ms);
+}
+
+.deck-spread__card:hover,
+.deck-spread__card.is-picked {
+  z-index: 1;
+  transform: translate(var(--shift), calc(var(--dy) - 8px)) rotate(0deg) scale(1.03);
+}
+
+.deck-spread__card:hover { z-index: 2; }
+
+.deck-spread__card > .card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(var(--note-scale));
+  transform-origin: 0 0;
+}
+
+@keyframes tip-out {
+  from {
+    opacity: 0;
+    transform: translate(var(--shift), calc(var(--dy) - 36px)) rotate(calc(var(--tilt) * -2)) scale(0.94);
+  }
+}
+
+@media (max-width: 519px) {
+  .deck-spread {
+    --note-scale: 1;
+
+    padding-top: 24px;
+    overflow-x: clip;
+  }
+
+  /* One column would just be a queue, so zigzag down it, each card landing over the last one's foot. */
+  .deck-spread__cards { gap: 0; }
+  .deck-spread__card { --shift: calc(var(--side) * 26px + var(--dx)); }
+  .deck-spread__card + .deck-spread__card { margin-top: -40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-box__peek,
+  .deck-spread__card { transition: none; }
+
+  .deck-spread__card { animation: none; }
+}

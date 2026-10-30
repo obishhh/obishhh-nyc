@@ -1,0 +1,54 @@
+import { h } from '../lib/dom.js';
+import { scribble } from '../lib/scrawl.js';
+import { energy } from './energy.js';
+
+const COPYRIGHT = '©2026 obishhh.nyc';
+const HAND = 'Reenie Beanie';
+
+const energyName = (type) => `${type[0].toUpperCase()}${type.slice(1)} Energy`;
+// Shorter notes get written bigger, the way you would on a card.
+const markerSize = (text) => (text.length <= 32 ? 40 : text.length <= 72 ? 31 : text.length <= 110 ? 26 : 22);
+// Dates come as 'YYYY-MM-DD'. Midday, so no timezone tips them into the day before.
+const day = (date, options) => (date ? new Date(`${date}T12:00:00`).toLocaleDateString('en-US', options) : '');
+
+function footer(left, number) {
+  return h('footer', { class: 'card__footer' },
+    h('span', {}, left),
+    h('span', {}, COPYRIGHT),
+    h('span', { class: 'card__number' }, number),
+  );
+}
+
+// A note: a blank energy card somebody wrote on in marker.
+export function noteCard({ type, text, date, number }) {
+  const ink = text ? scribble(text, { hand: HAND, size: markerSize(text), width: 200 }) : null;
+  ink?.classList.add('note-card__ink');
+  ink?.setAttribute('aria-hidden', 'true');
+  return h('article', { class: 'card note-card', dataset: { type, finish: 'standard' }, 'aria-label': text },
+    h('div', { class: 'card__panel' },
+      h('p', { class: 'card__stage' }, energyName(type)),
+      h('div', { class: 'note-card__symbol' }, energy(type, 'large')),
+      h('div', { class: 'note-card__writing' }, ink),
+      h('p', { class: 'card__dex' }, `Posted ${day(date, { month: 'short', day: 'numeric', year: 'numeric' })}.`),
+    ),
+    footer('Basic Note', number),
+  );
+}
+
+// A Snapshot: a photo as a trainer card. Silver frame, a banner across the top, the caption as its rule.
+export function snapshotCard({ title, photo, text, place, date, number }) {
+  const when = day(date, { month: 'short', day: 'numeric' });
+  return h('article', { class: 'card snapshot', dataset: { finish: 'standard' }, 'aria-label': title },
+    h('div', { class: 'card__panel' },
+      h('p', { class: 'snapshot__banner' }, 'Snapshot'),
+      h('h2', { class: 'card__title' }, title),
+      h('figure', { class: 'card__art snapshot__art' },
+        photo.src && h('img', { src: photo.src, alt: photo.alt, decoding: 'async', style: photo.position && { 'object-position': photo.position } })),
+      h('p', { class: 'snapshot__text' }, text),
+      h('p', { class: 'snapshot__rule' }, 'Play as many Snapshots as you like. Nobody’s counting.'),
+    ),
+    footer(['Photo.', place && ` ${place},`, when && ` ${when}.`].filter(Boolean).join(''), number),
+  );
+}
+
+export const deckCard = (entry) => (entry.kind === 'snapshot' ? snapshotCard(entry) : noteCard(entry));

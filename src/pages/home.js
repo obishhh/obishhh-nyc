@@ -1,9 +1,11 @@
 import { binder } from '../components/binder.js';
 import { colophon } from '../components/colophon.js';
+import { deckBox } from '../components/deck-box.js';
+import { deckCard } from '../components/deck-cards.js';
 import { dividers, WIDE } from '../components/dividers.js';
 import { masthead } from '../components/masthead.js';
 import { notice } from '../components/notice.js';
-import { loadBinder } from '../lib/cards.js';
+import { loadBinder, loadDeck } from '../lib/cards.js';
 import { h } from '../lib/dom.js';
 import { enableFlip } from '../lib/flip.js';
 import { enableReading } from '../lib/reading.js';
@@ -73,7 +75,17 @@ function fitToWindow(page) {
   fit();
 }
 
+// The deck box only turns up once something's in it. A deck that won't load just stays away.
+async function deck() {
+  const entries = await loadDeck().catch(() => []);
+  if (!entries.length) return null;
+  // Notes are written in marker, so wait for its font (but not forever).
+  await Promise.race([document.fonts.load('40px "Reenie Beanie"'), new Promise((resolve) => setTimeout(resolve, 3000))]);
+  return deckBox(entries, { make: deckCard });
+}
+
 async function binderPage() {
+  const decking = deck();
   let cards;
   try {
     cards = await loadBinder();
@@ -86,7 +98,10 @@ async function binderPage() {
   trackPointer(page, '.card');
   enableReading(page, cards);
   enableFlip(page, '.binder__flip');
-  return tabbed(page, cards);
+  const holder = tabbed(page, cards);
+  const box = await decking;
+  if (box) holder.append(box);
+  return holder;
 }
 
 const main = h('main', { class: 'page' });
