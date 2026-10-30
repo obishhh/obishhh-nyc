@@ -1,6 +1,7 @@
 import { deckCard } from '../../src/components/deck-cards.js';
 import { h, svg } from '../../src/lib/dom.js';
 import { trackPointer } from '../../src/lib/pointer.js';
+import { LOOKS } from '../../src/lib/looks.js';
 import { TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { formatDate } from '../lib/format.js';
@@ -26,7 +27,7 @@ function blankDeckCard(kind, deck) {
   const numbers = deck.map(({ number }) => parseInt(number, 10)).filter(Number.isFinite);
   const next = String(Math.max(0, ...numbers) + 1).padStart(3, '0');
   const set = deck.find(({ number }) => number.includes('/'))?.number.split('/')[1] ?? '100';
-  return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', place: '', photo: { src: '', alt: '', position: '' }, date: today() };
+  return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', place: '', photo: { src: '', alt: '', position: '', look: '' }, date: today() };
 }
 
 // The photo: upload one, then pick what stays in frame.
@@ -36,6 +37,7 @@ function photoRows({ uploadPhoto, onError }) {
   const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
   const label = h('span', {}, 'Upload a photo…');
   const focusRow = row('Focus', focus.root);
+  const lookRow = select('photo.look', 'Filter', LOOKS, { hint: 'Drawn on the card as it shows.' });
   let uploading = false;
   file.addEventListener('change', async () => {
     const [picked] = file.files;
@@ -57,9 +59,10 @@ function photoRows({ uploadPhoto, onError }) {
   return {
     file,
     focus,
-    rows: [row('Photo', h('div', {}, h('label', { class: 'button button--quiet art__upload' }, file, label), src)), focusRow],
+    rows: [row('Photo', h('div', {}, h('label', { class: 'button button--quiet art__upload' }, file, label), src)), focusRow, lookRow],
     show(value) {
       focusRow.hidden = !value;
+      lookRow.hidden = !value;
       focus.show(value);
       if (!uploading) label.textContent = value ? 'Upload a different photo…' : 'Upload a photo…';
     },
@@ -139,7 +142,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
 
   // What's in the form, tidied: trimmed, with a blank date read as today.
   function current() {
-    const values = { photo: { src: '', alt: '', position: '' }, ...readForm(form) };
+    const values = { photo: { src: '', alt: '', position: '', look: '' }, ...readForm(form) };
     const data = { ...record, ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, trim(value)])), kind };
     data.photo = Object.fromEntries(Object.entries(values.photo).map(([key, value]) => [key, trim(value)]));
     data.date ||= today();
@@ -238,7 +241,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
       build();
     }
     const data = next ? structuredClone(next) : blankDeckCard(kind, deck());
-    data.photo = { src: '', alt: '', position: '', ...data.photo };
+    data.photo = { src: '', alt: '', position: '', look: '', ...data.photo };
     writeForm(form, data);
     photo?.focus.sync();
     snapshot = editable(current());
