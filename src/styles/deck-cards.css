@@ -130,6 +130,9 @@
 
 .note-card[data-type='plain'] .note-card__wear { box-shadow: inset 0 0 10px 1px rgb(255 255 255 / 0.2); }
 
+/* White scuffs shout on a saturated card, so notes keep only their corners, grain and the odd crease. */
+.note-card .wear[data-scratched='true'] { --wear-scratch-img: none; }
+
 /* Psychic: a band faded across the middle, like it sat half out of a sleeve. */
 .note-card[data-type='ghost'] .note-card__wear {
   background:
