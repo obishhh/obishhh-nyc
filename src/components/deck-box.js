@@ -58,6 +58,9 @@ function label(text) {
 // How big a card comes up to read: most of the window's height, but never past this many pixels tall.
 const READ_HEIGHT = 0.8;
 const READ_MOST = 640;
+// When a card went up, in New York time on a 24-hour clock, as it shows under a raised card: just the time.
+const clock = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit', minute: '2-digit' });
+const timeOf = (at) => (at && !Number.isNaN(Date.parse(at)) ? clock.format(new Date(at)) : '');
 
 // The cards, tipped out of the box onto the desk: roughly in rows, but each landed a little off and
 // on top of the one before. Tap one and it comes up front and centre to read; tap it there and it's flipped over
@@ -65,6 +68,7 @@ const READ_MOST = 640;
 function spread(entries, make, title, onClose) {
   const close = h('button', { class: 'deck-spread__close', type: 'button', 'aria-label': 'Put the cards back' }, svg(CLOSE));
   const lower = h('button', { class: 'deck-spread__close deck-spread__lower', type: 'button', 'aria-label': 'Put this card down', hidden: true }, svg(CLOSE));
+  const stamp = h('p', { class: 'deck-spread__time', hidden: true });
   const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1 },
     h('header', { class: 'deck-spread__bar' },
       h('div', { class: 'deck-spread__heading' },
@@ -77,7 +81,7 @@ function spread(entries, make, title, onClose) {
       entries.map((entry, index) => {
         const toss = (key, most) => ((seeded(`${entry.id ?? index}:${key}`) * 2 - 1) * most).toFixed(1);
         return h('li', {
-          class: 'deck-spread__card', tabindex: 0,
+          class: 'deck-spread__card', tabindex: 0, dataset: { time: timeOf(entry.at) },
           style: {
             '--tilt': `${toss('tilt', SCATTER.tilt)}deg`, '--dx': `${toss('x', SCATTER.x)}px`, '--dy': `${toss('y', SCATTER.y)}px`,
             '--side': index % 2 ? '1' : '-1', '--index': String(index),
@@ -86,6 +90,7 @@ function spread(entries, make, title, onClose) {
       }),
     ),
     lower,
+    stamp,
   );
   let openedAt = 0;
   let pressedOnDesk = false;
@@ -126,6 +131,8 @@ function spread(entries, make, title, onClose) {
     card.classList.add('is-front');
     dialog.classList.add('has-front');
     lower.hidden = false;
+    stamp.textContent = card.dataset.time;
+    stamp.hidden = !card.dataset.time;
   }
 
   // Where the raised card goes: worked out from its spot as laid out, without its tilt or nudge.
@@ -150,6 +157,9 @@ function spread(entries, make, title, onClose) {
     const top = Math.max(tall / 2 - (spot.height * scale) / 2 - 22, 6);
     lower.style.setProperty('left', `${left.toFixed(1)}px`);
     lower.style.setProperty('top', `${top.toFixed(1)}px`);
+    // The time it went up, just under the card.
+    stamp.style.setProperty('top', `${(tall / 2 + (spot.height * scale) / 2 + 12).toFixed(1)}px`);
+    stamp.style.setProperty('width', `${wide}px`);
   }
 
   // Back to its spot on the desk. It stays on top of the pile until it's landed.
@@ -161,6 +171,7 @@ function spread(entries, make, title, onClose) {
     card.classList.remove('is-front');
     dialog.classList.remove('has-front');
     lower.hidden = true;
+    stamp.hidden = true;
     if (instantly) requestAnimationFrame(() => card.style.removeProperty('transition'));
   }
   lower.addEventListener('click', (event) => {
