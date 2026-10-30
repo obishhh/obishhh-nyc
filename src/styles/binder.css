@@ -136,3 +136,12 @@
   .binder__flip { transition: none; }
   .binder__pocket:hover > .binder__flip { --lift: 0px; --turn: var(--tilt); }
 }
+
+/* Switching tabs (see shuffle.js): the page itself changes at once, and only the pockets move, at an easy pace. */
+.is-shuffling::view-transition-old(root) { display: none; }
+.is-shuffling::view-transition-new(root) { animation: none; }
+
+.is-shuffling::view-transition-group(*) {
+  animation-duration: 0.38s;
+  animation-timing-function: var(--ease-out);
+}

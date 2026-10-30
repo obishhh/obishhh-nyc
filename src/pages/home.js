@@ -13,6 +13,7 @@ import { trackPointer } from '../lib/pointer.js';
 import { revealWhenReady } from '../lib/reveal.js';
 import { handwriting } from '../lib/scrawl.js';
 import { sections } from '../lib/sections.js';
+import { shuffle } from '../lib/shuffle.js';
 
 const POCKETS = 9;
 // On a computer the window shows two rows and a peek of the third, so the cards stay a good size.
@@ -21,7 +22,6 @@ const ROWS_SHOWN = 2.25;
 const SMALLEST = 0.5;
 // The All tab's value: blank, which no section can be, so a section called "all" can't clash with it.
 const ALL = '';
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 const sleeve = () =>
   h('li', { class: 'binder__pocket', 'aria-hidden': 'true', style: { '--tilt': '0deg' } }, h('span', { class: 'binder__sleeve' }));
@@ -46,8 +46,7 @@ function tabbed(page, cards) {
     active: start,
     onSelect(value) {
       strip.select(value);
-      show(value);
-      if (!reducedMotion.matches) page.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' });
+      shuffle({ cards: pockets, fill: sleeves }, () => show(value));
       const query = new URLSearchParams(location.search);
       if (value === ALL) query.delete('filed');
       else query.set('filed', value);
