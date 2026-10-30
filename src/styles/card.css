@@ -112,12 +112,14 @@
 
 /* The silver badge where a real card says BASIC. */
 .card__stage-badge {
-  padding: 0 6px 0 5px;
+  /* Set to look centred, not to measure it: a touch more on the left for the italic's lean, and on the bottom for the
+     room under lowercase letters. */
+  padding: 0 5px 1px 6px;
   border: 0.5px solid rgb(0 0 0 / 0.35);
   border-radius: 6px;
   background: linear-gradient(180deg, #fbfbfa, #c9c9c6 55%, #e6e6e3);
   box-shadow: inset 0 0.5px 0 #ffffff, 0 0.5px 1px rgb(0 0 0 / 0.25);
-  font: italic 700 8px/10px var(--font-body);
+  font: italic 700 8px/9px var(--font-body);
 }
 
 
