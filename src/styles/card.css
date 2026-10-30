@@ -54,7 +54,7 @@
   flex-direction: column;
   gap: 4px;
   height: 321px;
-  padding: 9px 11px 10px;
+  padding: 5px 11px 10px;
   border-radius: 6px;
   background:
     linear-gradient(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0) 50%, rgb(0 0 0 / 0.04)),
