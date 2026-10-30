@@ -137,7 +137,12 @@
   .binder__pocket:hover > .binder__flip { --lift: 0px; --turn: var(--tilt); }
 }
 
-/* Switching tabs (see shuffle.js): the page itself changes at once, and only the pockets move, at an easy pace. */
+/* Switching tabs (see shuffle.js): the page itself changes at once, and only the pockets move, at an easy pace.
+   Each card is pictured flat for the move, and Safari's picture shows both its faces, so the side turned away is
+   hidden until it's done. */
+.is-shuffling .binder__flip:not([aria-pressed='true']) > .card-back,
+.is-shuffling .binder__flip[aria-pressed='true'] > .card { visibility: hidden; }
+
 .is-shuffling::view-transition-old(root) { display: none; }
 .is-shuffling::view-transition-new(root) { animation: none; }
 

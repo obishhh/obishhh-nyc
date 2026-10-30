@@ -6,6 +6,7 @@ const EASE = 'cubic-bezier(0.2, 0.7, 0.2, 1)';
 const LEAVE = 170;
 const DEAL = 300;
 const STAGGER = 40;
+const HOP = 320;
 // Past this many, the rest are dealt together, so a big tab doesn't keep you waiting.
 const MOST_STAGGERED = 8;
 // How far past the window's edges a pocket still counts as on screen.
@@ -38,6 +39,7 @@ export function shuffle({ cards, fill = [] }, change) {
   pockets.forEach((pocket) => pocket.style.removeProperty('view-transition-name'));
   const before = showing();
   nameOnScreen();
+  const was = new Map([...named].map((pocket) => [pocket, pocket.getBoundingClientRect()]));
   root.classList.add('is-shuffling');
 
   const transition = document.startViewTransition(() => {
@@ -49,6 +51,7 @@ export function shuffle({ cards, fill = [] }, change) {
     .then(() => {
       const after = showing();
       let dealt = 0;
+      let hopped = 0;
       cards.forEach((card, at) => {
         if (!named.has(card)) return;
         const name = `shuffle-${at}`;
@@ -62,6 +65,13 @@ export function shuffle({ cards, fill = [] }, change) {
             delay: LEAVE * 0.6 + Math.min(dealt, MOST_STAGGERED) * STAGGER,
           });
           dealt += 1;
+        } else if (after.has(card) && before.has(card) && stayedPut(was.get(card), card.getBoundingClientRect())) {
+          // Already in the right pocket: a little lift and settle, so the switch still shows.
+          root.animate([{ transform: 'none' }, { transform: 'translateY(-8px)', offset: 0.4 }, { transform: 'none' }], {
+            pseudoElement: `::view-transition-image-pair(${name})`, duration: HOP, easing: EASE,
+            delay: Math.min(hopped, MOST_STAGGERED) * STAGGER,
+          });
+          hopped += 1;
         }
       });
     })
@@ -73,6 +83,8 @@ export function shuffle({ cards, fill = [] }, change) {
     named.forEach((each) => each.style.removeProperty('view-transition-name'));
   });
 }
+
+const stayedPut = (from, to) => from && Math.abs(from.left - to.left) < 1 && Math.abs(from.top - to.top) < 1;
 
 async function fade(page, change) {
   if (!page) return change();
