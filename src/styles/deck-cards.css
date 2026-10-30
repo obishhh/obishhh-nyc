@@ -102,6 +102,75 @@
   -webkit-mask-image: radial-gradient(circle at 50% 50%, #000000 10%, rgb(0 0 0 / 0) 72%);
 }
 
+/* A little wear on every note, a different kind for each type: grain, fading, rubbed edges,
+   scratches. It lifts the colour a touch, which helps the writing read. */
+.note-card__wear {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E %3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E %3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.8 -0.8'/%3E%3C/filter%3E %3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --speckle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E %3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='1' seed='7' stitchTiles='stitch'/%3E %3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 9 -7.2'/%3E%3C/filter%3E %3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E");
+  --scratches: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 252 352' preserveAspectRatio='none'%3E %3Cg fill='none' stroke='%23fff' stroke-linecap='round'%3E %3Cpath d='M18 60 L120 12' stroke-width='0.6' opacity='0.85'/%3E %3Cpath d='M40 170 C90 140 150 120 230 70' stroke-width='0.5' opacity='0.75'/%3E %3Cpath d='M10 250 L95 205' stroke-width='0.7' opacity='0.80'/%3E %3Cpath d='M130 330 C170 300 200 285 245 250' stroke-width='0.5' opacity='0.70'/%3E %3Cpath d='M150 120 L205 95' stroke-width='0.4' opacity='0.80'/%3E %3Cpath d='M60 300 L110 275' stroke-width='0.4' opacity='0.75'/%3E %3Cpath d='M180 200 L236 168' stroke-width='0.6' opacity='0.65'/%3E %3C/g%3E%3C/svg%3E");
+  --crease: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 252 352' preserveAspectRatio='none'%3E %3Cpath d='M168 352 C190 300 214 268 252 246' fill='none' stroke='%23fff' stroke-width='1.2' opacity='0.85'/%3E %3Cpath d='M168 352 C190 300 214 268 252 246' fill='none' stroke='%23000' stroke-width='0.6' opacity='0.15' transform='translate(1.2 1)'/%3E %3C/svg%3E");
+
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  background: var(--grain) 0 0 / 180px 180px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Grass: fine scratches, and a little fade at one corner. */
+.note-card[data-type='wire'] .note-card__wear {
+  background:
+    var(--scratches) center / 100% 100% no-repeat,
+    radial-gradient(circle at 0 0, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 45%),
+    var(--grain) 0 0 / 180px 180px;
+}
+
+/* Fire: bleached by the sun from the top corner. */
+.note-card[data-type='ember'] .note-card__wear {
+  background:
+    linear-gradient(215deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.05) 40%, rgb(255 255 255 / 0) 65%),
+    var(--grain) 40px 20px / 180px 180px;
+}
+
+/* Water: edges rubbed pale from handling. */
+.note-card[data-type='ink'] .note-card__wear {
+  background: var(--grain) 90px 60px / 180px 180px;
+  box-shadow: inset 0 0 14px 2px rgb(255 255 255 / 0.22), inset 0 0 2px 1px rgb(255 255 255 / 0.3);
+}
+
+/* Electric: an even fade, with speckle. */
+.note-card[data-type='spark'] .note-card__wear {
+  background:
+    var(--speckle) 0 0 / 120px 120px,
+    linear-gradient(rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.08)),
+    var(--grain) 30px 100px / 180px 180px;
+}
+
+/* Ground: scuffed the other way, and a bit grittier. */
+.note-card[data-type='stone'] .note-card__wear {
+  background:
+    var(--scratches) center / 100% 100% no-repeat,
+    var(--grain) 0 0 / 120px 120px,
+    var(--grain) 60px 60px / 180px 180px;
+  transform: scaleX(-1);
+}
+
+/* Psychic: a band faded across the middle, like it sat half out of a sleeve. */
+.note-card[data-type='ghost'] .note-card__wear {
+  background:
+    linear-gradient(rgb(255 255 255 / 0) 30%, rgb(255 255 255 / 0.13) 48%, rgb(255 255 255 / 0.13) 58%, rgb(255 255 255 / 0) 76%),
+    var(--grain) 120px 30px / 180px 180px;
+}
+
+/* Normal: a creased corner, and soft rubbed edges. */
+.note-card[data-type='plain'] .note-card__wear {
+  background:
+    var(--crease) center / 100% 100% no-repeat,
+    var(--grain) 70px 140px / 180px 180px;
+  box-shadow: inset 0 0 10px 1px rgb(255 255 255 / 0.2);
+}
+
 /* The writing goes right over the orb, sized down to fit between the bars. */
 .note-card__writing {
   position: relative;

@@ -69,6 +69,7 @@ export function noteCard({ type, text, date, number }) {
         h('span', { class: 'note-card__trace' }, look === 'wisp' && svg(WISP)),
         h('span', { class: 'note-card__orb' }, svg(energyGlyphs[type])),
       ),
+      h('span', { class: 'note-card__wear', 'aria-hidden': 'true' }),
       h('div', { class: 'note-card__writing' }, ink),
       h('p', { class: 'note-card__base' }, posted && `Posted ${posted}`),
     ),
