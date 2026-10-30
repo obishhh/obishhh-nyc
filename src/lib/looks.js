@@ -4,13 +4,13 @@ import { h } from './dom.js';
 // and the filtered version replaces it once it's drawn. A photo that can't be read back (no CORS) stays plain.
 export const LOOKS = [
   { value: '', label: 'Default' },
-  { value: 'pixel', label: 'Pixel' },
+  { value: 'watercolour', label: 'Watercolour' },
+  { value: 'pencil', label: 'Coloured pencil' },
+  { value: 'cel', label: 'Cel art' },
   { value: 'comic', label: 'Comic' },
   { value: 'gameboy', label: 'Game Boy (Gen 1)' },
   { value: 'gbc', label: 'Game Boy Color (Gen 2)' },
   { value: 'ds', label: 'DS (Gen 5)' },
-  { value: 'print', label: 'Base Set print' },
-  { value: 'holo', label: 'Holo foil' },
 ];
 
 const known = (look) => LOOKS.some(({ value }) => value && value === look);
@@ -22,13 +22,13 @@ const INK = [26, 23, 18];
 
 // Each look draws the photo onto a canvas of its own size: the pixel ones small, shown blown up with hard edges.
 const DRAW = {
-  pixel: { width: 72, pixelated: true, paint: () => {} },
+  watercolour: { width: 480, pixelated: false, paint: watercolour },
+  pencil: { width: 480, pixelated: false, paint: pencil },
+  cel: { width: 480, pixelated: false, paint: cel },
   gameboy: { width: 96, pixelated: true, paint: gameBoy },
   comic: { width: 420, pixelated: false, paint: comic },
   gbc: { width: 80, pixelated: true, paint: gameBoyColor },
   ds: { width: 128, pixelated: true, paint: ds },
-  print: { width: 480, pixelated: false, paint: basePrint },
-  holo: { width: 480, pixelated: false, paint: holo },
 };
 
 // Each pixel's brightness, stretched so the photo's darkest is 0 and lightest 1: every shade gets used, however
@@ -86,52 +86,136 @@ function ds({ data, width }) {
   }
 }
 
-// The way a 1999 card printed a picture: warm, a little faded, with the print's dots showing and a touch of grain.
-function basePrint({ data, width }) {
-  const cell = 3;
-  for (let i = 0; i < data.length; i += 4) {
-    const x = (i / 4) % width;
-    const y = Math.floor(i / 4 / width);
-    const grey = 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
-    // A dot screen at an angle: darker tones get bigger dots, so the darks break up into rosettes.
-    const u = (x + y) / cell;
-    const v = (x - y) / cell;
-    const dot = Math.hypot(u - Math.round(u), v - Math.round(v));
-    const ink = dot < (1 - grey / 255) * 0.55 ? 0.86 : 1;
-    const grain = ((((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1) + 1) % 1) * 12 - 6;
-    const warm = [1.06, 1.0, 0.86];
+// Shared by the painted looks: a soft copy of the picture (a box blur, run three times so it's close to a smooth
+// blur), how sharply each pixel changes (for outlines), and a steady per-pixel random number (for paper and strokes).
+function blurred(data, width, height, radius) {
+  const out = Float32Array.from(data);
+  const tmp = new Float32Array(out.length);
+  const pass = (from, to, horizontal) => {
+    const [lines, length] = horizontal ? [height, width] : [width, height];
+    for (let line = 0; line < lines; line += 1) {
+      for (let c = 0; c < 3; c += 1) {
+        const at = (k) => (horizontal ? (line * width + k) * 4 + c : (k * width + line) * 4 + c);
+        let sum = 0;
+        for (let k = -radius; k <= radius; k += 1) sum += from[at(Math.min(length - 1, Math.max(0, k)))];
+        for (let k = 0; k < length; k += 1) {
+          to[at(k)] = sum / (radius * 2 + 1);
+          sum += from[at(Math.min(length - 1, k + radius + 1))] - from[at(Math.max(0, k - radius))];
+        }
+      }
+    }
+  };
+  for (let n = 0; n < 3; n += 1) {
+    pass(out, tmp, true);
+    pass(tmp, out, false);
+  }
+  return out;
+}
+
+function edges(data, width, height) {
+  const lum = new Float32Array(width * height);
+  for (let p = 0; p < lum.length; p += 1) lum[p] = 0.3 * data[p * 4] + 0.59 * data[p * 4 + 1] + 0.11 * data[p * 4 + 2];
+  const out = new Float32Array(width * height);
+  for (let y = 1; y < height - 1; y += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      const p = y * width + x;
+      const gx = lum[p - width + 1] + 2 * lum[p + 1] + lum[p + width + 1] - lum[p - width - 1] - 2 * lum[p - 1] - lum[p + width - 1];
+      const gy = lum[p + width - 1] + 2 * lum[p + width] + lum[p + width + 1] - lum[p - width - 1] - 2 * lum[p - width] - lum[p - width + 1];
+      out[p] = Math.hypot(gx, gy);
+    }
+  }
+  return out;
+}
+
+const noise = (x, y) => ((((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1) + 1) % 1);
+// Smooth noise: the per-pixel kind, blended between points a few pixels apart, for paper fibres and blotches.
+function smoothNoise(x, y, scale) {
+  const [gx, gy] = [x / scale, y / scale];
+  const [x0, y0] = [Math.floor(gx), Math.floor(gy)];
+  const [fx, fy] = [gx - x0, gy - y0];
+  const ease = (t) => t * t * (3 - 2 * t);
+  const top = noise(x0, y0) + (noise(x0 + 1, y0) - noise(x0, y0)) * ease(fx);
+  const bottom = noise(x0, y0 + 1) + (noise(x0 + 1, y0 + 1) - noise(x0, y0 + 1)) * ease(fx);
+  return top + (bottom - top) * ease(fy);
+}
+
+const PAPER = [246, 240, 226];
+const clamp = (v) => Math.max(0, Math.min(255, v));
+
+// The painted art of the first sets: soft washes of colour on paper, pooling darker where one wash meets the next,
+// over a faint pencil drawing.
+function watercolour({ data, width, height }) {
+  const wash = blurred(data, width, height, 3);
+  const lines = edges(data, width, height);
+  // Pigment settles in a few strengths, so neighbouring washes meet at an edge. Only the strength steps, never the
+  // colour, and what's nearly white stays bare paper.
+  const step = 255 / 5;
+  const pooled = new Float32Array(wash.length);
+  for (let i = 0; i < wash.length; i += 4) {
+    const grey = 0.3 * wash[i] + 0.59 * wash[i + 1] + 0.11 * wash[i + 2];
+    const settled = grey > 226 ? 255 : Math.round(grey / step) * step + step * 0.35;
     for (let c = 0; c < 3; c += 1) {
-      const faded = 28 + data[i + c] * 0.84;
-      data[i + c] = Math.max(0, Math.min(255, (grey + (faded - grey) * 0.9) * warm[c] * ink + grain));
+      const vivid = grey + (wash[i + c] - grey) * 1.25;
+      pooled[i + c] = grey > 226 ? PAPER[c] : clamp(vivid * ((settled + 8) / (grey + 8)));
+    }
+  }
+  const rims = edges(pooled, width, height);
+  for (let i = 0; i < data.length; i += 4) {
+    const p = i / 4;
+    const [x, y] = [p % width, Math.floor(p / width)];
+    const blotch = smoothNoise(x, y, 14) * 0.5 + smoothNoise(x, y, 5) * 0.5;
+    const fibre = 0.94 + noise(x, y) * 0.08;
+    const rim = rims[p] > 60 ? 0.86 : 1;
+    const pencil = Math.min(1, lines[p] / 320) * 0.5;
+    for (let c = 0; c < 3; c += 1) {
+      // Thin paint: a third of the paper shows through, more where the wash was uneven.
+      const thin = 0.28 + blotch * 0.14;
+      const paint = pooled[i + c] * (1 - thin) + PAPER[c] * thin;
+      data[i + c] = clamp(paint * rim * fibre * (1 - pencil) + 60 * pencil);
     }
   }
 }
 
-// A holo rare: the picture under a rainbow foil that runs in diagonal bands, with stars glinting across it.
-function holo({ data, width, height }) {
-  const stars = new Set();
-  let seed = width * 31 + height;
-  const next = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let k = 0; k < (width * height) / 900; k += 1) stars.add(Math.floor(next() * width) + Math.floor(next() * height) * width);
+// The coloured-pencil backgrounds of the first sets: strokes on a slant, packed tighter in the darks, cream paper
+// between them, and the shapes outlined in a darker pencil.
+function pencil({ data, width, height }) {
+  const soft = blurred(data, width, height, 1);
+  const lines = edges(data, width, height);
   for (let i = 0; i < data.length; i += 4) {
     const p = i / 4;
-    const x = p % width;
-    const y = Math.floor(p / width);
-    const band = (x * 0.6 + y) / (width * 0.18);
-    const hue = (band + Math.sin(band * 2.1) * 0.15) % 1;
-    const foil = [0, 1, 2].map((c) => 0.5 + 0.5 * Math.cos(2 * Math.PI * (hue + c / 3)));
-    const shine = 0.5 + 0.5 * Math.sin(band * Math.PI * 2);
+    const [x, y] = [p % width, Math.floor(p / width)];
+    const grey = 0.3 * soft[i] + 0.59 * soft[i + 1] + 0.11 * soft[i + 2];
+    const dark = 1 - grey / 255;
+    const wobble = smoothNoise(x, y, 6) * 1.6;
+    const stroke = (((x * 0.8 + y + wobble) / 2.6) % 1 + 1) % 1;
+    const cross = (((x * 0.8 - y + wobble) / 2.6) % 1 + 1) % 1;
+    // Light areas get a few strokes, darks a dense hatch, the deepest a second hatch across it.
+    let cover = stroke < 0.25 + dark * 0.7 ? 0.85 : 0.18;
+    if (dark > 0.55 && cross < (dark - 0.55) * 1.8) cover = 1;
+    cover *= 0.85 + noise(x, y) * 0.3;
+    const outline = Math.min(1, Math.max(0, (lines[p] - 120) / 260)) * (0.7 + smoothNoise(x, y, 3) * 0.3);
     for (let c = 0; c < 3; c += 1) {
-      const base = data[i + c] / 255;
-      // Screened on, stronger where the band catches the light.
-      const lit = 1 - (1 - base) * (1 - foil[c] * (0.18 + 0.22 * shine));
-      data[i + c] = Math.min(255, lit * 255);
+      const colour = grey + (soft[i + c] - grey) * 1.35;
+      const laid = PAPER[c] * (1 - cover) + colour * cover;
+      data[i + c] = clamp(laid * (1 - outline) + colour * 0.35 * outline);
     }
-    if (stars.has(p)) {
-      for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const q = (Math.min(height - 1, Math.max(0, y + dy)) * width + Math.min(width - 1, Math.max(0, x + dx))) * 4;
-        data[q] = data[q + 1] = data[q + 2] = 255;
-      }
+  }
+}
+
+// Official cel-style art: each colour flattened to a lit tone and a shadow tone, under clean dark outlines.
+function cel({ data, width, height }) {
+  const soft = blurred(data, width, height, 2);
+  const lines = edges(blurred(data, width, height, 1), width, height);
+  for (let i = 0; i < data.length; i += 4) {
+    const p = i / 4;
+    const grey = 0.3 * soft[i] + 0.59 * soft[i + 1] + 0.11 * soft[i + 2];
+    // Hue kept, brightness snapped to one of three tones.
+    const tone = grey > 170 ? 1.12 : grey > 90 ? 0.92 : 0.62;
+    const ink = lines[p] > 110;
+    for (let c = 0; c < 3; c += 1) {
+      const vivid = grey + (soft[i + c] - grey) * 1.4;
+      const flat = Math.round(vivid / 32) * 32;
+      data[i + c] = ink ? 34 : clamp(flat * tone);
     }
   }
 }
