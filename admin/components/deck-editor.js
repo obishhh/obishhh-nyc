@@ -1,4 +1,4 @@
-import { deckCard } from '../../src/components/deck-cards.js';
+import { deckCard, SNAPSHOT_RULE } from '../../src/components/deck-cards.js';
 import { h, svg } from '../../src/lib/dom.js';
 import { trackPointer } from '../../src/lib/pointer.js';
 import { LOOKS } from '../../src/lib/looks.js';
@@ -16,7 +16,7 @@ const MAX_TEXT = { note: 140, snapshot: 200 };
 // The preview's handwriting waits for a pause in the typing, rather than redrawing on every key.
 const PREVIEW_PAUSE = 60;
 // What the form edits; the rest of a record (its id, status and times) is the server's.
-const EDITABLE = ['kind', 'number', 'type', 'title', 'text', 'place', 'photo', 'date'];
+const EDITABLE = ['kind', 'number', 'type', 'title', 'text', 'rule', 'place', 'photo', 'date'];
 
 const today = () => new Date().toLocaleDateString('en-CA');
 const editable = (data) => JSON.stringify(EDITABLE.map((key) => data[key]));
@@ -27,7 +27,7 @@ function blankDeckCard(kind, deck) {
   const numbers = deck.map(({ number }) => parseInt(number, 10)).filter(Number.isFinite);
   const next = String(Math.max(0, ...numbers) + 1).padStart(3, '0');
   const set = deck.find(({ number }) => number.includes('/'))?.number.split('/')[1] ?? '100';
-  return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', place: '', photo: { src: '', alt: '', position: '', look: '' }, date: today() };
+  return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', rule: '', place: '', photo: { src: '', alt: '', position: '', look: '' }, date: today() };
 }
 
 // The photo: upload one, then pick what stays in frame.
@@ -131,6 +131,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
           text('photo.alt', 'Alt text', { placeholder: 'Describe the photo', maxlength: 160 }),
           text('title', 'Title', { placeholder: 'Bodega Cat', maxlength: 24 }),
           textarea('text', 'Caption', { ...words, placeholder: 'Search your deck for a cat. He’s already on the counter.' }),
+          text('rule', 'Rule line', { placeholder: SNAPSHOT_RULE, maxlength: 60, hint: 'Left blank, it says the usual line.' }),
           text('place', 'Place', { placeholder: 'Union Sq', maxlength: 18, hint: 'Short, so the copyright stays in the middle.' }),
         ),
       section('Small print',

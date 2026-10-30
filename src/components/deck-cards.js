@@ -80,7 +80,10 @@ export function noteCard({ type: given, text, date, number }) {
 }
 
 // A Snapshot: a photo as a trainer card. Silver frame, a banner across the top, the caption as its rule.
-export function snapshotCard({ title, photo: picked, text, place, date, number }) {
+// What a Snapshot says under its caption when it hasn't been given a line of its own.
+export const SNAPSHOT_RULE = 'Play as many Snapshots as you like. Nobody’s counting.';
+
+export function snapshotCard({ title, photo: picked, text, rule, place, date, number }) {
   const when = day(date, { month: 'short', day: 'numeric' });
   const { src, alt, position, look } = picked && typeof picked === 'object' ? picked : {};
   const picture = safeImage(src ?? '');
@@ -91,7 +94,7 @@ export function snapshotCard({ title, photo: picked, text, place, date, number }
       h('figure', { class: 'card__art snapshot__art' },
         picture && photo(picture, { alt: alt || title || '', position, look })),
       h('p', { class: 'snapshot__text' }, text),
-      h('p', { class: 'snapshot__rule' }, 'Play as many Snapshots as you like. Nobody’s counting.'),
+      h('p', { class: 'snapshot__rule' }, rule || SNAPSHOT_RULE),
       smallPrint([place, when].filter(Boolean).join(', '), number),
     ),
     wear(number || title),
