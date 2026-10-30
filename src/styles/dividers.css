@@ -48,7 +48,7 @@
   .dividers {
     position: absolute;
     top: calc(-6px * var(--scale));
-    right: calc(100% + 8px * var(--scale));
+    right: calc(100% + 10px + 12px * var(--scale));
     height: calc(1124px * var(--scale));
     aspect-ratio: 94 / 1240;
   }
@@ -65,6 +65,7 @@
   .dividers__mark {
     top: var(--from);
     left: calc(100% - var(--inside));
+    width: var(--across);
     height: calc(var(--to) - var(--from));
     animation-name: dividers-swipe-up;
   }
@@ -74,7 +75,7 @@
 @media (max-width: 1039px) {
   /* The gap below is padding, not margin, so the underline can hang into it without being scrolled away. */
   .dividers {
-    padding-bottom: calc(14px * var(--scale));
+    padding-bottom: calc(10px + 12px * var(--scale));
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -98,6 +99,7 @@
     top: calc(100% - var(--inside));
     left: var(--from);
     width: calc(var(--to) - var(--from));
+    height: var(--across);
     animation-name: dividers-swipe-right;
   }
 }

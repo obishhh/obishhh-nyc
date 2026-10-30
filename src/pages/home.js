@@ -1,6 +1,6 @@
 import { binder } from '../components/binder.js';
 import { colophon } from '../components/colophon.js';
-import { dividers } from '../components/dividers.js';
+import { dividers, WIDE } from '../components/dividers.js';
 import { masthead } from '../components/masthead.js';
 import { notice } from '../components/notice.js';
 import { loadBinder } from '../lib/cards.js';
@@ -12,6 +12,10 @@ import { revealWhenReady } from '../lib/reveal.js';
 import { sections } from '../lib/sections.js';
 
 const POCKETS = 9;
+const ROWS = 3;
+// The smallest the cards get to fit a short window, and the space left under them.
+const SMALLEST = 0.5;
+const ROOM = 32;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 const sleeve = () =>
@@ -50,6 +54,25 @@ function tabbed(page, cards) {
   return h('div', { class: 'tabbed' }, index.root, page);
 }
 
+// On a computer, shrink the cards until a whole page of them fits the window. Narrower screens just scroll.
+function fitToWindow(page) {
+  const root = document.documentElement;
+  const wide = matchMedia(WIDE);
+  const fit = () => {
+    root.style.removeProperty('--fit');
+    if (!wide.matches) return;
+    const top = page.getBoundingClientRect().top + scrollY;
+    const scale = (innerHeight - top - ROOM) / (ROWS * 352 + (ROWS - 1) * 28);
+    root.style.setProperty('--fit', Math.max(SMALLEST, scale).toFixed(3));
+  };
+  let frame;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(fit);
+  });
+  fit();
+}
+
 async function binderPage() {
   let cards;
   try {
@@ -75,4 +98,6 @@ document.body.append(
 );
 
 main.append(await binderPage());
+const page = main.querySelector('.binder');
+if (page) fitToWindow(page);
 revealWhenReady(document.body);

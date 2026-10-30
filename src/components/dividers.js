@@ -11,7 +11,8 @@ const SLOTS = [
 const FACE = [0.23, 0.86];
 // How much of a tab's face the writing may use, clear of its rounded ends and edges.
 const ROOM = { length: 0.74, thickness: 0.78 };
-const WIDE = '(min-width: 1040px)';
+// Wide enough for the tabs to hang down the side.
+export const WIDE = '(min-width: 1040px)';
 const PHOTOS = { side: '/assets/tabs/side.webp', top: '/assets/tabs/top.webp' };
 // Drawn at about the photo's own resolution, so the writing is exactly as soft as the plastic it's on.
 const DETAIL = 1.25;
@@ -33,7 +34,10 @@ function mark(index, label, side) {
   const across = Math.round((MARK.inside + MARK.outside) * DETAIL);
   const canvas = h('canvas', {
     class: 'dividers__mark', 'aria-hidden': 'true', width: side ? across : length, height: side ? length : across,
-    style: { '--from': `${from}%`, '--to': `${to}%`, '--inside': `${(MARK.inside / PHOTO.thickness) * 100}%` },
+    style: {
+      '--from': `${from}%`, '--to': `${to}%`,
+      '--inside': `${(MARK.inside / PHOTO.thickness) * 100}%`, '--across': `${((MARK.inside + MARK.outside) / PHOTO.thickness) * 100}%`,
+    },
   });
   const pen = canvas.getContext('2d');
   // Down the side the words read upwards, so the line runs bottom to top along their right.

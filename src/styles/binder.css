@@ -1,6 +1,7 @@
-/* The binder's size lives on the page, so the footer can line up with the cards' edges. */
+/* The binder's size lives on the page, so the footer can line up with the cards' edges.
+   --fit, set by the page, shrinks the cards so a whole page of them fits the window. */
 :root {
-  --scale: 1;
+  --scale: min(1, var(--fit, 1));
   --columns: 3;
   --binder-gap: calc(22px * var(--scale));
   --binder-width: calc(var(--columns) * 252px * var(--scale) + (var(--columns) - 1) * var(--binder-gap));
@@ -98,15 +99,15 @@
 }
 
 @media (min-width: 1400px) {
-  :root { --scale: 1.15; }
+  :root { --scale: min(1.15, var(--fit, 1.15)); }
 }
 
 @media (max-width: 899px) {
-  :root { --scale: 0.8; }
+  :root { --scale: min(0.8, var(--fit, 0.8)); }
 }
 
 @media (max-width: 699px) {
-  :root { --scale: 0.62; }
+  :root { --scale: min(0.62, var(--fit, 0.62)); }
 }
 
 @media (max-width: 519px) {

@@ -49,7 +49,7 @@ export function enableReading(binder, cards) {
   const find = (slug) => cards.find((data) => data.slug === slug && data.body);
   const pocketOf = (data) => binder.querySelector(`[data-slug="${data.slug}"]`);
   // In the binder: its pocket's scale and tilt. In the article: its holder's width.
-  const inBinder = (pocket) => place(pocket, number(pocket, '--scale') || 1, number(pocket, '--turn'));
+  const inBinder = (pocket) => place(pocket, pocket.offsetWidth / CARD.width, number(pocket, '--turn'));
   const inArticle = (view) => place(view.pocket, view.pocket.offsetWidth / CARD.width);
 
   function show(data, { pushed }) {
