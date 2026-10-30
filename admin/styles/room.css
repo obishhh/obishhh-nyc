@@ -1,7 +1,10 @@
+/* Cards are drawn full size and shrunk, and Safari counts the full size as page width.
+   Clipping keeps the room to the screen without breaking the sticky bars. */
 .room {
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow-x: clip;
 }
 
 .topbar {

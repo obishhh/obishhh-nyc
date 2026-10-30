@@ -67,13 +67,13 @@ function photoRows({ uploadPhoto, onError }) {
 }
 
 // Write or edit one card in the deck box. The preview redraws as you type.
-export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
+export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
   const state = h('p', { class: 'editor__state', role: 'status', 'aria-live': 'polite' });
   const preview = h('div', { class: 'binder__pocket', style: { '--tilt': '0deg' } });
   const form = h('form', { class: 'editor__form', novalidate: true });
   const remove = button('Delete', 'button--danger', destroy);
   const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished. It’s out of the box.'));
-  const save = button('Save draft', '', keep);
+  const save = button('Save draft', '', () => keep());
   const publish = button('Publish', 'button--primary', () => commit('published', 'Published. It’s in the box.'));
   const actions = [remove, unpublish, save, publish];
   let flashTimer;
@@ -192,7 +192,8 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
     actions.forEach((action) => (action.disabled = on));
   }
 
-  async function commit(status, message) {
+  // The buttons save and head back to the binder; ⌘S saves and stays, for mid-writing.
+  async function commit(status, message, { stay = false } = {}) {
     const data = current();
     if (saving || (status === 'published' && !ready(data))) return;
     saving = true;
@@ -202,7 +203,8 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
       record = await onSave(data, status, record?.id);
       snapshot = editable(data);
       refresh({ now: true });
-      flash(message);
+      if (stay) flash(message);
+      else onDone(message);
     } catch (error) {
       flash(error.message, true);
     } finally {
@@ -211,9 +213,9 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
     }
   }
 
-  function keep() {
+  function keep(options) {
     const live = record?.status === 'published';
-    return commit(live ? 'published' : 'draft', live ? 'Saved. The box is updated.' : 'Saved. Still a draft.');
+    return commit(live ? 'published' : 'draft', live ? 'Saved. The box is updated.' : 'Saved. Still a draft.', options);
   }
 
   async function destroy() {
@@ -252,6 +254,6 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete }) {
     get dirty() {
       return dirty;
     },
-    save: keep,
+    save: () => keep({ stay: true }),
   };
 }

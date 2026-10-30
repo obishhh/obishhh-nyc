@@ -7,7 +7,7 @@ import { tile } from './tile.js';
 const nameOf = (data) => (data.kind === 'snapshot' ? data.title : data.text.split(/\s+/).slice(0, 5).join(' ')) || 'Untitled';
 
 const deckTile = (data) =>
-  tile({ href: `#/deck/${data.id}`, name: nameOf(data), status: data.status, card: deckCard(data), seed: data.id });
+  tile({ href: `#/deck/${data.id}`, name: nameOf(data), status: data.status, card: deckCard(data), seed: data.id, showName: false });
 
 // The deck box's cards, newest first. They go in by date, so there's nothing to drag.
 export function deckShelf() {
@@ -17,8 +17,8 @@ export function deckShelf() {
     h('header', { class: 'shelf__header' },
       h('h2', { class: 'shelf__title' }, 'Deck box'),
       h('span', { class: 'deck-shelf__actions' },
-        h('a', { class: 'button', href: '#/deck/new-note' }, 'New note'),
-        h('a', { class: 'button button--primary', href: '#/deck/new-snapshot' }, 'New Snapshot'),
+        h('a', { class: 'button button--primary', href: '#/deck/new-note', 'aria-label': 'New note' }, '+ Energy'),
+        h('a', { class: 'button button--primary', href: '#/deck/new-snapshot', 'aria-label': 'New Snapshot' }, '+ Trainer'),
       ),
     ),
     summary,

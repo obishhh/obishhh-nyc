@@ -60,7 +60,7 @@ function whereFiled(value, live, others) {
 }
 
 // Edit one card. Every field redraws the preview as you type.
-export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }) {
+export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, onDone }) {
   const state = h('p', { class: 'editor__state', role: 'status', 'aria-live': 'polite' });
   let flashTimer;
 
@@ -120,20 +120,19 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
 
   const remove = button('Delete', 'button--danger', destroy);
   const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished. It’s sealed again.'));
-  const save = button('Save draft', '', keep);
+  const save = button('Save draft', '', () => keep());
   const publish = button('Publish', 'button--primary', () => commit('published', 'Published.'));
   const actions = [remove, unpublish, save, publish];
-  const focusToggle = h('button', { class: 'button button--quiet', type: 'button', 'aria-pressed': 'false' }, 'Just the article');
+  const focusToggle = h('button', { class: 'editor__fold', type: 'button', 'aria-pressed': 'false' }, 'Collapse all but the article');
 
   const root = h('div', { class: 'editor' },
     h('div', { class: 'editor__bar' },
       h('a', { class: 'editor__back', href: '#/' }, svg(ARROW_LEFT), 'All cards'),
       state,
-      focusToggle,
       h('div', { class: 'editor__actions' }, actions),
     ),
     h('div', { class: 'editor__body' },
-      form,
+      h('div', { class: 'editor__main' }, focusToggle, form),
       h('aside', { class: 'editor__preview', 'aria-label': 'Preview' }, view.root),
     ),
   );
@@ -152,7 +151,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   function syncFocusToggle() {
     const on = otherSections().every((each) => !each.open);
     focusToggle.setAttribute('aria-pressed', String(on));
-    focusToggle.textContent = on ? 'Show card details' : 'Just the article';
+    focusToggle.textContent = on ? 'Show all sections' : 'Collapse all but the article';
   }
 
   function writing(on, { remember = true } = {}) {
@@ -230,14 +229,16 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
   // One save at a time: a second ⌘S while the first is out would save a new card twice.
   let saving = false;
 
-  async function commit(status, message) {
+  // The buttons save and head back to the binder; ⌘S saves and stays, for mid-writing.
+  async function commit(status, message, { stay = false } = {}) {
     const data = current();
     if (saving || (status === 'published' && !ready(data))) return;
     saving = true;
     busy(true);
     try {
       load(await onSave(data, status, record?.id));
-      flash(message);
+      if (stay) flash(message);
+      else onDone(message);
     } catch (error) {
       flash(error.code === '23505' ? 'Another card already uses that address.' : error.message, true);
     } finally {
@@ -246,9 +247,9 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
     }
   }
 
-  function keep() {
+  function keep(options) {
     const live = record?.status === 'published';
-    return commit(live ? 'published' : 'draft', live ? 'Saved. The live card is updated.' : 'Saved. Still sealed on the site.');
+    return commit(live ? 'published' : 'draft', live ? 'Saved. The live card is updated.' : 'Saved. Still sealed on the site.', options);
   }
 
   async function destroy() {
@@ -290,6 +291,6 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete }
     get dirty() {
       return dirty;
     },
-    save: keep,
+    save: () => keep({ stay: true }),
   };
 }

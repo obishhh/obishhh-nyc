@@ -25,8 +25,8 @@ export function shelf({ onSort }) {
 
   const root = h('section', { class: 'shelf' },
     h('header', { class: 'shelf__header' },
-      h('h1', { class: 'shelf__title' }, 'Cards'),
-      h('a', { class: 'button button--primary', href: '#/new' }, 'New card'),
+      h('h1', { class: 'shelf__title' }, 'Binder'),
+      h('a', { class: 'button button--primary', href: '#/new' }, '+ Card'),
     ),
     summary,
     status,
@@ -52,7 +52,7 @@ export function shelf({ onSort }) {
     flash,
     update(cards) {
       const live = cards.filter(({ status: state }) => state === 'published').length;
-      summary.textContent = `${plural(cards.length, 'card')}, ${live} live. Drag to reorder. Drafts show up sealed on the site.`;
+      summary.textContent = `${plural(cards.length, 'card')}, ${live} live.`;
       grid.replaceChildren(...cards.map(cardTile), newTile());
     },
   };

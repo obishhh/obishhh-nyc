@@ -40,6 +40,7 @@ const workbench = editor({
   uploadPhoto: (file) => upload(file, { folder: 'posts' }),
   onSave: save,
   onDelete: remove,
+  onDone: backToBinder,
 });
 const box = deckShelf();
 const deckBench = deckEditor({
@@ -47,6 +48,7 @@ const deckBench = deckEditor({
   uploadPhoto: (file) => upload(file, { folder: 'deck' }),
   onSave: saveToDeck,
   onDelete: removeFromDeck,
+  onDone: backToBinder,
 });
 
 const view = h('main', { class: 'room__view' });
@@ -119,6 +121,12 @@ async function save(data, status, id) {
   shown = `#/card/${saved.id}`;
   history.replaceState(null, '', shown);
   return saved;
+}
+
+// After a save from the buttons: back to the binder, with the news there.
+function backToBinder(message) {
+  go('#/');
+  binder.flash(message);
 }
 
 async function remove({ id }) {
