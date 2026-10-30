@@ -104,8 +104,10 @@ async function binderPage() {
 
   const page = binder(cards, { label: 'Binder page 1' });
   trackPointer(page, '.card');
+  // Reading has to come before flipping: it claims taps on cards with an article, so those open instead of turning over.
+  const reading = enableReading(page, cards);
   enableFlip(page, '.binder__flip');
-  return { ...tabbed(page, cards), page, cards };
+  return { ...tabbed(page, cards), page, reading };
 }
 
 const main = h('main', { class: 'page' });
@@ -124,5 +126,4 @@ if (shelf.page) {
   decking.then((box) => box && shelf.root.append(box));
 }
 await revealWhenReady(document.body, [shelf.ready]);
-// Once it's all on screen and sized, so a ?card= link flies its card from the right spot.
-if (shelf.page) enableReading(shelf.page, shelf.cards);
+shelf.reading?.openLinked();

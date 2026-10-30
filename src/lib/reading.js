@@ -185,5 +185,10 @@ export function enableReading(binder, cards) {
     else if (!current && slug) show(find(slug), { pushed: false });
   });
 
-  if (slugInUrl()) show(find(slugInUrl()), { pushed: false });
+  return {
+    // Opens the card a shared link points to. Called once the binder's on screen and sized, so it flies from its spot.
+    openLinked() {
+      if (slugInUrl()) show(find(slugInUrl()), { pushed: false });
+    },
+  };
 }
