@@ -1,16 +1,15 @@
 /* Cards for the deck box: notes written on blank energy cards, photos as trainer-style Snapshots. */
 
-/* Laid out like a basic energy card: the type's colour, glowing out from an orb in the upper
-   middle, with a lighter patch below it where the writing goes. */
+/* Laid out like a basic energy card: the type's colour, glowing out from an orb in the middle,
+   with the writing over the top of it. */
 .note-card .card__panel {
   gap: 0;
   padding: 4px 4px 5px;
   border-width: 2px;
   border-color: color-mix(in srgb, var(--type-energy) 70%, #000000);
   background:
-    radial-gradient(ellipse 62% 40% at 50% 72%, rgb(255 255 255 / 0.74), rgb(255 255 255 / 0) 100%),
-    radial-gradient(circle at 50% 33%, rgb(255 255 255 / 0.9) 0, rgb(255 255 255 / 0.4) 14%, rgb(255 255 255 / 0) 36%),
-    radial-gradient(circle at 50% 33%, var(--type-energy) 30%, color-mix(in srgb, var(--type-energy) 58%, #000000) 100%);
+    radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.95) 0, rgb(255 255 255 / 0.55) 22%, rgb(255 255 255 / 0) 52%),
+    radial-gradient(circle at 50% 50%, var(--type-energy) 30%, color-mix(in srgb, var(--type-energy) 58%, #000000) 100%);
 }
 
 /* The silver bar across the top, with the type's symbol where a real card says ENERGY's. */
@@ -51,12 +50,12 @@
 
 .note-card__orb {
   position: absolute;
-  top: 33%;
+  top: 50%;
   left: 50%;
   display: grid;
   place-items: center;
-  width: 70px;
-  height: 70px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
   background:
     radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0) 42%),
@@ -82,7 +81,7 @@
 /* Sun & Moon: a white wisp rising off the orb, with sparks. */
 .note-card__wisp {
   position: absolute;
-  top: calc(33% - 108px);
+  top: calc(50% - 112px);
   left: calc(50% - 10px);
   width: 74px;
   height: 110px;
@@ -92,18 +91,18 @@
 /* XY: a beam of light fanning down from the orb to the bottom of the card. */
 .note-card[data-look='beam'] .note-card__trace {
   background: linear-gradient(rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.45) 55%, rgb(255 255 255 / 0.12));
-  clip-path: polygon(46% 33%, 54% 33%, 100% 100%, 0 100%);
+  clip-path: polygon(46% 50%, 54% 50%, 100% 100%, 0 100%);
   filter: blur(1.5px);
 }
 
 /* Classic: rays all the way round the orb. */
 .note-card[data-look='rays'] .note-card__trace {
-  background: repeating-conic-gradient(from 0deg at 50% 33%, rgb(255 255 255 / 0.32) 0deg 5deg, rgb(255 255 255 / 0) 5deg 15deg);
-  mask-image: radial-gradient(circle at 50% 33%, #000000 10%, rgb(0 0 0 / 0) 72%);
-  -webkit-mask-image: radial-gradient(circle at 50% 33%, #000000 10%, rgb(0 0 0 / 0) 72%);
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgb(255 255 255 / 0.32) 0deg 5deg, rgb(255 255 255 / 0) 5deg 15deg);
+  mask-image: radial-gradient(circle at 50% 50%, #000000 10%, rgb(0 0 0 / 0) 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000000 10%, rgb(0 0 0 / 0) 72%);
 }
 
-/* The writing sits under the orb, sized down to fit what's left. */
+/* The writing goes right over the orb, sized down to fit between the bars. */
 .note-card__writing {
   position: relative;
   z-index: 1;
@@ -111,8 +110,7 @@
   flex: 1;
   place-items: center;
   min-height: 0;
-  margin-top: 112px;
-  padding: 0 4px 4px;
+  padding: 4px;
 }
 
 /* The silver strip along the bottom, with the date it went up. */
@@ -137,14 +135,15 @@
 
 .note-card .card__number { justify-self: end; }
 
-/* Laid on with multiply, so it reads as marker on the card. Long notes shrink to fit. */
+/* Marker over the orb: a faint light halo keeps it legible against the black symbol.
+   Long notes shrink to fit. */
 .note-card__ink {
   display: block;
   max-width: 100%;
   max-height: 100%;
   width: auto;
   height: auto;
-  mix-blend-mode: multiply;
+  filter: drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 1.5px rgb(255 255 255 / 0.95)) drop-shadow(0 0 5px rgb(255 255 255 / 0.55));
 }
 
 /* Snapshots get a silver frame and a cool grey panel, so they don't pass for binder cards. */

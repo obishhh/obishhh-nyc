@@ -1,7 +1,7 @@
 // Paints a card the way the binder shows it sealed (blurred, washed out, no words) into a small image,
 // so the site can show one picture instead of blurring a live card.
 
-const VERSION = 1;
+const VERSION = 2;
 const PAD = 24;
 const WIDTH = 252;
 const HEIGHT = 352;
