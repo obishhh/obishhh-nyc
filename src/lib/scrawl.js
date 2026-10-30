@@ -171,7 +171,8 @@ function write(text, { hand, size, width }) {
     const drift = (seeded(`${line}:drift`) * 2 - 1) * Math.max(0, sheet.width - w) * 0.3;
     ink.drawImage(word, (sheet.width - w) / 2 + drift, ((index + 0.5) * leading + size * 0.25) * ratio - h / 2, w, h);
   });
-  roughen(sheet, random(seeded(text)), INK);
+  // A note is written in Sharpie: solid strokes, only a whisper of patchiness.
+  roughen(sheet, random(seeded(text)), INK, { patchy: 0.08 });
   sheet.style.width = `${width}px`;
   return sheet;
 }
@@ -187,8 +188,9 @@ export function place(pen, word, { x, y, angle, size, length, thickness, wobble 
   pen.restore();
 }
 
-// Gives whatever's drawn on a canvas marker edges and patchy coverage, in one colour.
-export function roughen(ink, next, [red, green, blue]) {
+// Gives whatever's drawn on a canvas marker edges and patchy coverage, in one colour. `patchy` is how much the ink
+// thins at random from pixel to pixel: a dry marker's streaks at the default, near nothing for a fresh Sharpie.
+export function roughen(ink, next, [red, green, blue], { patchy = 0.3 } = {}) {
   const { width, height } = ink;
   const pen = ink.getContext('2d');
   const drawn = pen.getImageData(0, 0, width, height).data;
@@ -233,7 +235,7 @@ export function roughen(ink, next, [red, green, blue]) {
       laid.data[out] = red;
       laid.data[out + 1] = green;
       laid.data[out + 2] = blue;
-      laid.data[out + 3] = alpha * (0.7 + next() * 0.3);
+      laid.data[out + 3] = alpha * (1 - patchy + next() * patchy);
     }
   }
   pen.putImageData(laid, 0, 0);

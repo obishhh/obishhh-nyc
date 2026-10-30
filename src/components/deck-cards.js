@@ -69,11 +69,12 @@ export function noteCard({ type: given, text, date, number }) {
         h('span', { class: 'note-card__orb' }, svg(energyGlyphs[type])),
       ),
       h('span', { class: 'note-card__wear', 'aria-hidden': 'true' }),
+      // The card's handling goes under the writing: the marker went on after, over the top of it.
+      wear(number || text),
       h('div', { class: 'note-card__writing' }, ink),
       h('p', { class: 'note-card__base' }, posted && `Posted ${posted}`),
       smallPrint('', number),
     ),
-    wear(number || text),
   );
 }
 

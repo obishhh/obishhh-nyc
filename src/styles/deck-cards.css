@@ -201,16 +201,17 @@
   text-shadow: 0 0.5px 0 rgb(255 255 255 / 0.4);
 }
 
-/* Marker over the orb: a faint light halo keeps it legible against the black symbol.
-   Long notes shrink to fit. */
+/* Plain marker, straight on the card. Long notes shrink to fit. */
 .note-card__ink {
   display: block;
   max-width: 100%;
   max-height: 100%;
   width: auto;
   height: auto;
-  filter: drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 1.5px rgb(255 255 255 / 0.95)) drop-shadow(0 0 5px rgb(255 255 255 / 0.55));
 }
+
+/* With writing over it, the black symbol steps back a little so the marker still reads where they cross. */
+.note-card:has(.note-card__ink) .note-card__orb svg { opacity: 0.5; }
 
 /* Snapshots get a silver frame and a cool grey panel, so they don't pass for binder cards. */
 .snapshot {
