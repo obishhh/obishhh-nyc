@@ -55,7 +55,7 @@
   flex-direction: column;
   gap: 4px;
   height: 330px;
-  padding: 5px 11px 1px;
+  padding: 5px 11px 0;
   border-radius: 6px;
   background:
     linear-gradient(rgb(255 255 255 / 0.35), rgb(255 255 255 / 0) 50%, rgb(0 0 0 / 0.04)),
@@ -323,8 +323,8 @@
   align-items: center;
   justify-content: space-between;
   flex: none;
-  height: 10px;
-  margin-top: 1px;
+  height: 9px;
+  margin-top: 2px;
   padding: 0 2px;
   font: 500 6.5px/8px var(--font-display);
 }
@@ -333,7 +333,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  font: 700 8px/10px var(--font-body);
+  font: 700 8px/9px var(--font-body);
 }
 
 /* Handled: grain everywhere, edges and corners rubbed pale, a fade from one side, and on some cards

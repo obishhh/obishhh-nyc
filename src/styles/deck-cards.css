@@ -4,7 +4,7 @@
    with the writing over the top of it. */
 .note-card .card__panel {
   gap: 0;
-  padding: 6px 6px 1px;
+  padding: 6px 6px 0;
   background:
     radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.95) 0, rgb(255 255 255 / 0.55) 22%, rgb(255 255 255 / 0) 52%),
     radial-gradient(circle at 50% 50%, var(--type-energy) 30%, color-mix(in srgb, var(--type-energy) 58%, #000000) 100%);
