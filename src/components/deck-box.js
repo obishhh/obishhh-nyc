@@ -68,8 +68,6 @@ const timeOf = (at) => (at && !Number.isNaN(Date.parse(at)) ? clock.format(new D
 
 const keyInUrl = () => openedIn('deck');
 const withDeckCard = (key) => addressFor('deck', key);
-// A tipped-out card lands this long after the deck opens; a linked one comes up once it has.
-const LANDED = 600;
 // A deck card's picture to keep, drawn with its share page (see scripts/share-pages.mjs).
 const keepsakeOf = (key) => `/d/${encodeURIComponent(key)}/save.png`;
 
@@ -91,7 +89,7 @@ function spread(entries, make, title, onClose) {
   const site = h('b');
   const go = h('a', { class: 'deck-spread__tool deck-spread__go', target: '_blank', rel: 'noopener noreferrer' },
     h('span', {}, 'A wild link appeared!'),
-    h('span', { class: 'deck-spread__go-to' }, 'Go to ', site),
+    h('span', { class: 'deck-spread__go-to' }, 'Go to', site),
   );
   const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1 },
     h('header', { class: 'deck-spread__bar' },
@@ -121,14 +119,14 @@ function spread(entries, make, title, onClose) {
   let openedAt = 0;
   let pressedOnDesk = false;
   let byKey = false;
-  // A link's card is raised once the deck has landed; anything else that happens first calls that off.
-  let landing;
+  // A link's card is raised once it has landed; anything else that happens first calls that off.
+  let landing = 0;
 
   // A quick put-away, then shut. Esc goes the same way. `withKey`: put away from the keyboard, so focus goes back to
   // the box for the next key; put away with a pointer, it doesn't, or the box would show focused and stay fanned up.
   function putBack({ withKey = false } = {}) {
     if (!dialog.open || dialog.classList.contains('is-closing')) return;
-    clearTimeout(landing);
+    landing += 1;
     byKey = withKey;
     dialog.classList.add('is-closing');
     setTimeout(() => dialog.close(), reducedMotion.matches ? 0 : PUT_BACK);
@@ -149,14 +147,14 @@ function spread(entries, make, title, onClose) {
   let front = null;
   const cards = () => [...dialog.querySelectorAll('.deck-spread__card')];
   function raise(card) {
-    clearTimeout(landing);
+    landing += 1;
     if (front && front !== card) lowerCard({ instantly: true });
-    // Still tipping out (a linked card comes up as the deck lands): it's landed now, so it's measured where it rests.
+    // Still tipping out (tapped as it lands): it's landed now, or the tip-out would hold it down until it ended.
     card.getAnimations().forEach((animation) => animation.animationName === 'tip-out' && animation.finish());
     dialog.querySelector('.is-picked')?.classList.remove('is-picked');
     card.classList.add('is-picked');
     front = card;
-    // The desk stops scrolling first: where a scrollbar takes room, it goes, and the card is measured where it ends up.
+    // The desk stops scrolling first, so the card's measured where the desk will hold still.
     dialog.classList.add('has-front');
     place();
     card.classList.add('is-front');
@@ -220,13 +218,13 @@ function spread(entries, make, title, onClose) {
   // Where the raised card goes: worked out from its spot as laid out, without its tilt or nudge.
   function place() {
     if (!front || !dialog.open) return;
-    // Measured with no transform and no transition, so the reading is the spot itself, not a step on the way.
-    front.style.setProperty('transition', 'none');
-    front.style.setProperty('transform', 'none');
-    const spot = front.getBoundingClientRect();
-    front.style.removeProperty('transform');
-    front.getBoundingClientRect();
-    front.style.removeProperty('transition');
+    // Read from the layout, which leaves out its tilt and nudge, and any hover lift still on its way.
+    const spot = {
+      left: front.offsetLeft - dialog.scrollLeft,
+      top: front.offsetTop - dialog.scrollTop,
+      width: front.offsetWidth,
+      height: front.offsetHeight,
+    };
     // The middle of the desk as shown: the dialog's own box, without any scrollbar. A note with a link needs room
     // under it for the link: it's kept clear of the window's foot, the card going up only as far as it has to.
     const [wide, tall] = [dialog.clientWidth, dialog.clientHeight];
@@ -327,7 +325,7 @@ function spread(entries, make, title, onClose) {
   });
   // However it shuts (put away, or closed from outside, like going Forward to an article), it's left tidy.
   dialog.addEventListener('close', () => {
-    clearTimeout(landing);
+    landing += 1;
     dialog.classList.remove('is-closing');
     lowerCard({ instantly: true });
     dialog.querySelector('.is-picked')?.classList.remove('is-picked');
@@ -344,8 +342,9 @@ function spread(entries, make, title, onClose) {
       const card = [...dialog.querySelectorAll('.deck-spread__card')].find((each) => each.dataset.key === key);
       if (!card) return history.replaceState(history.state, '', withDeckCard(null));
       card.scrollIntoView({ block: 'center' });
-      clearTimeout(landing);
-      landing = setTimeout(() => dialog.open && !front && raise(card), reducedMotion.matches ? 0 : LANDED);
+      const ticket = (landing += 1);
+      const tipping = card.getAnimations().find((animation) => animation.animationName === 'tip-out');
+      (tipping?.finished ?? Promise.resolve()).catch(() => {}).then(() => ticket === landing && dialog.open && !front && raise(card));
     },
     open() {
       if (dialog.open) return;
@@ -355,7 +354,11 @@ function spread(entries, make, title, onClose) {
       // that way as if it had been tabbed to. Tab still goes straight to it.
       dialog.focus({ preventScroll: true });
       openedAt = performance.now();
-      cards().forEach((card) => ask(card.dataset.key));
+      // Asked again for any that had no picture last time: the pictures are drawn a few times an hour.
+      cards().forEach((card) => {
+        if (saveable.get(card.dataset.key) === false) asked.delete(card.dataset.key);
+        ask(card.dataset.key);
+      });
     },
   };
 }

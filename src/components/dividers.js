@@ -1,5 +1,6 @@
 import { h } from '../lib/dom.js';
 import { HAND, handwriting, inkOver, place, random, roughen, scrawl, swipe } from '../lib/scrawl.js';
+import { WIDE } from '../lib/screens.js';
 import { MAX_TABS } from '../lib/sections.js';
 import { seeded } from '../lib/seeded.js';
 import { plural } from '../lib/words.js';
@@ -13,8 +14,6 @@ const SLOTS = [
 const FACE = [0.23, 0.86];
 // How much of a tab's face the writing may use, clear of its rounded ends and edges.
 const ROOM = { length: 0.74, thickness: 0.78 };
-// Wide enough for the tabs to hang down the side.
-export const WIDE = '(min-width: 1040px)';
 const PHOTOS = { side: '/assets/tabs/side.webp', top: '/assets/tabs/top.webp' };
 // Drawn at about the photo's own resolution, so the writing is exactly as soft as the plastic it's on.
 const DETAIL = 1.25;

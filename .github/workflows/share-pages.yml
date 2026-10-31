@@ -1,10 +1,11 @@
 # Keeps a page for every published card, so a link to one shows that card in a message (see scripts/share-pages.mjs).
-# Runs every hour, whenever main changes, and by hand from the Actions tab ("Run workflow").
+# Runs every ten minutes, so a card just published soon has its page and picture to save, whenever main changes, and
+# by hand from the Actions tab ("Run workflow"). A run with nothing new commits nothing.
 name: Share pages
 
 on:
   schedule:
-    - cron: '17 * * * *'
+    - cron: '*/10 * * * *'
   push:
     branches: [main]
     paths-ignore: ['d/**', 'c/**']

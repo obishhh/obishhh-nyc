@@ -33,21 +33,29 @@ const measure = (font) => {
   return measurer;
 };
 
-// Crops a sheet down to the ink on it, so the word can be measured and fitted exactly.
+// Crops a sheet down to the ink on it, so the word can be measured and fitted exactly. Each edge is found by working in
+// from it until there's ink, so the empty margins are all it looks at.
 function trim(sheet) {
   const { width, height } = sheet;
   const { data } = sheet.getContext('2d').getImageData(0, 0, width, height);
-  let [left, top, right, bottom] = [width, height, -1, -1];
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      if (data[(y * width + x) * 4 + 3] < 8) continue;
-      left = Math.min(left, x);
-      right = Math.max(right, x);
-      top = Math.min(top, y);
-      bottom = Math.max(bottom, y);
-    }
-  }
-  if (right < 0) return sheet;
+  const inked = (x, y) => data[(y * width + x) * 4 + 3] >= 8;
+  const rowInked = (y) => {
+    for (let x = 0; x < width; x += 1) if (inked(x, y)) return true;
+    return false;
+  };
+  const columnInked = (x, from, to) => {
+    for (let y = from; y <= to; y += 1) if (inked(x, y)) return true;
+    return false;
+  };
+  let top = 0;
+  while (top < height && !rowInked(top)) top += 1;
+  if (top === height) return sheet;
+  let bottom = height - 1;
+  while (!rowInked(bottom)) bottom -= 1;
+  let left = 0;
+  while (!columnInked(left, top, bottom)) left += 1;
+  let right = width - 1;
+  while (!columnInked(right, top, bottom)) right -= 1;
   const trimmed = Object.assign(document.createElement('canvas'), { width: right - left + 1, height: bottom - top + 1 });
   trimmed.getContext('2d').drawImage(sheet, -left, -top);
   return trimmed;

@@ -138,6 +138,8 @@
   color: inherit;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* Room for a scrollbar is kept even while a card's up and the desk stops scrolling, so nothing shifts sideways. */
+  scrollbar-gutter: stable;
 }
 
 .deck-spread:focus { outline: none; }
@@ -314,7 +316,7 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 }
 
 /* A note's link, in the text box from a Game Boy battle: white, a heavy double border, the line that says what's
-   happening, the choice with its ▶, and the ▼ blinking in the corner for you to press on. */
+   happening, where to, and the ▼ blinking in the corner for you to press on. */
 .deck-spread__go {
   display: grid;
   gap: 4px;
@@ -336,12 +338,10 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 
 .deck-spread__go-to {
   display: flex;
-  gap: 0.35em;
+  gap: 0.3em;
   min-width: 0;
   white-space: nowrap;
 }
-
-.deck-spread__go-to::before { content: '▶'; }
 
 .deck-spread__go::after {
   content: '▼';
@@ -349,20 +349,23 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   right: 11px;
   bottom: 7px;
   font-size: 10px;
-  animation: blink 1s steps(1) infinite;
 }
+
+.deck-spread.has-front .deck-spread__go.is-ready::after { animation: blink 1s steps(1) infinite; }
 
 .deck-spread__go:hover b,
 .deck-spread__go:focus-visible b { text-decoration: underline; text-underline-offset: 2px; }
 
 .deck-spread__go:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 4px; }
 
-/* As it comes up, the line prints out a letter at a time, the way a battle's text does, and then the choice. */
-.deck-spread.has-front .deck-spread__go.is-ready > :first-child { animation: print 0.55s steps(21, end) 0.42s backwards; }
-.deck-spread.has-front .deck-spread__go.is-ready > .deck-spread__go-to { animation: page-in 0.2s var(--ease-out) 1s backwards; }
+/* It comes up with the card's ✕ and Save, and where it goes follows a beat behind. */
+.deck-spread.has-front .deck-spread__go.is-ready > .deck-spread__go-to { animation: rise-in 0.26s var(--ease-out) 0.44s backwards; }
 
-@keyframes print {
-  from { clip-path: inset(0 100% 0 0); }
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
 }
 
 @keyframes blink {
@@ -437,8 +440,7 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 
   .tabbed > .deck-box,
   .deck-spread__card,
-  .deck-spread__go::after,
-  .deck-spread.has-front .deck-spread__go.is-ready > :first-child,
+  .deck-spread.has-front .deck-spread__go.is-ready::after,
   .deck-spread.has-front .deck-spread__go.is-ready > .deck-spread__go-to,
   .deck-spread[open]::backdrop,
   .deck-spread[open] .deck-spread__bar { animation: none; }

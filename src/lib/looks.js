@@ -321,28 +321,68 @@ function comic({ data, width, height }) {
   }
 }
 
+// Painting a look is a long, heavy loop over every pixel, so it's done in a worker, away from the page: the page only
+// reads the photo's pixels and puts the painted ones back. Where a worker won't start, it's painted here.
+export const paintLook = (look, pixels) => DRAW[look].paint(pixels);
+let painter;
+let asked = 0;
+const painting = new Map();
+
+function startPainter() {
+  try {
+    const worker = new Worker(new URL('./looks-worker.js', import.meta.url), { type: 'module' });
+    worker.addEventListener('message', ({ data: { id, data } }) => {
+      painting.get(id)?.resolve(data);
+      painting.delete(id);
+    });
+    // Couldn't start after all: what it was given is painted here, and so is everything after.
+    worker.addEventListener('error', () => {
+      painter = false;
+      for (const job of painting.values()) job.resolve(job.paintHere());
+      painting.clear();
+    });
+    return worker;
+  } catch {
+    return false;
+  }
+}
+
+function painted(look, { data, width, height }) {
+  const paintHere = () => {
+    paintLook(look, { data, width, height });
+    return data;
+  };
+  painter ??= startPainter();
+  if (!painter) return Promise.resolve(paintHere());
+  const id = (asked += 1);
+  const sent = new Uint8ClampedArray(data);
+  return new Promise((resolve) => {
+    painting.set(id, { resolve, paintHere });
+    painter.postMessage({ id, look, data: sent, width, height }, [sent.buffer]);
+  });
+}
+
 // One drawing per photo and look, shared by every card that shows it: a canvas can only be in one place, so each
 // gets a copy. Once one's drawn, it's kept to hand (`ready`), so a card drawn again shows it straight away.
 const drawn = new Map();
 const ready = new Map();
+const keyOf = (src, look) => `${look} ${src}`;
 
 export function draw(src, look) {
-  const key = `${look} ${src}`;
+  const key = keyOf(src, look);
   if (!drawn.has(key)) {
     drawn.set(key, (async () => {
       const image = new Image();
       image.crossOrigin = 'anonymous';
       image.src = src;
       await image.decode();
-      const { width: wide, paint } = DRAW[look];
-      const width = Math.min(wide, image.naturalWidth);
+      const width = Math.min(DRAW[look].width, image.naturalWidth);
       const height = Math.max(1, Math.round((image.naturalHeight / image.naturalWidth) * width));
       const canvas = Object.assign(document.createElement('canvas'), { width, height });
       const pen = canvas.getContext('2d', { willReadFrequently: true });
       pen.drawImage(image, 0, 0, width, height);
       const pixels = pen.getImageData(0, 0, width, height);
-      paint({ data: pixels.data, width, height });
-      pen.putImageData(pixels, 0, 0);
+      pen.putImageData(new ImageData(await painted(look, pixels), width, height), 0, 0);
       ready.set(key, canvas);
       return canvas;
     })().catch(() => {
@@ -424,15 +464,18 @@ export function photo(src, { look = '', baked = '', alt = '', position = '', zoo
     picture.addEventListener('error', () => picture.replaceWith(photo(src, { look, alt, position, zoom, ...props })), { once: true });
     return picture;
   }
-  if (filtered && ready.has(`${look} ${src}`)) return drawing(ready.get(`${look} ${src}`), { look, alt, position, zoom });
+  if (filtered && ready.has(keyOf(src, look))) return drawing(ready.get(keyOf(src, look)), { look, alt, position, zoom });
   // A look reads the photo's pixels, so ask for it that way from the start (before src), and it's only fetched once.
   const image = h('img', { ...props, crossorigin: filtered ? 'anonymous' : null, src, alt, decoding: 'async', style });
   if (!filtered) return image;
   image.dataset.look = look;
-  soon(image, () => draw(src, look).then((canvas) => {
+  const swap = () => draw(src, look).then((canvas) => {
     if (!canvas) delete image.dataset.look;
     if (!canvas || !image.parentNode) return;
     image.replaceWith(drawing(canvas, { look, alt, position, zoom }));
-  }));
+  });
+  // Already being drawn for another card: this one takes it as soon as it's done.
+  if (drawn.has(keyOf(src, look))) swap();
+  else soon(image, swap);
   return image;
 }

@@ -1,5 +1,6 @@
 // The first thing the home page runs: the cards are asked for the moment the page is read, and their pictures as soon
 // as they're back, so both are on their way while the rest of the page's code arrives.
+import { WIDE } from '../lib/screens.js';
 import { askEarly } from '../lib/supabase.js';
 
 // Fetched the way the card will ask for it, so the card finds it ready: a photo drawn in its look here is read back
@@ -31,5 +32,6 @@ askEarly('deck')?.then(([newest]) => {
   if (newest?.photo?.second?.src) warmArt({ ...newest.photo.second, look: newest.photo.look });
 }, () => {});
 
-warm('/assets/tabs/top.webp');
+// The tabs' photo: down the side on a wide screen, across the top otherwise.
+warm(matchMedia(WIDE).matches ? '/assets/tabs/side.webp' : '/assets/tabs/top.webp');
 warm('/assets/deck/box-front.webp');

@@ -2,7 +2,7 @@ import { binder } from '../components/binder.js';
 import { colophon } from '../components/colophon.js';
 import { deckBox } from '../components/deck-box.js';
 import { deckCard } from '../components/deck-cards.js';
-import { dividers, WIDE } from '../components/dividers.js';
+import { dividers } from '../components/dividers.js';
 import { masthead } from '../components/masthead.js';
 import { notice } from '../components/notice.js';
 import { openedIn } from '../lib/addresses.js';
@@ -13,6 +13,7 @@ import { enableReading } from '../lib/reading.js';
 import { trackPointer } from '../lib/pointer.js';
 import { revealWhenReady } from '../lib/reveal.js';
 import { handwriting } from '../lib/scrawl.js';
+import { WIDE } from '../lib/screens.js';
 import { sections } from '../lib/sections.js';
 
 const POCKETS = 9;
