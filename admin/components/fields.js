@@ -52,8 +52,8 @@ export const dropdown = (name, choices, attrs = {}) => h('select', { class: 'inp
 
 export const select = (name, label, choices, { hint } = {}) => row(label, dropdown(name, choices), hint);
 
-export const checkbox = (name, label, text, { hint } = {}) =>
-  row(label, h('label', { class: 'check' }, h('input', { type: 'checkbox', name }), text), hint);
+export const checkbox = (name, label, { hint } = {}) =>
+  row(label, h('span', { class: 'check' }, h('input', { type: 'checkbox', name })), hint);
 
 export function button(label, variant, onClick) {
   const element = h('button', { class: `button ${variant}`.trim(), type: 'button' }, label);
@@ -66,3 +66,10 @@ export const section = (title, ...rows) =>
     h('summary', { class: 'form-section__title' }, h('h2', { class: 'form-section__name' }, title)),
     rows,
   );
+
+// Puts the cursor in a field, opening its section first if it's folded away.
+export function reveal(control) {
+  const folded = control.closest('details');
+  if (folded) folded.open = true;
+  control.focus();
+}

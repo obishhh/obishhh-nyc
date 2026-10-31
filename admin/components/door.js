@@ -7,9 +7,10 @@ import { ARROW_LEFT } from '../lib/icons.js';
 const SLIDE_OUT = 420;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
+// A server that can't be reached comes back from Supabase as an error with no status, not a TypeError.
 function explain(error) {
   if (/invalid login credentials/i.test(error.message)) return 'Wrong email or password.';
-  if (error instanceof TypeError) return 'Couldn’t reach the server. Try again.';
+  if (error instanceof TypeError || error.status === 0) return 'Couldn’t reach the server. Try again.';
   return error.message;
 }
 
@@ -19,7 +20,7 @@ export function door({ onSignedIn }) {
   const password = h('input', { class: 'input', id: 'door-password', name: 'password', type: 'password', autocomplete: 'current-password', required: true });
   const emailField = h('div', { class: 'door__field' }, h('label', { for: 'door-email' }, 'Email'), email);
   const notMe = h('button', { class: 'button--link', type: 'button' }, 'Not you?');
-  const lede = h('p', { class: 'door__lede' });
+  const lede = h('p', { class: 'door__lede' }, notMe);
   const error = h('p', { class: 'door__error', role: 'alert' });
   const submit = h('button', { class: 'button button--primary door__submit', type: 'submit' }, 'Sign in');
 
@@ -48,7 +49,6 @@ export function door({ onSignedIn }) {
     const remembered = rememberedEmail();
     email.value = remembered ?? '';
     emailField.hidden = Boolean(remembered);
-    lede.replaceChildren('Welcome back. ', notMe);
     lede.hidden = !remembered;
   }
 

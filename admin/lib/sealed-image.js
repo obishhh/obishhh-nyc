@@ -1,5 +1,5 @@
-import { zoomOf } from '../../src/lib/looks.js';
-import { digest, encode } from './storage.js';
+import { focusOf, zoomOf } from '../../src/lib/looks.js';
+import { digest, encode, uploadImage } from './storage.js';
 
 // Paints a card the way the binder shows it sealed (blurred, washed out, no words) into a small image,
 // so the site can show one picture instead of blurring a live card.
@@ -11,7 +11,7 @@ const HEIGHT = 352;
 const BLUR_RADII = [7, 6, 7];
 const SATURATION = 0.7;
 
-export async function sealedKey({ art, type, finish }) {
+async function sealedKey({ art, type, finish }) {
   // A zoom only joins the key when there is one, so cards without stay painted as they are.
   const zoom = zoomOf(art.zoom) === 1 ? [] : [zoomOf(art.zoom)];
   return digest([VERSION, art.baked || art.src, art.position, type, finish, ...zoom]);
@@ -83,7 +83,7 @@ function coin(ctx, x, y, radius, fill) {
 
 // Covers the frame the way the card does: cropped to its focus point, and zoomed in on that point.
 function cover(ctx, image, x, y, w, h, position = '', zoom = '') {
-  const [px = 50, py = 50] = (position.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+  const [px, py] = focusOf(position);
   const z = zoomOf(zoom);
   const scale = Math.max(w / image.naturalWidth, h / image.naturalHeight);
   const dw = image.naturalWidth * scale;
@@ -200,7 +200,7 @@ function soften(data) {
   }
 }
 
-export async function paintSealed(card) {
+async function paintSealed(card) {
   // Painted from the photo in its look, if it has one, so a draft matches the card it'll be.
   const image = await loadImage(card.art.baked || card.art.src).catch(() => null);
   const canvas = Object.assign(document.createElement('canvas'), { width: WIDTH + PAD * 2, height: HEIGHT + PAD * 2 });
@@ -212,4 +212,16 @@ export async function paintSealed(card) {
   ctx.putImageData(data, 0, 0);
   // Its corners are see-through, so where WebP can't be made it's a PNG.
   return encode(canvas, { fallback: 'image/png', quality: 0.82 });
+}
+
+// A card's art with its sealed picture. It's painted once per art, crop, type and finish, and reused until one of them
+// changes (`previous` is the one it has). One that can't be painted keeps the one it had, if any.
+export async function withSealed(card, previous) {
+  const key = await sealedKey(card);
+  if (previous?.includes(key)) return { ...card.art, sealed: previous };
+  try {
+    return { ...card.art, sealed: await uploadImage(await paintSealed(card), { folder: 'sealed', name: key }) };
+  } catch {
+    return previous ? { ...card.art, sealed: previous } : card.art;
+  }
 }

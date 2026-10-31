@@ -1,5 +1,6 @@
 import { h } from '../../src/lib/dom.js';
 import { seeded } from '../../src/lib/seeded.js';
+import { STATUS } from '../data/options.js';
 
 const MAX_TILT = 0.8;
 
@@ -29,7 +30,7 @@ export function tile({ href, name, status, card, seed, data = {}, extra, showNam
     ),
     h('div', { class: 'tile__meta' },
       showName && h('span', { class: 'tile__title' }, name),
-      h('span', { class: 'tile__status' }, live ? 'Live' : 'Draft'),
+      h('span', { class: 'tile__status' }, live ? STATUS.published : STATUS.draft),
       extra,
     ),
   );

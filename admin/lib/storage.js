@@ -23,11 +23,12 @@ export const listUploads = async () =>
     .filter(({ id, name }) => id && !name.startsWith('.'))
     .map(({ name }) => publicUrl(name));
 
-// Takes an uploaded image back out of storage. Only ever one of ours: anything else, like library art, is left alone.
-export async function deleteImage(url) {
+// Takes an uploaded photo nothing points at any more back out of storage, quietly: tidying up never gets in the way of
+// a save. Only ever one of ours: anything else, like library art, is left alone.
+export async function letGo(url) {
   const ours = publicUrl('');
   if (!url?.startsWith(ours)) return;
-  unwrap(await bucket().remove([decodeURIComponent(url.slice(ours.length))]));
+  await bucket().remove([decodeURIComponent(url.slice(ours.length))]).catch(() => {});
 }
 
 // A canvas as an image file: `type` where the browser can make it, `fallback` where it can't (Safari makes no WebP).
@@ -54,7 +55,7 @@ export async function upload(file, options) {
     canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close();
   } catch {
-    throw new Error('That file didn’t read as an image. Try a JPG or PNG.');
+    throw new Error('That file isn’t an image.');
   }
   return uploadImage(await encode(canvas), options);
 }

@@ -47,6 +47,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .button--quiet:hover { background: none; color: var(--ink-900); }
 .button--danger { color: var(--hp-600); }
 
+/* A quiet button that picks a photo to upload, lined up with the text of its column. */
+.upload-button { margin: 8px 0 0 -12px; }
+.upload-button:has(:focus-visible) { outline: 2px solid var(--ink-900); outline-offset: 2px; }
+.upload-button.is-busy { cursor: progress; }
+
 /* A button that reads as a link, in among other words. */
 .button--link {
   padding: 0;
@@ -108,10 +113,7 @@ select.input {
 .check {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   padding: 6px 0;
-  font-size: 15px;
-  cursor: pointer;
 }
 
 .check input {

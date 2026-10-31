@@ -1,5 +1,5 @@
 import { h } from '../../src/lib/dom.js';
-import { MOST_ZOOM, zoomOf } from '../../src/lib/looks.js';
+import { focusOf, MOST_ZOOM, zoomOf } from '../../src/lib/looks.js';
 
 const STEP = 5;
 const clamp = (value) => Math.min(100, Math.max(0, Math.round(value)));
@@ -107,7 +107,7 @@ export function focusPicker(name) {
     },
     // Pick up whatever the form, or a drag or pinch in the preview, just wrote into the hidden inputs.
     sync() {
-      [x = 50, y = 50] = (input.value.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+      [x, y] = focusOf(input.value);
       render();
       zoom.sync();
     },

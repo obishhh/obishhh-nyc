@@ -1,0 +1,58 @@
+.focus__pad {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--page-line);
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.focus__pad:focus-visible { outline: 2px solid var(--border-500); outline-offset: 2px; }
+
+.focus__image {
+  display: block;
+  max-width: 100%;
+  max-height: 180px;
+  pointer-events: none;
+}
+
+.focus__dot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(13 10 5 / 0.4), 0 1px 4px rgb(13 10 5 / 0.35);
+  pointer-events: none;
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 320px;
+  margin-top: 8px;
+}
+
+.zoom__label {
+  font-size: 14px;
+  color: var(--page-muted);
+}
+
+.zoom__slider {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--ink-900);
+}
+
+.zoom__amount {
+  min-width: 3ch;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--page-muted);
+}

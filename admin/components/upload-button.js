@@ -4,7 +4,7 @@ import { h } from '../../src/lib/dom.js';
 export function uploadButton({ label, upload, onUploaded, onError }) {
   const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
   const text = h('span', {}, label);
-  const root = h('label', { class: 'button button--quiet art__upload' }, file, text);
+  const root = h('label', { class: 'button button--quiet upload-button' }, file, text);
   let shown = label;
 
   file.addEventListener('change', async () => {

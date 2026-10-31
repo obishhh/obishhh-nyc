@@ -1,7 +1,7 @@
 import { licenses } from '../../src/data/licenses.js';
 import { h } from '../../src/lib/dom.js';
 import { LOOKS } from '../../src/lib/looks.js';
-import { dropdown, row, select, text } from './fields.js';
+import { dropdown, reveal, row, select, text } from './fields.js';
 import { focusPicker } from './focus-picker.js';
 import { uploadButton } from './upload-button.js';
 
@@ -44,9 +44,9 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
     row('Image', root),
     focusRow,
     lookRow,
-    text('art.alt', 'Alt text', { placeholder: 'Describe the picture' }),
+    text('art.alt', 'Alt text'),
     text('art.illustrator', 'Illustrator', { placeholder: 'obishhh', maxlength: 40 }),
-    text('art.title', 'Work', { placeholder: 'Title of the original' }),
+    text('art.title', 'Work'),
     text('art.author', 'Author'),
     row('License', license),
     text('art.source', 'Source', { type: 'url', placeholder: 'https://' }),
@@ -107,7 +107,7 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
       focus.sync();
     },
     focus() {
-      (radios().find((radio) => radio.checked) ?? uploader.file).focus();
+      reveal(radios().find((radio) => radio.checked) ?? uploader.file);
       root.scrollIntoView({ behavior: 'smooth', block: 'center' });
     },
   };

@@ -23,3 +23,16 @@ export async function lookImage(src, look, previous) {
     return null;
   }
 }
+
+// A Snapshot's photos with their look drawn (they share one look), reusing the pictures `was` has where they're still
+// it. A photo whose look couldn't be drawn has none, and the site draws it; `failed` says if that happened.
+export async function withLooks(photo, was) {
+  if (!photo) return { photo, failed: false };
+  const { src, look, second } = photo;
+  const baked = await lookImage(src, look, was?.baked);
+  const secondBaked = second?.src ? await lookImage(second.src, look, was?.second?.baked) : undefined;
+  return {
+    photo: { ...photo, baked: baked ?? undefined, second: second?.src ? { ...second, baked: secondBaked ?? undefined } : second },
+    failed: baked === null || secondBaked === null,
+  };
+}

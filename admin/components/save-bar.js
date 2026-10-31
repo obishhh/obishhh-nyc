@@ -4,23 +4,23 @@ import { ARROW_LEFT } from '../lib/icons.js';
 import { button } from './fields.js';
 
 // The bar across the top of an editor: back to all the cards, how the card stands (or what just happened to it), and
-// its buttons. Saving goes through here: one save at a time, and `busy` while a save or an upload is out, so the room
-// can keep you from leaving until it's landed.
+// its buttons. Saving and deleting go through here, one at a time, and `busy` while one or an upload is out, so the
+// room can keep you from leaving until it's landed.
 //   title(status): what to call the card, as 'new', 'draft' or 'published'.
 //   check(status): whether it's ready to save that way (saying why not, if it isn't).
-//   save(status): saves it; resolves false if the card was put away meanwhile.
+//   save(status): saves it.
 //   remove(): deletes it, after asking.
 export function saveBar({ title, check = () => true, save, remove, onDone }) {
   const state = h('p', { class: 'editor__state', role: 'status', 'aria-live': 'polite' });
-  const deleteButton = button('Delete', 'button--danger', destroy);
+  const deleteButton = button('Delete', 'button--danger', () => run(remove));
   const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished.'));
   const keepButton = button('Save draft', '', () => keep());
   const publish = button('Publish', 'button--primary', () => commit('published', 'Published.'));
   const actions = [deleteButton, unpublish, keepButton, publish];
+  const uploads = new Set();
   let record = null;
   let dirty = false;
-  let saving = false;
-  let uploads = 0;
+  let working = false;
   let flashTimer;
 
   function render() {
@@ -46,36 +46,32 @@ export function saveBar({ title, check = () => true, save, remove, onDone }) {
 
   const disable = (on) => actions.forEach((action) => (action.disabled = on));
 
-  // The buttons save and head back to all the cards; ⌘S saves and stays, for mid-writing. Changes made while it
-  // saved keep it here, still to be saved.
-  async function commit(status, message, { stay = false } = {}) {
-    if (saving || !check(status)) return;
-    saving = true;
+  // One save or delete at a time, with the buttons off until it's done.
+  async function run(work) {
+    if (working) return;
+    working = true;
     disable(true);
     try {
-      if ((await save(status)) === false) return;
-      if (stay || dirty) flash(message);
-      else onDone(message);
+      await work();
     } catch (error) {
       flash(error.message, true);
     } finally {
-      saving = false;
+      working = false;
       disable(false);
     }
   }
+
+  // The buttons save and head back to all the cards; ⌘S saves and stays, for mid-writing. A photo still uploading goes
+  // in with the save, and changes made while it saved keep it here, still to be saved.
+  const commit = (status, message, { stay = false } = {}) => run(async () => {
+    while (uploads.size) await Promise.allSettled(uploads);
+    if (!check(status)) return;
+    await save(status);
+    if (stay || dirty) flash(message);
+    else onDone(message);
+  });
 
   const keep = (options) => commit(record?.status === 'published' ? 'published' : 'draft', 'Saved.', options);
-
-  async function destroy() {
-    disable(true);
-    try {
-      await remove();
-    } catch (error) {
-      flash(error.message, true);
-    } finally {
-      disable(false);
-    }
-  }
 
   return {
     root: h('div', { class: 'editor__bar' },
@@ -90,13 +86,14 @@ export function saveBar({ title, check = () => true, save, remove, onDone }) {
       dirty = isDirty;
       render();
     },
-    // An upload on its way: the card isn't left until it's in.
+    // An upload on its way: the card isn't left, or saved, until it's in.
     track(upload) {
-      uploads += 1;
-      return upload.finally(() => (uploads -= 1));
+      const out = upload.finally(() => uploads.delete(out));
+      uploads.add(out);
+      return out;
     },
     get busy() {
-      return saving || uploads > 0;
+      return working || uploads.size > 0;
     },
     save: () => keep({ stay: true }),
   };

@@ -3,16 +3,15 @@ import { h } from '../../src/lib/dom.js';
 import { LOOKS } from '../../src/lib/looks.js';
 import { trackPointer } from '../../src/lib/pointer.js';
 import { linkTo } from '../../src/lib/urls.js';
-import { DESIGNS, TYPES } from '../data/options.js';
+import { DESIGNS, nextNumber, STATUS, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { photoGestures } from '../lib/photo-gestures.js';
-import { row, section, select, text, textarea } from './fields.js';
+import { reveal, row, section, select, text, textarea } from './fields.js';
 import { focusPicker, zoomControl } from './focus-picker.js';
 import { PREVIEW_PAUSE } from './preview.js';
 import { saveBar } from './save-bar.js';
 import { uploadButton } from './upload-button.js';
 
-const STATUS = { new: 'New', draft: 'Draft', published: 'Live' };
 const NAMES = { note: 'note', snapshot: 'Snapshot' };
 // A note is written big in marker, so it fits less; a Snapshot's caption box holds about 200 characters.
 const MAX_TEXT = { note: 140, snapshot: 200 };
@@ -27,12 +26,7 @@ const today = () => new Date().toLocaleDateString('en-CA');
 const editable = (data) => JSON.stringify(EDITABLE[data.kind].map((key) => data[key]));
 
 // A fresh card for the deck: today's date and the next number along.
-function blankDeckCard(kind, deck) {
-  const numbers = deck.map(({ number }) => parseInt(number, 10)).filter(Number.isFinite);
-  const next = String(Math.max(0, ...numbers) + 1).padStart(3, '0');
-  const set = deck.find(({ number }) => number.includes('/'))?.number.split('/')[1] ?? '100';
-  return { kind, number: `${next}/${set}`, type: 'plain', design: 'painted', date: today() };
-}
+const blankDeckCard = (kind, deck) => ({ kind, number: nextNumber(deck, '100'), type: 'plain', design: 'painted', date: today() });
 
 // An upload button that puts the uploaded photo's address in a hidden field.
 function uploader({ upload, onError, name, empty, filled }) {
@@ -120,18 +114,18 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     },
     onDone,
   });
-  const preview = h('div', { class: 'binder__pocket', style: { '--tilt': '0deg' } });
+  const preview = h('div', { class: 'binder__pocket' });
   const form = h('form', { class: 'editor__form', novalidate: true });
   let previewTimer;
   let record = null;
   let kind = null;
-  let snapshot = '';
+  // What the form held as last saved, to tell when it's moved on.
+  let baseline = '';
   let dirty = false;
   let counter;
-  let photo;
-  let second;
-  // Counts the cards opened, so a save that lands after another one's been opened leaves that one be.
-  let opened = 0;
+  // A Snapshot's photo fields, and its second photo's.
+  let photoFields;
+  let secondFields;
 
   trackPointer(preview, '.card');
 
@@ -143,12 +137,12 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     fields: (half) => ['position', 'zoom'].map((field) => form.elements.namedItem(half === '1' ? `photo.second.${field}` : `photo.${field}`)),
     enabled: () => kind === 'snapshot',
     onChange: () => {
-      photo?.focus.sync();
-      second?.zoom.sync();
+      photoFields?.focus.sync();
+      secondFields?.zoom.sync();
     },
   });
 
-  const root = h('div', { class: 'editor deck-editor' },
+  const root = h('div', { class: 'editor' },
     bar.root,
     h('div', { class: 'editor__body' },
       form,
@@ -164,8 +158,8 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     const words = { rows: 3, maxlength: MAX_TEXT[kind], hint: counter };
     const upload = (file) => bar.track(uploadPhoto(file));
     const onError = (error) => bar.flash(`Upload failed. ${error.message}`, true);
-    photo = kind === 'snapshot' ? photoRows({ upload, onError }) : null;
-    second = kind === 'snapshot' ? secondRows({ upload, onError }) : null;
+    photoFields = kind === 'snapshot' ? photoRows({ upload, onError }) : null;
+    secondFields = kind === 'snapshot' ? secondRows({ upload, onError }) : null;
     form.replaceChildren(
       kind === 'note'
         ? section('Note',
@@ -175,9 +169,9 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
           text('link', 'Link', { placeholder: 'nytimes.com/…', maxlength: 512, inputmode: 'url', autocapitalize: 'off', spellcheck: 'false' }),
         )
         : section('Snapshot',
-          ...photo.rows,
-          ...second.rows,
-          text('photo.alt', 'Alt text', { placeholder: 'Describe the photo', maxlength: 160 }),
+          ...photoFields.rows,
+          ...secondFields.rows,
+          text('photo.alt', 'Alt text', { maxlength: 160 }),
           text('title', 'Title', { placeholder: 'Bodega Cat', maxlength: 24 }),
           textarea('text', 'Caption', { ...words, placeholder: 'Search your deck for a cat. He’s already on the counter.' }),
           text('rule', 'Rule line', { placeholder: SNAPSHOT_RULE, maxlength: 60 }),
@@ -207,9 +201,9 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
   function refresh({ now = false } = {}) {
     const data = current();
     counter.textContent = `${data.text.length}/${MAX_TEXT[kind]}`;
-    photo?.show(data.photo.src);
-    second?.show(data.photo.src, data.photo.second?.src);
-    dirty = editable(data) !== snapshot;
+    photoFields?.show(data.photo.src);
+    secondFields?.show(data.photo.src, data.photo.second?.src);
+    dirty = editable(data) !== baseline;
     bar.show(record, dirty);
     clearTimeout(previewTimer);
     if (now) drawPreview();
@@ -219,33 +213,30 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
   function ready(data) {
     const missing = kind === 'note'
       ? !data.text && [form.elements.namedItem('text'), 'Write something before publishing.']
-      : (!data.photo.src && [photo.file, 'Add a photo before publishing.']) || (!data.title && [form.elements.namedItem('title'), 'Add a title before publishing.']);
+      : (!data.photo.src && [photoFields.file, 'Add a photo before publishing.']) || (!data.title && [form.elements.namedItem('title'), 'Add a title before publishing.']);
     if (!missing) return true;
     bar.flash(missing[1], true);
-    missing[0]?.focus();
+    reveal(missing[0]);
     return false;
   }
 
   function linkOk({ link }) {
     if (!link || (linkTo(link) && !/\s/.test(link) && link.length <= 512)) return true;
     bar.flash(link.length > 512 ? 'That link’s too long.' : 'That link doesn’t look like a web address.', true);
-    form.elements.namedItem('link')?.focus();
+    reveal(form.elements.namedItem('link'));
     return false;
   }
 
   async function persist(status) {
     const data = current();
-    const at = opened;
     const saved = await onSave(data, status, record?.id);
-    if (at !== opened) return false;
     // The form already shows what's being saved, and may have moved on since: leave it be, and note what's saved.
     record = saved;
-    snapshot = editable(data);
+    baseline = editable(data);
     refresh({ now: true });
   }
 
   function load(next, newKind = 'note') {
-    opened += 1;
     record = next;
     const wanted = next?.kind ?? newKind;
     if (wanted !== kind) {
@@ -253,9 +244,9 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
       build();
     }
     writeForm(form, next ?? blankDeckCard(kind, deck()));
-    photo?.focus.sync();
-    second?.zoom.sync();
-    snapshot = editable(current());
+    photoFields?.focus.sync();
+    secondFields?.zoom.sync();
+    baseline = editable(current());
     refresh({ now: true });
   }
 

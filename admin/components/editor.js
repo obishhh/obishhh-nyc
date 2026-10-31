@@ -1,16 +1,15 @@
 import { h } from '../../src/lib/dom.js';
 import { MAX_TABS, sections } from '../../src/lib/sections.js';
-import { blankCard, FINISHES, RARITIES, TYPES } from '../data/options.js';
+import { blankCard, FINISHES, RARITIES, STATUS, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { photoGestures } from '../lib/photo-gestures.js';
 import { recall, store } from '../lib/prefs.js';
 import { artPicker } from './art-picker.js';
 import { composer } from './composer.js';
-import { checkbox, dropdown, number, row, section, select, text, textarea } from './fields.js';
+import { checkbox, dropdown, number, reveal, row, section, select, text, textarea } from './fields.js';
 import { preview, PREVIEW_PAUSE } from './preview.js';
 import { saveBar } from './save-bar.js';
 
-const STATUS = { new: 'New card', draft: 'Draft', published: 'Live' };
 const WRITING_KEY = 'obishhh.editor.writing';
 
 const slugify = (text) =>
@@ -47,7 +46,7 @@ function outOfTabs(value, others) {
 // Edit one card. The preview redraws as you type, once you pause.
 export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, onDone }) {
   const bar = saveBar({
-    title: (status) => STATUS[status],
+    title: (status) => (status === 'new' ? 'New card' : STATUS[status]),
     check: (status) => status !== 'published' || ready(current()),
     save: persist,
     remove: async () => {
@@ -70,7 +69,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
       uploadPhoto: (file) => bar.track(uploadPhoto(file)),
       onError: (error) => bar.flash(`Photo upload failed. ${error.message}`, true),
     })),
-    text('slug', 'Address', { placeholder: 'from the title', maxlength: 60 }),
+    text('slug', 'Address', { maxlength: 60 }),
   );
 
   const form = h('form', { class: 'editor__form', novalidate: true },
@@ -84,7 +83,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
       select('type', 'Type', TYPES),
       select('finish', 'Finish', FINISHES),
       select('rarity', 'Rarity', RARITIES),
-      checkbox('firstPrint', 'First print', 'Show the “1” badge'),
+      checkbox('firstPrint', 'First print'),
     ),
     section('Art', ...art.rows),
     section('Move',
@@ -114,13 +113,12 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
   );
 
   let record = null;
-  let snapshot = '';
+  // The form as last saved, to tell when it's moved on.
+  let baseline = '';
   let dirty = false;
   let shownType = '';
   let others = [];
   let previewTimer;
-  // Counts the cards opened, so a save that lands after another one's been opened leaves that one be.
-  let opened = 0;
 
   const current = () => tidy(readForm(form));
 
@@ -130,9 +128,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
   function syncFocusToggle() {
     const on = otherSections().every((each) => !each.open);
     focusToggle.setAttribute('aria-pressed', String(on));
-    const label = on ? 'Show all sections' : 'Collapse all but the article';
-    focusToggle.setAttribute('aria-label', label);
-    focusToggle.title = label;
+    focusToggle.setAttribute('aria-label', on ? 'Show all sections' : 'Only the article');
   }
 
   function writing(on, { remember = true } = {}) {
@@ -143,12 +139,10 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     syncFocusToggle();
   }
 
-  const unfold = (element) => (element.closest('.form-section').open = true);
-
   function refresh({ now = false } = {}) {
     const data = current();
     filedHint.textContent = outOfTabs(data.stats.filed, others);
-    dirty = JSON.stringify(data) !== snapshot;
+    dirty = JSON.stringify(data) !== baseline;
     bar.show(record, dirty);
     clearTimeout(previewTimer);
     if (now) view.update(data);
@@ -157,8 +151,6 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
 
   // Fills the form with a card: one being opened, or the one just saved.
   function fill(next) {
-    const fresh = !next || next.id !== record?.id;
-    if (fresh) view.reset();
     record = next;
     const rest = cards().filter(({ id }) => id !== next?.id);
     others = rest.filter(({ status }) => status === 'published');
@@ -169,26 +161,25 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     writeForm(form, data);
     art.sync();
     shownType = data.type;
-    snapshot = JSON.stringify(current());
+    baseline = JSON.stringify(current());
     refresh({ now: true });
-    if (fresh) writing(recall(WRITING_KEY), { remember: false });
   }
 
+  // A card being opened starts face up, with the sections folded or not as they were last left.
   function load(next) {
-    opened += 1;
+    view.reset();
     fill(next);
+    writing(recall(WRITING_KEY), { remember: false });
   }
 
   function ready(data) {
     if (!data.title) {
       bar.flash('Add a title before publishing.', true);
-      unfold(form.elements.namedItem('title'));
-      form.elements.namedItem('title').focus();
+      reveal(form.elements.namedItem('title'));
       return false;
     }
     if (!data.art.src) {
       bar.flash('Pick an image before publishing.', true);
-      unfold(art.rows[0]);
       art.focus();
       return false;
     }
@@ -197,14 +188,12 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
 
   async function persist(status) {
     const data = current();
-    const at = opened;
     const saved = await onSave(data, status, record?.id);
-    if (at !== opened) return false;
     // Words typed while it saved stay put: the form only catches up with the saved card if it hasn't moved on.
     if (JSON.stringify(current()) === JSON.stringify(data)) fill(saved);
     else {
       record = saved;
-      snapshot = JSON.stringify(data);
+      baseline = JSON.stringify(data);
       refresh();
     }
   }

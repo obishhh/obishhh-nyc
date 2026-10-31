@@ -32,10 +32,11 @@ export function composer(name, { uploadPhoto, onError, ...attrs }) {
 
   const picker = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*', tabindex: -1 });
   const photoButton = tool('Add a photo', null, PHOTO);
+  // Where the photo goes: where the cursor was when it was asked for, unless the text has changed since.
   let spot = null;
 
   photoButton.addEventListener('click', () => {
-    spot = [field.selectionStart, field.selectionEnd];
+    spot = { text: field.value, at: [field.selectionStart, field.selectionEnd] };
     picker.click();
   });
 
@@ -47,7 +48,7 @@ export function composer(name, { uploadPhoto, onError, ...attrs }) {
     photoButton.classList.add('is-busy');
     try {
       const url = await uploadPhoto(chosen);
-      field.setSelectionRange(...spot);
+      if (field.value === spot.text) field.setSelectionRange(...spot.at);
       photo(field, url);
     } catch (error) {
       onError(error);

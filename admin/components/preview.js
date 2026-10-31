@@ -18,7 +18,7 @@ const VIEWS = [
 // The card exactly as the binder will show it: face up, sealed, or opened as its article.
 export function preview() {
   const back = cardBack();
-  const flip = h('div', { class: 'binder__flip', role: 'button', tabindex: 0, 'aria-pressed': 'false', 'aria-label': 'Flip the preview' });
+  const flip = h('div', { class: 'flip binder__flip', role: 'button', tabindex: 0, 'aria-pressed': 'false', 'aria-label': 'Flip the preview' });
   const pocket = h('div', { class: 'binder__pocket' }, flip);
   const stage = h('div', { class: 'preview__stage' }, pocket);
   const buttons = VIEWS.map(({ value, label }) =>

@@ -14,7 +14,7 @@ export const listDeck = async () =>
 
 // The number's the card's link, so the database holds it to what a link can be, and to one live card each.
 const NUMBER_TROUBLE = {
-  deck_number_shape: 'A number can only have letters, digits, dots, dashes and slashes.',
+  deck_number_shape: 'A number can only have letters, digits, dots, dashes, underscores and slashes.',
   deck_published_key: 'Another live card already has that number.',
 };
 

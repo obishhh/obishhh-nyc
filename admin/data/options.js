@@ -1,5 +1,8 @@
 export { TYPES } from '../../src/data/types.js';
 
+// How a card stands, on the shelves and in an editor's bar.
+export const STATUS = { new: 'New', draft: 'Draft', published: 'Live' };
+
 // How a note's drawn: over its type's painting, or plain like the first energy cards.
 export const DESIGNS = [
   { value: 'painted', label: 'Painted' },
@@ -18,13 +21,17 @@ export const RARITIES = [
   { value: 'rare', label: 'Rare' },
 ];
 
-// A fresh card takes the next number in the set.
-export function blankCard(cards) {
+// The number after the highest so far, in the set the others are numbered in (or `set`, for the first).
+export function nextNumber(cards, set) {
   const numbers = cards.map(({ number }) => parseInt(number, 10)).filter(Number.isFinite);
   const next = String(Math.max(0, ...numbers) + 1).padStart(3, '0');
-  const set = cards.find(({ number }) => number.includes('/'))?.number.split('/')[1] ?? '120';
+  return `${next}/${cards.find(({ number }) => number.includes('/'))?.number.split('/')[1] ?? set}`;
+}
+
+// A fresh card takes the next number in the set.
+export function blankCard(cards) {
   return {
-    number: `${next}/${set}`,
+    number: nextNumber(cards, '120'),
     title: '',
     type: 'plain',
     finish: 'standard',

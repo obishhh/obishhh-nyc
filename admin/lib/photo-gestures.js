@@ -1,6 +1,5 @@
-import { frame, zoomOf } from '../../src/lib/looks.js';
+import { focusOf, frame, zoomOf } from '../../src/lib/looks.js';
 
-const numbers = (value) => (value.match(/\d+(\.\d+)?/g) ?? []).map(Number);
 const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 const middle = (points) => points.reduce(([x, y], [px, py]) => [x + px / points.length, y + py / points.length], [0, 0]);
 const spread = ([a, b]) => (b ? Math.hypot(a[0] - b[0], a[1] - b[1]) : 0);
@@ -21,7 +20,7 @@ export function photoGestures(preview, { frames, keyOf = () => '', fields, enabl
   const frameFor = (key) => [...preview.querySelectorAll(frames)].find((each) => keyOf(each) === key && !each.querySelector(frames));
   const read = (key) => {
     const [position, zoom] = fields(key);
-    const [x = 50, y = 50] = numbers(position.value);
+    const [x, y] = focusOf(position.value);
     return { x, y, zoom: zoomOf(zoom.value) };
   };
 
@@ -110,7 +109,10 @@ export function photoGestures(preview, { frames, keyOf = () => '', fields, enabl
     });
   });
 
-  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) preview.addEventListener(type, (event) => lift(event.pointerId));
+  for (const type of ['pointerup', 'pointercancel']) preview.addEventListener(type, (event) => lift(event.pointerId));
+  // A finger starts out held by the photo it touched, and lets go of it when the preview takes over: only the preview
+  // itself losing hold ends the drag.
+  preview.addEventListener('lostpointercapture', (event) => event.target === preview && lift(event.pointerId));
   // A drag ends in a click where it's let go: not a tap on whatever's there.
   preview.addEventListener('click', (event) => {
     if (!dragged) return;
