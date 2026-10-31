@@ -5,8 +5,9 @@
 // Run after adding, removing or moving an import: node scripts/preloads.mjs. With --check, it only says whether the
 // lists are out of date (and exits 1 if they are).
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { reachable } from './modules.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PAGES = [
@@ -16,22 +17,6 @@ const PAGES = [
 const START = '<!-- modules: written by scripts/preloads.mjs -->';
 const END = '<!-- /modules -->';
 
-// Every module reachable from the entry by static imports (and re-exports), the entry itself left out.
-function reachable(entry) {
-  const seen = new Set();
-  const visit = (file) => {
-    if (seen.has(file)) return;
-    seen.add(file);
-    const code = readFileSync(join(ROOT, file), 'utf8');
-    for (const [, path] of code.matchAll(/^\s*(?:import|export)\s[^'"]*?from\s+'(\.{1,2}\/[^']+)'/gm)) {
-      visit(relative(ROOT, join(ROOT, dirname(file), path)));
-    }
-  };
-  visit(entry);
-  seen.delete(entry);
-  return [...seen].sort();
-}
-
 // A page as it is, and as it should be with its list written in.
 function listed({ page, entry }) {
   const file = join(ROOT, page);
@@ -39,7 +24,8 @@ function listed({ page, entry }) {
   const [before, rest] = html.split(START);
   const after = rest?.split(END)[1];
   if (after === undefined) throw new Error(`${page} needs ${START} … ${END} where the list goes`);
-  const modules = reachable(entry);
+  // Everything the entry loads; the entry itself has its own script tag.
+  const modules = reachable(ROOT, [entry]).filter((module) => module !== entry);
   const list = modules.map((module) => `  <link rel="modulepreload" href="/${module}">`).join('\n');
   return { page, file, html, next: `${before}${START}\n${list}\n  ${END}${after}`, count: modules.length };
 }
