@@ -73,21 +73,12 @@
 }
 
 .binder__flip:focus-visible {
-  outline: 2px solid var(--ink-900);
   outline-offset: 8px;
 }
 
 .binder__flip[aria-pressed='true'] { --flip: 180deg; }
 
-.binder__flip > * {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transition: box-shadow 0.4s var(--ease-out);
-}
-
-.binder__flip > .card-back { transform: rotateY(180deg); }
+.binder__flip > * { transition: box-shadow 0.4s var(--ease-out); }
 
 /* Only for a real pointer: a finger's tap leaves :hover stuck, which would leave the card lifted. */
 @media (hover: hover) {
@@ -132,7 +123,7 @@
   :root { --scale: 1.1; }
 }
 
+/* With less motion asked for, a card doesn't lift on hover at all (base.css stops the rest). */
 @media (prefers-reduced-motion: reduce) {
-  .binder__flip { transition: none; }
   .binder__pocket:hover > .binder__flip { --lift: 0px; --turn: var(--tilt); }
 }

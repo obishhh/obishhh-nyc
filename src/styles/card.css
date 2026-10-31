@@ -86,7 +86,6 @@
 .card__panel::after {
   background: var(--noise);
   opacity: 0.12;
-  mix-blend-mode: multiply;
 }
 
 .card[data-finish='reverse'] .card__panel::before {

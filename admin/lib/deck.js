@@ -12,9 +12,18 @@ const toRow = ({ kind, number, type, title, text, rule, place, link, photo, date
 export const listDeck = async () =>
   unwrap(await deck().select().order('posted_on', { ascending: false }).order('created_at', { ascending: false })).map(fromRow);
 
+// The number's the card's link, so the database holds it to what a link can be, and to one live card each.
+const NUMBER_TROUBLE = {
+  deck_number_shape: 'A number can only have letters, digits, dots, dashes and slashes.',
+  deck_published_key: 'Another live card already has that number.',
+};
+
 export async function saveDeckCard(id, data, status) {
   const row = toRow(data, status);
-  return fromRow(unwrap(await (id ? deck().update(row).eq('id', id) : deck().insert(row)).select().single()));
+  const saved = await (id ? deck().update(row).eq('id', id) : deck().insert(row)).select().single();
+  const trouble = Object.keys(NUMBER_TROUBLE).find((name) => saved.error?.message?.includes(name));
+  if (trouble) throw new Error(NUMBER_TROUBLE[trouble]);
+  return fromRow(unwrap(saved));
 }
 
 export const deleteDeckCard = async (id) => unwrap(await deck().delete().eq('id', id));

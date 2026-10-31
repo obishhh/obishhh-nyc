@@ -47,3 +47,14 @@
   stroke-linejoin: round;
   paint-order: stroke fill;
 }
+
+/* Wherever a card turns over (the binder, the reader, the flight between them, the deck), its face and this back sit on
+   top of each other, each hidden from behind, the back turned round to start with. */
+:is(.binder__flip, .reader__flip, .reader-ghost__turn, .deck-spread__turn) > * {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+:is(.binder__flip, .reader__flip, .reader-ghost__turn, .deck-spread__turn) > .card-back { transform: rotateY(180deg); }

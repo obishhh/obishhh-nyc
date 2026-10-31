@@ -1,0 +1,15 @@
+.tabbed > .binder { animation: page-in 0.3s var(--ease-out); }
+
+.mock__sleeve {
+  width: 252px;
+  height: 352px;
+  border-radius: 12px;
+  background:
+    linear-gradient(118deg, rgb(255 255 255 / 0) 30%, rgb(255 255 255 / 0.9) 42%, rgb(255 255 255 / 0) 54%),
+    #f8f7f4;
+}
+
+/* One column has no page to fill, so no empty sleeves. */
+@media (max-width: 519px) {
+  .binder__pocket:has(> .mock__sleeve) { display: none; }
+}

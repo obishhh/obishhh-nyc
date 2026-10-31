@@ -1,0 +1,33 @@
+/* The deck box's cards, laid out to look over. */
+.deck-mock {
+  --scale: 1;
+  --pocket-width: 252px;
+  --pocket-height: 352px;
+
+  width: min(1000px, 100%);
+  margin: 0 auto;
+}
+
+.deck-mock__set + .deck-mock__set { margin-top: 72px; }
+
+.deck-mock__title {
+  margin: 0;
+  font: 700 36px/1 var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.deck-mock__about {
+  max-width: 56ch;
+  margin: 8px 0 32px;
+  color: var(--page-muted);
+}
+
+.deck-mock__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 252px);
+  justify-content: space-between;
+  gap: 32px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

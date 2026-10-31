@@ -32,7 +32,6 @@
 
 .dividers__tab:focus-visible {
   border-radius: 6px;
-  outline: 2px solid var(--ink-900);
   outline-offset: -2px;
 }
 
@@ -106,8 +105,4 @@
     height: var(--across);
     animation-name: dividers-swipe-right;
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dividers__mark { animation: none; }
 }

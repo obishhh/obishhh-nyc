@@ -37,7 +37,6 @@
 }
 
 .deck-box__open:focus-visible {
-  outline: 2px solid var(--ink-900);
   outline-offset: 4px;
 }
 
@@ -206,7 +205,6 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 }
 
 .deck-spread__close:hover { background: var(--page-wash); }
-.deck-spread__close:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 2px; }
 
 .deck-spread__icon {
   width: 16px;
@@ -256,7 +254,6 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 }
 
 .deck-spread__card:focus-visible {
-  outline: 2px solid var(--ink-900);
   outline-offset: 6px;
 }
 
@@ -356,7 +353,7 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 .deck-spread__go:hover b,
 .deck-spread__go:focus-visible b { text-decoration: underline; text-underline-offset: 2px; }
 
-.deck-spread__go:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 4px; }
+.deck-spread__go:focus-visible { outline-offset: 4px; }
 
 /* It comes up with the card's ✕ and Save, and where it goes follows a beat behind. */
 .deck-spread.has-front .deck-spread__go.is-ready > .deck-spread__go-to { animation: rise-in 0.26s var(--ease-out) 0.44s backwards; }
@@ -390,15 +387,6 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   transform-style: preserve-3d;
 }
 
-.deck-spread__turn > * {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.deck-spread__turn > .card-back { transform: rotateY(180deg); }
-
 @keyframes tip-out {
   from {
     opacity: 0;
@@ -427,21 +415,4 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   .deck-spread__cards { gap: 0; }
   .deck-spread__card { --shift: calc(var(--side) * 26px + var(--dx)); }
   .deck-spread__card + .deck-spread__card { margin-top: -40px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .deck-box__peek,
-  .deck-spread__tool,
-  .deck-spread.has-front .deck-spread__tool.is-ready,
-  .deck-spread__card,
-  .deck-spread__card.is-picked,
-  .deck-spread__card.is-front,
-  .deck-spread__card:focus-visible { transition: none; }
-
-  .tabbed > .deck-box,
-  .deck-spread__card,
-  .deck-spread.has-front .deck-spread__go.is-ready::after,
-  .deck-spread.has-front .deck-spread__go.is-ready > .deck-spread__go-to,
-  .deck-spread[open]::backdrop,
-  .deck-spread[open] .deck-spread__bar { animation: none; }
 }

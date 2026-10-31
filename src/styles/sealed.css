@@ -26,7 +26,3 @@
 
 /* Cards that are ready before the page shows arrive with it, not after. */
 .is-waiting .sealed__face { transition: none; }
-
-@media (prefers-reduced-motion: reduce) {
-  .sealed__face { transition: none; }
-}
