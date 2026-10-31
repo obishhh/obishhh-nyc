@@ -5,6 +5,7 @@ import { deckCard } from '../components/deck-cards.js';
 import { dividers, WIDE } from '../components/dividers.js';
 import { masthead } from '../components/masthead.js';
 import { notice } from '../components/notice.js';
+import { openedIn } from '../lib/addresses.js';
 import { loadBinder, loadDeck } from '../lib/cards.js';
 import { h } from '../lib/dom.js';
 import { enableFlip } from '../lib/flip.js';
@@ -126,4 +127,4 @@ if (shelf.page) {
 await revealWhenReady(document.body, [shelf.ready]);
 shelf.reading?.openLinked();
 // A link to a deck card opens the deck on it, unless it's a link to an article too.
-if (shelf.page && !new URLSearchParams(location.search).get('card')) decking.then((box) => box?.openLinked());
+if (shelf.page && !openedIn('card')) decking.then((box) => box?.openLinked());

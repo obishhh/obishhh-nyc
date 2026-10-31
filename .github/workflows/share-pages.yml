@@ -1,0 +1,58 @@
+# Keeps a page for every published card, so a link to one shows that card in a message (see scripts/share-pages.mjs).
+# Runs every hour, whenever main changes, and by hand from the Actions tab ("Run workflow").
+name: Share pages
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+    paths-ignore: ['d/**', 'c/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: share-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install a browser to draw the cards
+        run: |
+          npm install --no-save --no-package-lock playwright@1.49.1
+          npx playwright install --with-deps chromium
+
+      - name: Build the pages
+        run: node scripts/share-pages.mjs
+
+      - name: Commit what changed
+        id: commit
+        run: |
+          git add -A d c
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "share-pages"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh share pages"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # A push made by a workflow doesn't start a Pages build on its own, so ask for one.
+      - name: Publish
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${{ github.repository }}/pages/builds" || echo "Pages will pick it up on the next build."

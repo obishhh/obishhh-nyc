@@ -1,3 +1,4 @@
+import { addressFor, deckKey, openedIn } from '../lib/addresses.js';
 import { h, svg } from '../lib/dom.js';
 import { cardBack } from './card-back.js';
 import { HAND, handwriting, INK, random, roughen, scrawl } from '../lib/scrawl.js';
@@ -62,16 +63,8 @@ const READ_MOST = 640;
 const clock = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit', minute: '2-digit' });
 const timeOf = (at) => (at && !Number.isNaN(Date.parse(at)) ? clock.format(new Date(at)) : '');
 
-// A deck card's own address, ?deck=001-100: its number, or its id if it has none.
-const keyOf = (entry) => (entry.number ? entry.number.replaceAll('/', '-') : String(entry.id ?? ''));
-const keyInUrl = () => new URLSearchParams(location.search).get('deck');
-function withDeckCard(key) {
-  const query = new URLSearchParams(location.search);
-  if (key) query.set('deck', key);
-  else query.delete('deck');
-  const search = query.toString();
-  return `${location.pathname}${search ? `?${search}` : ''}`;
-}
+const keyInUrl = () => openedIn('deck');
+const withDeckCard = (key) => addressFor('deck', key);
 // A tipped-out card lands this long after the deck opens; a linked one comes up once it has.
 const LANDED = 600;
 
@@ -94,7 +87,7 @@ function spread(entries, make, title, onClose) {
       entries.map((entry, index) => {
         const toss = (key, most) => ((seeded(`${entry.id ?? index}:${key}`) * 2 - 1) * most).toFixed(1);
         return h('li', {
-          class: 'deck-spread__card', tabindex: 0, dataset: { time: timeOf(entry.at), key: keyOf(entry) },
+          class: 'deck-spread__card', tabindex: 0, dataset: { time: timeOf(entry.at), key: deckKey(entry) },
           style: {
             '--tilt': `${toss('tilt', SCATTER.tilt)}deg`, '--dx': `${toss('x', SCATTER.x)}px`, '--dy': `${toss('y', SCATTER.y)}px`,
             '--side': index % 2 ? '1' : '-1', '--index': String(index),

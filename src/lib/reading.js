@@ -1,4 +1,5 @@
 import { reader } from '../components/reader.js';
+import { addressFor, openedIn } from './addresses.js';
 
 const CARD = { width: 252, height: 352 };
 const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
@@ -11,16 +12,10 @@ let usingKeyboard = false;
 addEventListener('keydown', () => (usingKeyboard = true), true);
 addEventListener('pointerdown', () => (usingKeyboard = false), true);
 
-const slugInUrl = () => new URLSearchParams(location.search).get('card');
+const slugInUrl = () => openedIn('card');
 
-// The address with ?card= set or cleared, keeping anything else in it (like the open tab).
-function withCard(slug) {
-  const query = new URLSearchParams(location.search);
-  if (slug) query.set('card', slug);
-  else query.delete('card');
-  const search = query.toString();
-  return search ? `?${search}` : location.pathname;
-}
+// The address with an article open, or none, keeping anything else in it (like the open tab).
+const withCard = (slug) => addressFor('card', slug);
 
 // Where a card sits on screen: its centre, scale and tilt. The centre holds still
 // under a tilt, where the corners don't.
