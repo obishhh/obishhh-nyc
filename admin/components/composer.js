@@ -30,7 +30,7 @@ export function composer(name, { uploadPhoto, onError, ...attrs }) {
     return element;
   });
 
-  const picker = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*', tabindex: -1 });
+  const picker = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*,.heic,.heif', tabindex: -1 });
   const photoButton = tool('Add a photo', null, PHOTO);
   // Where the photo goes: where the cursor was when it was asked for, unless the text has changed since.
   let spot = null;

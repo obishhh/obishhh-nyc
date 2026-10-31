@@ -5,6 +5,8 @@ import { supabase, unwrap } from './supabase.js';
 const BUCKET = 'card-art';
 const LONGEST_SIDE = 1600;
 const QUALITY = 0.86;
+// Opens an iPhone's HEIC photos where the browser can't (everywhere but Safari). Big, so only fetched for one.
+const HEIC = 'https://cdn.jsdelivr.net/npm/heic-to@1.6.6/dist/csp/heic-to.js';
 
 const bucket = () => supabase.storage.from(BUCKET);
 const publicUrl = (name) => bucket().getPublicUrl(name).data.publicUrl;
@@ -45,17 +47,35 @@ export async function digest(value) {
   return [...hash.slice(0, 12)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+const NOT_AN_IMAGE = 'That file isn’t an image.';
+
+// Whether a file's a HEIC (or other HEIF) photo, by its first bytes: an ISO media box with a HEIF brand.
+async function heif(file) {
+  const head = new TextDecoder().decode(await file.slice(4, 12).arrayBuffer());
+  return /^ftyp(heic|heix|heim|heis|hevc|hevx|hevm|hevs|mif1|msf1)$/.test(head);
+}
+
+// A photo as the browser opens it, or through the converter if it's a HEIC the browser can't.
+async function open(file) {
+  try {
+    return await createImageBitmap(file);
+  } catch {
+    if (!(await heif(file))) throw new Error(NOT_AN_IMAGE);
+  }
+  const { heicTo } = await import(HEIC).catch(() => {
+    throw new Error('Couldn’t fetch what opens HEIC photos. Try again once you’re online.');
+  });
+  return heicTo({ blob: file, type: 'bitmap' }).catch(() => {
+    throw new Error(NOT_AN_IMAGE);
+  });
+}
+
 // A photo from this device, shrunk to a sensible size and re-encoded so it stays small, then uploaded: its address.
 export async function upload(file, options) {
-  let canvas;
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, LONGEST_SIDE / Math.max(bitmap.width, bitmap.height));
-    canvas = Object.assign(document.createElement('canvas'), { width: Math.round(bitmap.width * scale), height: Math.round(bitmap.height * scale) });
-    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-  } catch {
-    throw new Error('That file isn’t an image.');
-  }
+  const bitmap = await open(file);
+  const scale = Math.min(1, LONGEST_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = Object.assign(document.createElement('canvas'), { width: Math.round(bitmap.width * scale), height: Math.round(bitmap.height * scale) });
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
   return uploadImage(await encode(canvas), options);
 }

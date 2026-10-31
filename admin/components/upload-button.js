@@ -2,7 +2,7 @@ import { h } from '../../src/lib/dom.js';
 
 // A button that uploads a photo from this device. While one's on its way it says so, and takes no second pick.
 export function uploadButton({ label, upload, onUploaded, onError }) {
-  const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
+  const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*,.heic,.heif' });
   const text = h('span', {}, label);
   const root = h('label', { class: 'button button--quiet upload-button' }, file, text);
   let shown = label;
