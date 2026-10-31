@@ -41,11 +41,12 @@
   outline-offset: 4px;
 }
 
-/* The newest few cards stand in the box: the newest in front, the rest to either side of it in turn (--lean), each one
-   further back sitting a little lower. Going for the box fans them up out of it, the front one highest. */
+/* The newest few cards stand in the box: the newest in front, the rest to either side of it, each one further back
+   sitting a little lower and every one a little askew. Going for the box fans them up out of it every which way: where
+   each goes, and how fast, is set afresh each time (deck-box.js). */
 .deck-box__peek {
-  --rest: translate(calc(var(--lean) * 4%), calc(var(--behind) * 2%)) rotate(calc(-3deg + var(--lean) * 3deg));
-  --up: translate(calc(var(--lean) * 9%), calc(-34% + var(--behind) * 5%)) rotate(calc(-5deg + var(--lean) * 7deg));
+  --rest: translate(var(--rest-x), calc(var(--behind) * 2%)) rotate(var(--rest-r));
+  --up: translate(var(--up-x), var(--up-y)) rotate(var(--up-r));
 
   position: absolute;
   top: 2.5%;
@@ -53,7 +54,7 @@
   aspect-ratio: 252 / 352;
   transform: var(--rest);
   transform-origin: 50% 100%;
-  transition: transform 0.45s var(--ease-out) calc(var(--behind) * 0.04s);
+  transition: transform var(--rise, 0.45s) var(--ease-out) var(--wait, 0s);
 }
 
 /* Their own layers only while they're likely to move, not the whole time the page is open. */
@@ -270,7 +271,15 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 
 .deck-spread.has-front { overflow: hidden; }
 .deck-spread.has-front .deck-spread__card:not(.is-front) { opacity: 0.25; }
-.deck-spread.has-front .deck-spread__bar { opacity: 0.35; transition: opacity 0.3s; }
+
+/* The deck's own title and ✕ go while a card's up, so the card's ✕ is the only one there, and come back after. */
+.deck-spread__bar { transition: opacity 0.2s, visibility 0s; }
+
+.deck-spread.has-front .deck-spread__bar {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0s 0.2s;
+}
 
 /* What comes up with a raised card: its ✕ and Save at its bottom right corner, and the time it went up under it.
    They come in together as the card lands, and go straight away when it's put down. */

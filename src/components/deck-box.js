@@ -367,6 +367,27 @@ function spread(entries, make, title, onClose) {
 
 // How many of the newest cards stand in the box.
 const PEEKING = 5;
+const between = (next, low, high) => low + next() * (high - low);
+
+// Up out of the box: each card to its own side, height and angle, at its own pace, and differently every time it's
+// gone for, so it never fans the same way twice.
+function fanOut(peeks, next) {
+  const sides = peeks.map((_, at) => Math.ceil(at / 2) * (at % 2 ? 1 : -1));
+  for (let at = sides.length - 1; at > 0; at -= 1) {
+    const other = Math.floor(next() * (at + 1));
+    [sides[at], sides[other]] = [sides[other], sides[at]];
+  }
+  peeks.forEach((peek, at) => {
+    const lean = sides[at] + between(next, -0.8, 0.8);
+    // The newest, in front, always comes well up; the rest anywhere from barely to as high.
+    const rise = at ? between(next, 14, 50) : between(next, 36, 50);
+    peek.style.setProperty('--up-x', `${(lean * 11 + between(next, -8, 8)).toFixed(1)}%`);
+    peek.style.setProperty('--up-y', `${(-rise).toFixed(1)}%`);
+    peek.style.setProperty('--up-r', `${(lean * 8 + between(next, -14, 14)).toFixed(1)}deg`);
+    peek.style.setProperty('--rise', `${between(next, 0.34, 0.62).toFixed(2)}s`);
+    peek.style.setProperty('--wait', `${between(next, 0, 0.1).toFixed(2)}s`);
+  });
+}
 
 // A photo of a real deck box, cut out and stuck on a block of colour, with the newest cards tucked inside.
 // Open it to tip the cards out.
@@ -379,12 +400,19 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
   // further back they are, so each shows over a shoulder. Only the front one is drawn straight away; the rest are
   // drawn when the page is idle, or as soon as someone goes for the box.
   const peeks = entries.slice(0, PEEKING).map((entry, behind) => {
+    // Standing in the box, each a little askew its own way.
+    const settle = random(seeded(`peek:${entry.id ?? behind}`));
     const lean = Math.ceil(behind / 2) * (behind % 2 ? 1 : -1);
     return h('span', {
       class: 'deck-box__peek', 'aria-hidden': 'true', inert: true,
-      style: { width: `${PEEK * 100}%`, '--behind': String(behind), '--lean': String(lean) },
+      style: {
+        width: `${PEEK * 100}%`, '--behind': String(behind),
+        '--rest-x': `${(lean * 4 + between(settle, -2, 2)).toFixed(1)}%`,
+        '--rest-r': `${(-3 + lean * 3 + between(settle, -2.5, 2.5)).toFixed(1)}deg`,
+      },
     }, behind === 0 && make(entry));
   });
+  fanOut(peeks, random(seeded(`fan:${entries[0]?.id}`)));
   let filled = peeks.length < 2;
   const fillPeeks = () => {
     if (filled) return;
@@ -414,6 +442,8 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
   };
   box.addEventListener('pointerenter', fillPeeks, { once: true });
   open.addEventListener('focus', fillPeeks, { once: true });
+  box.addEventListener('pointerenter', () => fanOut(peeks, Math.random));
+  open.addEventListener('focus', () => fanOut(peeks, Math.random));
   if ('requestIdleCallback' in window) requestIdleCallback(ready, { timeout: 2000 });
   else setTimeout(ready, 1200);
   open.addEventListener('click', () => ready().open());
