@@ -45,7 +45,7 @@ export function focusPicker(name) {
     class: 'focus__pad',
     role: 'slider',
     tabindex: 0,
-    'aria-label': 'Focus point. Arrow keys move it.',
+    'aria-label': 'Focus point',
     'aria-valuemin': 0,
     'aria-valuemax': 100,
   }, image, dot);
@@ -91,7 +91,7 @@ export function focusPicker(name) {
 
   const root = h('div', { class: 'focus' },
     pad,
-    h('p', { class: 'row__hint' }, 'Drag the dot to choose what stays in frame, and pinch the preview to zoom. ', reset),
+    h('p', { class: 'row__hint' }, reset),
     zoom.root,
     input,
   );
