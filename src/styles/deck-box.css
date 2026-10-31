@@ -272,29 +272,7 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
 }
 
-.deck-spread__lower[hidden],
-.deck-spread__share[hidden] { display: none; }
-
-.deck-spread__share {
-  position: fixed;
-  z-index: 6;
-  animation: page-in 0.3s var(--ease-out) 0.3s backwards;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
-}
-
-/* "Link copied", for a moment, beside the share button. */
-.deck-spread__shared {
-  position: fixed;
-  z-index: 6;
-  margin: 0;
-  padding: 4px 8px;
-  transform: translateX(-100%);
-  border-radius: 4px;
-  background: var(--ink-900);
-  color: var(--page);
-  font: 500 12px/1.2 var(--font-display);
-  white-space: nowrap;
-}
+.deck-spread__lower[hidden] { display: none; }
 
 /* When the raised card went up: just the time, centred under it. */
 .deck-spread__time {
