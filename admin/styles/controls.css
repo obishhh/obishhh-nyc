@@ -65,6 +65,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font: 400 15px/1.4 var(--font-body);
 }
 
+/* A phone zooms in on a field under 16px when it's tapped, and stays zoomed, so the room pans sideways. */
+@media (pointer: coarse) {
+  .input { font-size: 16px; }
+}
+
 .input::placeholder { color: #bab6ad; }
 .input:hover { border-bottom-color: var(--line-hover); }
 
