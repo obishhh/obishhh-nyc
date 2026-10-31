@@ -1,6 +1,7 @@
 import { deckCard } from '../../src/components/deck-cards.js';
 import { h } from '../../src/lib/dom.js';
 import { plural } from '../../src/lib/words.js';
+import { shelfTitle } from './shelf.js';
 import { tile, tiles } from './tile.js';
 
 // A note's name on the shelf is its first few words.
@@ -16,7 +17,7 @@ export function deckShelf() {
   const tilesFor = tiles(deckTile);
   const root = h('section', { class: 'shelf deck-shelf' },
     h('header', { class: 'shelf__header' },
-      h('h2', { class: 'shelf__title' }, 'Deck box'),
+      shelfTitle('h2', 'Deck box', grid),
       h('span', { class: 'deck-shelf__actions' },
         h('a', { class: 'button button--primary', href: '#/deck/new-note', 'aria-label': 'New note' }, '+ Energy'),
         h('a', { class: 'button button--primary', href: '#/deck/new-snapshot', 'aria-label': 'New Snapshot' }, '+ Trainer'),

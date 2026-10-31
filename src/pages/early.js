@@ -41,8 +41,10 @@ askEarly('deck')?.then(([newest]) => {
   if (newest.photo?.second?.src) warmArt({ ...newest.photo.second, look: newest.photo.look });
 }, () => {});
 
-// The Pokédex lies by the box whatever's in the deck.
+// The Pokédex lies by the box whatever's in the deck. What's in it is asked for now; its photos wait until it's opened
+// or the page has settled.
 warm('/assets/pokedex/pokedex.webp');
+askEarly('pokedex')?.catch(() => {});
 
 // The tabs' photo: down the side on a wide screen, across the top otherwise.
 warm(matchMedia(WIDE).matches ? '/assets/tabs/side.webp' : '/assets/tabs/top.webp');

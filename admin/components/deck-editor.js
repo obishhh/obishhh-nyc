@@ -1,16 +1,15 @@
 import { deckCard, SNAPSHOT_RULE } from '../../src/components/deck-cards.js';
 import { h } from '../../src/lib/dom.js';
-import { LOOKS } from '../../src/lib/looks.js';
 import { trackPointer } from '../../src/lib/pointer.js';
 import { linkTo } from '../../src/lib/urls.js';
 import { DESIGNS, nextNumber, STATUS, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { photoGestures } from '../lib/photo-gestures.js';
 import { reveal, row, section, select, text, textarea } from './fields.js';
-import { focusPicker, zoomControl } from './focus-picker.js';
+import { zoomControl } from './focus-picker.js';
+import { photoRows, uploader } from './photo-fields.js';
 import { PREVIEW_PAUSE } from './preview.js';
 import { saveBar } from './save-bar.js';
-import { uploadButton } from './upload-button.js';
 
 const NAMES = { note: 'note', snapshot: 'Snapshot' };
 // A note is written big in marker, so it fits less; a Snapshot's caption box holds about 200 characters.
@@ -27,29 +26,6 @@ const editable = (data) => JSON.stringify(EDITABLE[data.kind].map((key) => data[
 
 // A fresh card for the deck: today's date and the next number along.
 const blankDeckCard = (kind, deck) => ({ kind, number: nextNumber(deck, '100'), type: 'plain', design: 'painted', date: today() });
-
-// An upload button that puts the uploaded photo's address in a hidden field.
-function uploader({ upload, onError, name, empty, filled }) {
-  const src = h('input', { type: 'hidden', name });
-  const button = uploadButton({
-    label: empty,
-    upload,
-    onError,
-    onUploaded(address) {
-      src.value = address;
-      src.dispatchEvent(new Event('uploaded'));
-      src.dispatchEvent(new Event('input', { bubbles: true }));
-    },
-  });
-  return {
-    src,
-    file: button.file,
-    button: button.root,
-    show(value) {
-      button.label(value ? filled : empty);
-    },
-  };
-}
 
 // The second photo, for a Snapshot split down the middle: add one, swap it, or take it away again.
 function secondRows({ upload: send, onError }) {
@@ -76,26 +52,6 @@ function secondRows({ upload: send, onError }) {
       drop.hidden = !second;
       zoom.root.hidden = !second;
       upload.show(second);
-    },
-  };
-}
-
-// The photo: upload one, then pick what stays in frame and how it's drawn.
-function photoRows({ upload: send, onError }) {
-  const upload = uploader({ upload: send, onError, name: 'photo.src', empty: 'Upload…', filled: 'Replace…' });
-  const focus = focusPicker('photo.position');
-  upload.src.addEventListener('uploaded', () => focus.clear());
-  const focusRow = row('Focus', focus.root);
-  const lookRow = select('photo.look', 'Filter', LOOKS);
-  return {
-    file: upload.file,
-    focus,
-    rows: [row('Photo', h('div', {}, upload.button, upload.src)), focusRow, lookRow],
-    show(value) {
-      focusRow.hidden = !value;
-      lookRow.hidden = !value;
-      focus.show(value);
-      upload.show(value);
     },
   };
 }

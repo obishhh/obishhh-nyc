@@ -8,7 +8,7 @@ import { masthead } from '../components/masthead.js';
 import { notice } from '../components/notice.js';
 import { pokedex } from '../components/pokedex.js';
 import { openedIn } from '../lib/addresses.js';
-import { loadBinder, loadDeck } from '../lib/cards.js';
+import { loadBinder, loadDeck, loadPokedex } from '../lib/cards.js';
 import { h } from '../lib/dom.js';
 import { enableFlip } from '../lib/flip.js';
 import { enableReading } from '../lib/reading.js';
@@ -130,7 +130,7 @@ const shelf = await binderPage();
 main.append(shelf.root);
 if (shelf.page) {
   fitToWindow(shelf.page);
-  shelf.root.append(pokedex().root);
+  shelf.root.append(pokedex(loadPokedex()).root);
   decking.then((box) => box && shelf.root.append(box.root));
 }
 await revealWhenReady(document.body, [shelf.ready]);

@@ -6,17 +6,21 @@ import { deckEditor } from './components/deck-editor.js';
 import { deckShelf } from './components/deck-shelf.js';
 import { door } from './components/door.js';
 import { editor } from './components/editor.js';
+import { pokedexEditor } from './components/pokedex-editor.js';
+import { pokedexShelf } from './components/pokedex-shelf.js';
 import { shelf } from './components/shelf.js';
 import { topbar } from './components/topbar.js';
 import { currentSession, isAdmin, signOut } from './lib/auth.js';
 import { deleteCard, listCards, reorderCards, saveArt, saveCard } from './lib/cards.js';
 import { deleteDeckCard, listDeck, saveDeckCard, savePhoto } from './lib/deck.js';
 import { lookImage, withLooks } from './lib/look-image.js';
+import { deletePull, listPokedex, reorderPokedex, savePull } from './lib/pokedex.js';
 import { withSealed } from './lib/sealed-image.js';
 import { letGo, listUploads, upload } from './lib/storage.js';
 
 let cards = [];
 let deck = [];
+let pulls = [];
 
 const entrance = door({ onSignedIn: enter });
 const cardShelf = shelf({ onSort: reorder });
@@ -41,13 +45,21 @@ const deckBench = deckEditor({
   onDelete: removeFromDeck,
   onDone: backToBinder,
 });
+const pokedexBox = pokedexShelf({ onSort: reorderPulls });
+const pokedexBench = pokedexEditor({
+  uploadPhoto: (file) => upload(file, { folder: 'pokedex' }),
+  onSave: saveToPokedex,
+  onDelete: removeFromPokedex,
+  onDone: backToBinder,
+});
 
 const view = h('main', { class: 'room__view' });
 const room = h('div', { class: 'room', hidden: true }, topbar({ onSignOut: leave }), view);
 document.body.append(entrance.root, room);
 
 // Routes: #/ is the binder and the deck box, #/new a fresh card, #/card/<id> an existing one,
-// #/deck/new-note or #/deck/new-snapshot a fresh deck card, #/deck/<id> an existing one.
+// #/deck/new-note or #/deck/new-snapshot a fresh deck card, #/deck/<id> an existing one, #/pokedex/new a fresh card for
+// the Pokédex and #/pokedex/<id> one in it.
 let shown = location.hash;
 
 function render() {
@@ -57,18 +69,25 @@ function render() {
   const deckId = hash.match(/^#\/deck\/(.+)$/)?.[1];
   const fresh = deckId?.match(/^new-(note|snapshot)$/)?.[1];
   const entry = deckId && deck.find((data) => data.id === deckId);
+  const pullId = hash.match(/^#\/pokedex\/(.+)$/)?.[1];
+  const pull = pullId && pulls.find((data) => data.id === pullId);
   if (hash === '#/new' || record) {
     cardBench.load(record || null);
     view.replaceChildren(cardBench.root);
   } else if (fresh || entry) {
     deckBench.load(entry || null, fresh);
     view.replaceChildren(deckBench.root);
+  } else if (pullId === 'new' || pull) {
+    pokedexBench.load(pull || null);
+    view.replaceChildren(pokedexBench.root);
   } else {
     cardShelf.update(cards);
     deckBox.update(deck);
-    view.replaceChildren(cardShelf.root, deckBox.root);
+    pokedexBox.update(pulls);
+    view.replaceChildren(cardShelf.root, deckBox.root, pokedexBox.root);
     if (id) cardShelf.flash('That card isn’t in the binder any more.', true);
     if (deckId) cardShelf.flash('That card isn’t in the deck any more.', true);
+    if (pullId) cardShelf.flash('That card isn’t in the Pokédex any more.', true);
   }
   scrollTo(0, 0);
 }
@@ -79,7 +98,7 @@ function go(hash) {
   render();
 }
 
-const bench = () => [cardBench, deckBench].find((each) => view.contains(each.root));
+const bench = () => [cardBench, deckBench, pokedexBench].find((each) => view.contains(each.root));
 const editing = () => Boolean(bench());
 const unsaved = () => Boolean(bench()?.dirty);
 // Nothing's left while a save, a delete or an upload is still out: it would land on whatever card was open by then.
@@ -147,6 +166,39 @@ async function removeFromDeck({ id, photo }) {
   cardShelf.flash('Deleted.');
 }
 
+// A Pokédex card goes in as it is, and a photo it's let go of comes out of storage.
+async function saveToPokedex(data, status, id) {
+  const was = pulls.find((other) => other.id === id)?.photo;
+  const saved = await savePull(id, data, status);
+  if (was?.src && was.src !== saved.photo?.src) letGo(was.src);
+  pulls = id ? pulls.map((other) => (other.id === id ? saved : other)) : [...pulls, saved];
+  shown = `#/pokedex/${saved.id}`;
+  history.replaceState(null, '', shown);
+  return saved;
+}
+
+async function removeFromPokedex({ id, photo }) {
+  await deletePull(id);
+  if (photo?.src) letGo(photo.src);
+  pulls = pulls.filter((other) => other.id !== id);
+  go('#/');
+  cardShelf.flash('Deleted.');
+}
+
+async function reorderPulls(ids) {
+  const before = pulls;
+  const byId = new Map(pulls.map((data) => [data.id, data]));
+  pulls = ids.map((id) => byId.get(id));
+  try {
+    await reorderPokedex(ids);
+    pokedexBox.flash('Order saved.');
+  } catch (error) {
+    pulls = before;
+    pokedexBox.update(pulls);
+    pokedexBox.flash(error.message, true);
+  }
+}
+
 async function reorder(ids) {
   const before = cards;
   const byId = new Map(cards.map((data) => [data.id, data]));
@@ -167,7 +219,7 @@ async function enter() {
   view.replaceChildren(notice('Loading the cards…'));
   // Whether this account may edit, and the cards, asked for together. Notes are written in marker, so its font comes
   // in with them.
-  const [admin, lists] = await Promise.allSettled([isAdmin(), Promise.all([listCards(), listDeck(), handwriting()])]);
+  const [admin, lists] = await Promise.allSettled([isAdmin(), Promise.all([listCards(), listDeck(), listPokedex(), handwriting()])]);
   if (admin.status === 'fulfilled' && !admin.value) {
     await signOut();
     room.hidden = true;
@@ -180,7 +232,7 @@ async function enter() {
     view.replaceChildren(notice(`Couldn’t load the cards: ${failed.message}`));
     return;
   }
-  [cards, deck] = lists.value;
+  [cards, deck, pulls] = lists.value;
   shown = location.hash;
   render();
   drawLooks();
@@ -209,6 +261,7 @@ async function leave() {
   room.hidden = true;
   cards = [];
   deck = [];
+  pulls = [];
   view.replaceChildren();
   entrance.show();
 }

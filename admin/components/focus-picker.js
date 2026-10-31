@@ -1,42 +1,52 @@
 import { h } from '../../src/lib/dom.js';
-import { focusOf, MOST_ZOOM, zoomOf } from '../../src/lib/looks.js';
+import { focusOf, MOST_TURN, MOST_ZOOM, turnOf, zoomOf } from '../../src/lib/looks.js';
 
 const STEP = 5;
 const clamp = (value) => Math.min(100, Math.max(0, Math.round(value)));
 
-// How far a photo is zoomed in on its focus point: a slider, kept in a hidden field as "1.5" ('' for not at all).
-// Pinching the photo in the preview moves it too.
-export function zoomControl(name) {
+// A slider kept in a hidden field: blank at `rest`, otherwise the number. `of` reads what's written as a number in
+// range, and `says` is how it reads beside the slider.
+function slider(name, { label, min, max, step, rest, of, says }) {
   const input = h('input', { type: 'hidden', name });
-  const slider = h('input', { class: 'zoom__slider', type: 'range', min: 1, max: MOST_ZOOM, step: 0.05, value: 1, 'aria-label': 'Zoom' });
+  const range = h('input', { class: 'zoom__slider', type: 'range', min, max, step, value: rest, 'aria-label': label });
   const amount = h('span', { class: 'zoom__amount', 'aria-hidden': 'true' });
-  const show = (zoom) => {
-    slider.value = String(zoom);
-    amount.textContent = `${zoom.toFixed(1)}×`;
+  const show = (value) => {
+    range.value = String(value);
+    amount.textContent = says(value);
   };
-  slider.addEventListener('input', () => {
-    const zoom = zoomOf(slider.value);
-    input.value = zoom === 1 ? '' : String(zoom);
-    show(zoom);
+  range.addEventListener('input', () => {
+    const value = of(range.value);
+    input.value = value === rest ? '' : String(value);
+    show(value);
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
   return {
-    root: h('label', { class: 'zoom' }, h('span', { class: 'zoom__label' }, 'Zoom'), slider, amount, input),
+    root: h('label', { class: 'zoom' }, h('span', { class: 'zoom__label' }, label), range, amount, input),
     clear() {
       input.value = '';
       this.sync();
     },
     // Pick up whatever the form or a pinch just wrote into the hidden input.
     sync() {
-      show(zoomOf(input.value));
+      show(of(input.value));
     },
   };
 }
 
-// Pick the part of the picture that stays in frame, and how far in it's zoomed. Stored as a CSS object-position, and
-// beside it (`…zoom` for `…position`) the zoom.
-export function focusPicker(name) {
+// How far a photo is zoomed in on its focus point, as "1.5" ('' for not at all). Pinching the photo in the preview
+// moves it too.
+export const zoomControl = (name) =>
+  slider(name, { label: 'Zoom', min: 1, max: MOST_ZOOM, step: 0.05, rest: 1, of: zoomOf, says: (zoom) => `${zoom.toFixed(1)}×` });
+
+// How far a photo's turned back to stand its card up straight, in degrees either way, as "-2.5" ('' for not at all).
+const turnControl = (name) =>
+  slider(name, { label: 'Rotate', min: -MOST_TURN, max: MOST_TURN, step: 0.5, rest: 0, of: turnOf, says: (turn) => `${turn}°` });
+
+// Pick the part of the picture that stays in frame, how far in it's zoomed and, with `turn`, how far it's turned.
+// Stored as a CSS object-position, and beside it (`…zoom` and `…turn` for `…position`) the zoom and the turn.
+export function focusPicker(name, { turn = false } = {}) {
   const zoom = zoomControl(name.replace(/position$/, 'zoom'));
+  const turning = turn ? turnControl(name.replace(/position$/, 'turn')) : null;
   const input = h('input', { type: 'hidden', name });
   const image = h('img', { class: 'focus__image', alt: '', draggable: 'false' });
   const dot = h('span', { class: 'focus__dot', 'aria-hidden': 'true' });
@@ -92,6 +102,7 @@ export function focusPicker(name) {
     pad,
     h('p', { class: 'row__hint' }, reset),
     zoom.root,
+    turning?.root,
     input,
   );
 
@@ -103,6 +114,7 @@ export function focusPicker(name) {
     clear() {
       input.value = '';
       zoom.clear();
+      turning?.clear();
       this.sync();
     },
     // Pick up whatever the form, or a drag or pinch in the preview, just wrote into the hidden inputs.
@@ -110,6 +122,7 @@ export function focusPicker(name) {
       [x, y] = focusOf(input.value);
       render();
       zoom.sync();
+      turning?.sync();
     },
   };
 }

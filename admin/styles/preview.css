@@ -67,9 +67,25 @@
 
 /* A card's picture in the preview is dragged and pinched to line it up: no scrolling or zooming the page from it,
    and a hand. */
-.preview .card__art {
+.preview :is(.card__art, .pull) {
   touch-action: none;
   cursor: grab;
 }
 
-.preview .card__art:active { cursor: grabbing; }
+.preview :is(.card__art, .pull):active { cursor: grabbing; }
+
+/* A Pokédex card, out of its pocket as the site shows it: the photo in its sleeve, and its entry under it. */
+.pull-preview {
+  display: grid;
+  justify-items: center;
+  gap: 28px;
+  width: min(100%, 340px);
+  padding-top: 10px;
+}
+
+.pull-preview > .dex-sleeve {
+  width: min(300px, 100%);
+  rotate: -1.5deg;
+}
+
+.pull-preview > .dex-about { justify-self: stretch; }

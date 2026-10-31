@@ -12,6 +12,33 @@
   letter-spacing: -0.02em;
 }
 
+/* The name folds the shelf: a chevron after it points down while it's open, across while it's folded. */
+.shelf__fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.shelf__fold::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-right: 2.5px solid currentColor;
+  border-bottom: 2.5px solid currentColor;
+  transform: translateY(-4px) rotate(45deg);
+  transition: transform 0.2s var(--ease-out);
+}
+
+.shelf__fold[aria-expanded='false']::after { transform: rotate(-45deg); }
+.shelf__fold:focus-visible { outline-offset: 4px; }
+
 .shelf__summary {
   margin: 0;
   font-size: 14px;
@@ -60,23 +87,23 @@
 
 .tile__open:focus-visible { outline-offset: 10px; }
 
-.tile .binder__pocket > .card {
+.tile .binder__pocket > :is(.card, .pull) {
   transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out), opacity 0.3s var(--ease-out), filter 0.3s var(--ease-out);
 }
 
 /* Drafts sit faded, so live and not-live read at a glance across the shelf. */
-.tile:not([data-status='published']) .binder__pocket > .card {
+.tile:not([data-status='published']) .binder__pocket > :is(.card, .pull) {
   opacity: 0.5;
   filter: saturate(0.35);
 }
 
-.tile:not([data-status='published']):hover .binder__pocket > .card {
+.tile:not([data-status='published']):hover .binder__pocket > :is(.card, .pull) {
   opacity: 0.85;
   filter: saturate(0.8);
 }
 
-.tile:hover .binder__pocket > .card,
-.tile.is-dragging .binder__pocket > .card {
+.tile:hover .binder__pocket > :is(.card, .pull),
+.tile.is-dragging .binder__pocket > :is(.card, .pull) {
   --lift: -6px;
   --turn: 0deg;
   box-shadow: 0 2px 4px rgb(13 10 5 / 0.18), 0 22px 32px -10px rgb(13 10 5 / 0.28);
@@ -87,7 +114,7 @@
   cursor: grabbing;
 }
 
-.tile.is-dragging .binder__pocket > .card { --lift: -12px; }
+.tile.is-dragging .binder__pocket > :is(.card, .pull) { --lift: -12px; }
 .shelf__grid.is-sorting { cursor: grabbing; }
 .shelf__grid.is-sorting .tile__open { pointer-events: none; }
 
@@ -166,11 +193,24 @@
   .shelf__grid { --scale: 0.54; }
 }
 
-/* The deck box, under the binder. */
-.deck-shelf { margin-top: 88px; }
+/* The deck box and the Pokédex, under the binder: well apart from an open shelf, close under a folded one. */
+.deck-shelf,
+.pokedex-shelf { margin-top: 88px; }
+
+.shelf:has(> .shelf__grid[hidden]) + .shelf { margin-top: 36px; }
+
 .deck-shelf .shelf__summary { margin-bottom: 32px; }
+
+/* Folded, a shelf keeps no room for news it isn't showing. */
+.shelf:has(> .shelf__grid[hidden]) :is(.shelf__status, .deck-shelf .shelf__summary) {
+  min-height: 0;
+  margin-bottom: 0;
+}
 
 .deck-shelf__actions {
   display: flex;
   gap: 8px;
 }
+
+/* A Pokédex photo sits in its pocket at a card's size, like the cards. */
+.binder__pocket > .pull { width: var(--card-width); }

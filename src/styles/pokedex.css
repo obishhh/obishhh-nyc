@@ -77,9 +77,9 @@
   }
 }
 
-/* What it says when it's pressed: in the middle of the screen, over everything else gone soft. The screen-sized box
-   blurs what's behind it itself, rather than its backdrop, so it fades in and out in Safari too. */
-.pokedex-says[open] {
+/* Pressed, it opens in the middle of the screen, over everything else gone soft. The screen-sized box blurs what's
+   behind it itself, rather than its backdrop, so it fades in and out in Safari too. */
+.pokedex-screen[open] {
   display: grid;
   place-items: center;
   width: 100%;
@@ -92,13 +92,21 @@
   background: rgb(255 255 255 / 0.5);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  cursor: pointer;
+  overflow: auto;
+  overscroll-behavior: contain;
   animation: page-in 0.2s var(--ease-out);
 }
 
-.pokedex-says::backdrop { background: none; }
+.pokedex-screen::backdrop { background: none; }
 
-.pokedex-says__box {
+.pokedex-screen:focus-visible { outline: none; }
+
+.pokedex-screen.is-leaving { animation: put-away 0.15s ease-in forwards; }
+
+/* While it's empty, it says so: a press anywhere goes on. */
+.pokedex-screen:has(> .pokedex-says) { cursor: pointer; }
+
+.pokedex-says {
   position: relative;
   max-width: 320px;
   margin: 0;
@@ -108,8 +116,4 @@
   animation: rise-in 0.25s var(--ease-out);
 }
 
-.pokedex-says__box::after { animation: blink 1s steps(1) infinite; }
-
-.pokedex-says:focus-visible { outline: none; }
-
-.pokedex-says.is-leaving { animation: put-away 0.15s ease-in forwards; }
+.pokedex-says::after { animation: blink 1s steps(1) infinite; }

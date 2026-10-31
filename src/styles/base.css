@@ -43,7 +43,7 @@ img { display: block; max-width: 100%; }
 html { scrollbar-gutter: stable; }
 
 html.is-reading,
-html:has(.deck-spread[open], .pokedex-says[open]) { overflow: hidden; }
+html:has(.deck-spread[open], .pokedex-screen[open]) { overflow: hidden; }
 
 body { animation: page-in 0.3s var(--ease-out); }
 

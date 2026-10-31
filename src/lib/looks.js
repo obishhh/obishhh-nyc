@@ -415,6 +415,9 @@ const lookClass = (look) => `look${pixelated(look) ? ' look--pixelated' : ''}`;
 // everything around it stay as they are.
 export const MOST_ZOOM = 3;
 export const zoomOf = (zoom) => Math.min(MOST_ZOOM, Math.max(1, Number(zoom) || 1));
+// And, for a photo of a card that wasn't held quite straight, how far it's turned back, in degrees either way ("-2.5").
+export const MOST_TURN = 15;
+export const turnOf = (turn) => Math.min(MOST_TURN, Math.max(-MOST_TURN, Number(turn) || 0));
 // The point as numbers out of 100: "40% 60%" is [40, 60], and anything missing is the middle.
 export function focusOf(position) {
   const [x = 50, y = 50] = (String(position || '').match(/\d+(\.\d+)?/g) ?? []).map(Number);

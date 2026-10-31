@@ -13,6 +13,9 @@ const SEALED_FACE = {
 // The deck box's published notes and Snapshots, newest first.
 export const loadDeck = () => rpc('deck');
 
+// The Pokédex's published cards, in binder order.
+export const loadPokedex = () => rpc('pokedex');
+
 // A published card with no text has no article, so it just flips; nor does one with no address to open it at.
 export const loadBinder = async () =>
   (await rpc('binder')).map((data) =>
