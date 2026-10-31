@@ -1,15 +1,14 @@
-import { h, svg } from '../../src/lib/dom.js';
+import { h } from '../../src/lib/dom.js';
 import { MAX_TABS, sections } from '../../src/lib/sections.js';
 import { blankCard, FINISHES, RARITIES, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { photoGestures } from '../lib/photo-gestures.js';
-import { formatDate } from '../lib/format.js';
-import { ARROW_LEFT } from '../lib/icons.js';
 import { recall, store } from '../lib/prefs.js';
 import { artPicker } from './art-picker.js';
 import { composer } from './composer.js';
-import { button, checkbox, dropdown, number, row, section, select, text, textarea } from './fields.js';
-import { preview } from './preview.js';
+import { checkbox, dropdown, number, row, section, select, text, textarea } from './fields.js';
+import { preview, PREVIEW_PAUSE } from './preview.js';
+import { saveBar } from './save-bar.js';
 
 const STATUS = { new: 'New card', draft: 'Draft', published: 'Live' };
 const WRITING_KEY = 'obishhh.editor.writing';
@@ -45,28 +44,31 @@ function outOfTabs(value, others) {
   return ranked.findIndex((section) => section.value === value) >= MAX_TABS - 1 ? 'Out of tabs: only under All.' : '';
 }
 
-// Edit one card. Every field redraws the preview as you type.
+// Edit one card. The preview redraws as you type, once you pause.
 export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, onDone }) {
-  const state = h('p', { class: 'editor__state', role: 'status', 'aria-live': 'polite' });
-  let flashTimer;
-
-  function flash(message, bad = false) {
-    clearTimeout(flashTimer);
-    state.textContent = message;
-    state.classList.toggle('is-bad', bad);
-    flashTimer = setTimeout(renderState, bad ? 6000 : 2500);
-  }
-
+  const bar = saveBar({
+    title: (status) => STATUS[status],
+    check: (status) => status !== 'published' || ready(current()),
+    save: persist,
+    remove: async () => {
+      if (confirm(`Delete “${record.title || 'Untitled'}”?`)) await onDelete(record);
+    },
+    onDone,
+  });
   const filedHint = h('span');
   const sectionList = h('datalist', { id: 'editor-sections' });
-  const art = artPicker({ ...artOptions, onError: (error) => flash(`Upload failed. ${error.message}`, true) });
+  const art = artPicker({
+    ...artOptions,
+    upload: (file) => bar.track(artOptions.upload(file)),
+    onError: (error) => bar.flash(`Upload failed. ${error.message}`, true),
+  });
   const view = preview();
 
   const articleSection = section('Article',
     row('Text', composer('body', {
       rows: 12,
-      uploadPhoto,
-      onError: (error) => flash(`Photo upload failed. ${error.message}`, true),
+      uploadPhoto: (file) => bar.track(uploadPhoto(file)),
+      onError: (error) => bar.flash(`Photo upload failed. ${error.message}`, true),
     })),
     text('slug', 'Address', { placeholder: 'from the title', maxlength: 60 }),
   );
@@ -101,19 +103,10 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     sectionList,
   );
 
-  const remove = button('Delete', 'button--danger', destroy);
-  const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished.'));
-  const save = button('Save draft', '', () => keep());
-  const publish = button('Publish', 'button--primary', () => commit('published', 'Published.'));
-  const actions = [remove, unpublish, save, publish];
   const focusToggle = h('button', { class: 'editor__fold', type: 'button', 'aria-pressed': 'false' });
 
   const root = h('div', { class: 'editor' },
-    h('div', { class: 'editor__bar' },
-      h('a', { class: 'editor__back', href: '#/' }, svg(ARROW_LEFT), 'All cards'),
-      state,
-      h('div', { class: 'editor__actions' }, actions),
-    ),
+    bar.root,
     h('div', { class: 'editor__body' },
       h('div', { class: 'editor__main' }, focusToggle, form),
       h('aside', { class: 'editor__preview', 'aria-label': 'Preview' }, view.root),
@@ -125,6 +118,9 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
   let dirty = false;
   let shownType = '';
   let others = [];
+  let previewTimer;
+  // Counts the cards opened, so a save that lands after another one's been opened leaves that one be.
+  let opened = 0;
 
   const current = () => tidy(readForm(form));
 
@@ -149,31 +145,18 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
 
   const unfold = (element) => (element.closest('.form-section').open = true);
 
-  function renderState() {
-    clearTimeout(flashTimer);
-    const status = record?.status ?? 'new';
-    state.classList.remove('is-bad');
-    state.classList.toggle('is-dirty', dirty);
-    state.textContent = [
-      STATUS[status],
-      dirty ? 'Unsaved changes' : record && `Saved ${formatDate(record.updated_at)}`,
-    ].filter(Boolean).join(' · ');
-    remove.hidden = !record;
-    unpublish.hidden = status !== 'published';
-    publish.hidden = status === 'published';
-    save.textContent = status === 'published' ? 'Save changes' : 'Save draft';
-    save.classList.toggle('button--primary', status === 'published');
-  }
-
-  function refresh() {
+  function refresh({ now = false } = {}) {
     const data = current();
-    view.update(data);
     filedHint.textContent = outOfTabs(data.stats.filed, others);
     dirty = JSON.stringify(data) !== snapshot;
-    renderState();
+    bar.show(record, dirty);
+    clearTimeout(previewTimer);
+    if (now) view.update(data);
+    else previewTimer = setTimeout(() => view.update(current()), PREVIEW_PAUSE);
   }
 
-  function load(next) {
+  // Fills the form with a card: one being opened, or the one just saved.
+  function fill(next) {
     const fresh = !next || next.id !== record?.id;
     if (fresh) view.reset();
     record = next;
@@ -187,19 +170,24 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     art.sync();
     shownType = data.type;
     snapshot = JSON.stringify(current());
-    refresh();
+    refresh({ now: true });
     if (fresh) writing(recall(WRITING_KEY), { remember: false });
+  }
+
+  function load(next) {
+    opened += 1;
+    fill(next);
   }
 
   function ready(data) {
     if (!data.title) {
-      flash('Add a title before publishing.', true);
+      bar.flash('Add a title before publishing.', true);
       unfold(form.elements.namedItem('title'));
       form.elements.namedItem('title').focus();
       return false;
     }
     if (!data.art.src) {
-      flash('Pick an image before publishing.', true);
+      bar.flash('Pick an image before publishing.', true);
       unfold(art.rows[0]);
       art.focus();
       return false;
@@ -207,52 +195,17 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     return true;
   }
 
-  function busy(on) {
-    actions.forEach((action) => (action.disabled = on));
-  }
-
-  // One save at a time: a second ⌘S while the first is out would save a new card twice.
-  let saving = false;
-
-  // The buttons save and head back to the binder; ⌘S saves and stays, for mid-writing.
-  async function commit(status, message, { stay = false } = {}) {
+  async function persist(status) {
     const data = current();
-    if (saving || (status === 'published' && !ready(data))) return;
-    saving = true;
-    busy(true);
-    try {
-      const saved = await onSave(data, status, record?.id);
-      // Words typed while it saved stay put: the form only catches up with the saved card if it hasn't moved on.
-      if (JSON.stringify(current()) === JSON.stringify(data)) load(saved);
-      else {
-        record = saved;
-        snapshot = JSON.stringify(data);
-        refresh();
-      }
-      if (stay || dirty) flash(message);
-      else onDone(message);
-    } catch (error) {
-      flash(error.code === '23505' ? 'Another card already uses that address.' : error.message, true);
-    } finally {
-      saving = false;
-      busy(false);
-    }
-  }
-
-  function keep(options) {
-    const live = record?.status === 'published';
-    return commit(live ? 'published' : 'draft', 'Saved.', options);
-  }
-
-  async function destroy() {
-    if (!record || !confirm(`Delete “${record.title || 'Untitled'}”?`)) return;
-    busy(true);
-    try {
-      await onDelete(record);
-    } catch (error) {
-      flash(error.message, true);
-    } finally {
-      busy(false);
+    const at = opened;
+    const saved = await onSave(data, status, record?.id);
+    if (at !== opened) return false;
+    // Words typed while it saved stay put: the form only catches up with the saved card if it hasn't moved on.
+    if (JSON.stringify(current()) === JSON.stringify(data)) fill(saved);
+    else {
+      record = saved;
+      snapshot = JSON.stringify(data);
+      refresh();
     }
   }
 
@@ -290,6 +243,10 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     get dirty() {
       return dirty;
     },
-    save: () => keep({ stay: true }),
+    get busy() {
+      return bar.busy;
+    },
+    flash: bar.flash,
+    save: bar.save,
   };
 }

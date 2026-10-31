@@ -82,7 +82,14 @@ function go(hash) {
 const bench = () => [workbench, deckBench].find((each) => view.contains(each.root));
 const editing = () => Boolean(bench());
 const unsaved = () => Boolean(bench()?.dirty);
-const canLeave = () => !unsaved() || confirm('Ditch your unsaved changes?');
+// Nothing's left while a save or an upload is still out: it would land on whatever card was open by then.
+function canLeave() {
+  if (bench()?.busy) {
+    bench().flash('Still saving…');
+    return false;
+  }
+  return !unsaved() || confirm('Ditch your unsaved changes?');
+}
 
 addEventListener('hashchange', () => {
   if (room.hidden) return;
@@ -240,7 +247,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 addEventListener('beforeunload', (event) => {
-  if (!room.hidden && unsaved()) event.preventDefault();
+  if (!room.hidden && (unsaved() || bench()?.busy)) event.preventDefault();
 });
 
 (await currentSession()) ? enter() : entrance.show();

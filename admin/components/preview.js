@@ -6,6 +6,9 @@ import { h } from '../../src/lib/dom.js';
 import { enableFlip } from '../../src/lib/flip.js';
 import { trackPointer } from '../../src/lib/pointer.js';
 
+// A preview redraws once the typing pauses, rather than on every key.
+export const PREVIEW_PAUSE = 60;
+
 const VIEWS = [
   { value: 'revealed', label: 'Face up' },
   { value: 'sealed', label: 'Sealed' },

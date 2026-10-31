@@ -1,21 +1,20 @@
 import { deckCard, linkTo, SNAPSHOT_RULE } from '../../src/components/deck-cards.js';
-import { h, svg } from '../../src/lib/dom.js';
-import { trackPointer } from '../../src/lib/pointer.js';
+import { h } from '../../src/lib/dom.js';
 import { LOOKS } from '../../src/lib/looks.js';
+import { trackPointer } from '../../src/lib/pointer.js';
 import { TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
-import { formatDate } from '../lib/format.js';
-import { ARROW_LEFT } from '../lib/icons.js';
-import { button, row, section, select, text, textarea } from './fields.js';
 import { photoGestures } from '../lib/photo-gestures.js';
+import { row, section, select, text, textarea } from './fields.js';
 import { focusPicker, zoomControl } from './focus-picker.js';
+import { PREVIEW_PAUSE } from './preview.js';
+import { saveBar } from './save-bar.js';
+import { uploadButton } from './upload-button.js';
 
 const STATUS = { new: 'New', draft: 'Draft', published: 'Live' };
 const NAMES = { note: 'note', snapshot: 'Snapshot' };
 // A note is written big in marker, so it fits less; a Snapshot's caption box holds about 200 characters.
 const MAX_TEXT = { note: 140, snapshot: 200 };
-// The preview's handwriting waits for a pause in the typing, rather than redrawing on every key.
-const PREVIEW_PAUSE = 60;
 // What the form edits for each kind; the rest of a record (its id, status and times, and the other kind's fields,
 // blank until it's first saved) isn't anything to save.
 const EDITABLE = {
@@ -34,42 +33,32 @@ function blankDeckCard(kind, deck) {
   return { kind, number: `${next}/${set}`, type: 'plain', date: today() };
 }
 
-// An upload button that puts the uploaded photo's address in a hidden field and says what it did.
-function uploader({ uploadPhoto, onError, name, empty, filled }) {
+// An upload button that puts the uploaded photo's address in a hidden field.
+function uploader({ upload, onError, name, empty, filled }) {
   const src = h('input', { type: 'hidden', name });
-  const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
-  const label = h('span', {}, empty);
-  let uploading = false;
-  file.addEventListener('change', async () => {
-    const [picked] = file.files;
-    if (!picked) return;
-    uploading = true;
-    label.textContent = 'Uploading…';
-    try {
-      src.value = await uploadPhoto(picked);
+  const button = uploadButton({
+    label: empty,
+    upload,
+    onError,
+    onUploaded(address) {
+      src.value = address;
       src.dispatchEvent(new Event('uploaded'));
       src.dispatchEvent(new Event('input', { bubbles: true }));
-    } catch (error) {
-      onError(error);
-    } finally {
-      uploading = false;
-      label.textContent = src.value ? filled : empty;
-      file.value = '';
-    }
+    },
   });
   return {
     src,
-    file,
-    button: h('label', { class: 'button button--quiet art__upload' }, file, label),
+    file: button.file,
+    button: button.root,
     show(value) {
-      if (!uploading) label.textContent = value ? filled : empty;
+      button.label(value ? filled : empty);
     },
   };
 }
 
 // The second photo, for a Snapshot split down the middle: add one, swap it, or take it away again.
-function secondRows({ uploadPhoto, onError }) {
-  const upload = uploader({ uploadPhoto, onError, name: 'photo.second.src', empty: 'Add…', filled: 'Replace…' });
+function secondRows({ upload: send, onError }) {
+  const upload = uploader({ upload: send, onError, name: 'photo.second.src', empty: 'Add…', filled: 'Replace…' });
   const position = h('input', { type: 'hidden', name: 'photo.second.position' });
   const zoom = zoomControl('photo.second.zoom');
   const drop = h('button', { class: 'button button--quiet', type: 'button' }, 'Remove');
@@ -97,8 +86,8 @@ function secondRows({ uploadPhoto, onError }) {
 }
 
 // The photo: upload one, then pick what stays in frame and how it's drawn.
-function photoRows({ uploadPhoto, onError }) {
-  const upload = uploader({ uploadPhoto, onError, name: 'photo.src', empty: 'Upload…', filled: 'Replace…' });
+function photoRows({ upload: send, onError }) {
+  const upload = uploader({ upload: send, onError, name: 'photo.src', empty: 'Upload…', filled: 'Replace…' });
   const focus = focusPicker('photo.position');
   upload.src.addEventListener('uploaded', () => focus.clear());
   const focusRow = row('Focus', focus.root);
@@ -116,26 +105,32 @@ function photoRows({ uploadPhoto, onError }) {
   };
 }
 
-// Write or edit one card in the deck box. The preview redraws as you type.
+// Write or edit one card in the deck box. The preview redraws as you type, once you pause.
 export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
-  const state = h('p', { class: 'editor__state', role: 'status', 'aria-live': 'polite' });
+  const bar = saveBar({
+    title: (status) => `${STATUS[status]} ${NAMES[kind]}`,
+    check: (status) => {
+      const data = current();
+      return linkOk(data) && (status !== 'published' || ready(data));
+    },
+    save: persist,
+    remove: async () => {
+      if (confirm('Delete this card?')) await onDelete(record);
+    },
+    onDone,
+  });
   const preview = h('div', { class: 'binder__pocket', style: { '--tilt': '0deg' } });
   const form = h('form', { class: 'editor__form', novalidate: true });
-  const remove = button('Delete', 'button--danger', destroy);
-  const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished.'));
-  const save = button('Save draft', '', () => keep());
-  const publish = button('Publish', 'button--primary', () => commit('published', 'Published.'));
-  const actions = [remove, unpublish, save, publish];
-  let flashTimer;
   let previewTimer;
   let record = null;
   let kind = null;
   let snapshot = '';
   let dirty = false;
-  let saving = false;
   let counter;
   let photo;
   let second;
+  // Counts the cards opened, so a save that lands after another one's been opened leaves that one be.
+  let opened = 0;
 
   trackPointer(preview, '.card');
 
@@ -153,11 +148,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
   });
 
   const root = h('div', { class: 'editor deck-editor' },
-    h('div', { class: 'editor__bar' },
-      h('a', { class: 'editor__back', href: '#/' }, svg(ARROW_LEFT), 'All cards'),
-      state,
-      h('div', { class: 'editor__actions' }, actions),
-    ),
+    bar.root,
     h('div', { class: 'editor__body' },
       form,
       h('aside', { class: 'editor__preview', 'aria-label': 'Preview' },
@@ -166,20 +157,14 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     ),
   );
 
-  function flash(message, bad = false) {
-    clearTimeout(flashTimer);
-    state.textContent = message;
-    state.classList.toggle('is-bad', bad);
-    flashTimer = setTimeout(renderState, bad ? 6000 : 2500);
-  }
-
   // The form for one kind of card. Only rebuilt when the kind changes, so saving never yanks it out from under you.
   function build() {
     counter = h('span');
     const words = { rows: 3, maxlength: MAX_TEXT[kind], hint: counter };
-    const onError = (error) => flash(`Upload failed. ${error.message}`, true);
-    photo = kind === 'snapshot' ? photoRows({ uploadPhoto, onError }) : null;
-    second = kind === 'snapshot' ? secondRows({ uploadPhoto, onError }) : null;
+    const upload = (file) => bar.track(uploadPhoto(file));
+    const onError = (error) => bar.flash(`Upload failed. ${error.message}`, true);
+    photo = kind === 'snapshot' ? photoRows({ upload, onError }) : null;
+    second = kind === 'snapshot' ? secondRows({ upload, onError }) : null;
     form.replaceChildren(
       kind === 'note'
         ? section('Note',
@@ -212,22 +197,6 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     return data;
   }
 
-  function renderState() {
-    clearTimeout(flashTimer);
-    const status = record?.status ?? 'new';
-    state.classList.remove('is-bad');
-    state.classList.toggle('is-dirty', dirty);
-    state.textContent = [
-      `${STATUS[status]} ${NAMES[kind]}`,
-      dirty ? 'Unsaved changes' : record && `Saved ${formatDate(record.updated_at)}`,
-    ].filter(Boolean).join(' · ');
-    remove.hidden = !record;
-    unpublish.hidden = status !== 'published';
-    publish.hidden = status === 'published';
-    save.textContent = status === 'published' ? 'Save changes' : 'Save draft';
-    save.classList.toggle('button--primary', status === 'published');
-  }
-
   function drawPreview() {
     clearTimeout(previewTimer);
     preview.replaceChildren(deckCard(current()));
@@ -239,7 +208,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     photo?.show(data.photo.src);
     second?.show(data.photo.src, data.photo.second?.src);
     dirty = editable(data) !== snapshot;
-    renderState();
+    bar.show(record, dirty);
     clearTimeout(previewTimer);
     if (now) drawPreview();
     else previewTimer = setTimeout(drawPreview, PREVIEW_PAUSE);
@@ -250,61 +219,31 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
       ? !data.text && [form.elements.namedItem('text'), 'Write something before publishing.']
       : (!data.photo.src && [photo.file, 'Add a photo before publishing.']) || (!data.title && [form.elements.namedItem('title'), 'Add a title before publishing.']);
     if (!missing) return true;
-    flash(missing[1], true);
+    bar.flash(missing[1], true);
     missing[0]?.focus();
     return false;
   }
 
   function linkOk({ link }) {
     if (!link || (linkTo(link) && !/\s/.test(link) && link.length <= 512)) return true;
-    flash(link.length > 512 ? 'That link’s too long.' : 'That link doesn’t look like a web address.', true);
+    bar.flash(link.length > 512 ? 'That link’s too long.' : 'That link doesn’t look like a web address.', true);
     form.elements.namedItem('link')?.focus();
     return false;
   }
 
-  function busy(on) {
-    actions.forEach((action) => (action.disabled = on));
-  }
-
-  // The buttons save and head back to the binder; ⌘S saves and stays, for mid-writing.
-  async function commit(status, message, { stay = false } = {}) {
+  async function persist(status) {
     const data = current();
-    if (saving || !linkOk(data) || (status === 'published' && !ready(data))) return;
-    saving = true;
-    busy(true);
-    try {
-      // The form already shows what's being saved, and may have moved on since: leave it be, and note what's saved.
-      record = await onSave(data, status, record?.id);
-      snapshot = editable(data);
-      refresh({ now: true });
-      if (stay || dirty) flash(message);
-      else onDone(message);
-    } catch (error) {
-      flash(error.message, true);
-    } finally {
-      saving = false;
-      busy(false);
-    }
-  }
-
-  function keep(options) {
-    const live = record?.status === 'published';
-    return commit(live ? 'published' : 'draft', 'Saved.', options);
-  }
-
-  async function destroy() {
-    if (!record || !confirm('Delete this card?')) return;
-    busy(true);
-    try {
-      await onDelete(record);
-    } catch (error) {
-      flash(error.message, true);
-    } finally {
-      busy(false);
-    }
+    const at = opened;
+    const saved = await onSave(data, status, record?.id);
+    if (at !== opened) return false;
+    // The form already shows what's being saved, and may have moved on since: leave it be, and note what's saved.
+    record = saved;
+    snapshot = editable(data);
+    refresh({ now: true });
   }
 
   function load(next, newKind = 'note') {
+    opened += 1;
     record = next;
     const wanted = next?.kind ?? newKind;
     if (wanted !== kind) {
@@ -327,6 +266,10 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     get dirty() {
       return dirty;
     },
-    save: () => keep({ stay: true }),
+    get busy() {
+      return bar.busy;
+    },
+    flash: bar.flash,
+    save: bar.save,
   };
 }
