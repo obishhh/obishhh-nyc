@@ -93,9 +93,10 @@ html { scrollbar-gutter: stable; }
   padding: 8px 64px 64px;
 }
 
+/* Pinned where it starts, under the bar (its 16px and the 38px ✕) and the layout's 8px, so only the article moves. */
 .reader__card {
   position: sticky;
-  top: 24px;
+  top: 62px;
   display: flex;
   flex-direction: column;
   align-items: center;
