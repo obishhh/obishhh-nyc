@@ -4,12 +4,14 @@
 //
 // Run by .github/workflows/share-pages.yml, which commits what changes. By hand: npm i --no-save playwright, then
 // node scripts/share-pages.mjs.
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { goodKey } from '../src/lib/addresses.js';
+import { reachable } from './modules.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SITE = 'https://obishhh.nyc';
@@ -20,34 +22,46 @@ const STAGE = { width: 750, height: 394, scale: 1.6 };
 // A deck card's picture to save to a phone: the card alone, three times its size, its corners left clear.
 const SAVE_SCALE = 3;
 const KINDS = { deck: 'd', card: 'c' };
-// What a card looks like comes from these: a change to any of them redraws every picture.
-const DRAWN_BY = [
-  'src/components/card.js', 'src/components/deck-cards.js', 'src/components/energy.js', 'src/components/rarity.js',
-  'src/components/wear.js', 'src/components/small-print.js', 'src/components/battle-stats.js', 'src/components/card-back.js',
-  'src/styles/tokens.css', 'src/styles/card.css', 'src/styles/deck-cards.css', 'src/styles/energy.css', 'src/styles/rarity.css',
-  'src/styles/card-back.css', 'src/lib/looks.js', 'src/lib/scrawl.js', 'src/lib/glyphs.js', 'src/data/types.js',
-];
+// What a card looks like comes from these: a change to any of them redraws every picture. The code is everything the
+// two card components load; then their styles, the energy notes' paintings, and the fonts the home page asks for.
+const STYLES = ['tokens', 'base', 'card', 'card-back', 'energy', 'rarity', 'deck-cards'].map((name) => `src/styles/${name}.css`);
+function drawnBy(root) {
+  const files = [
+    ...reachable(root, ['src/components/card.js', 'src/components/deck-cards.js']),
+    ...STYLES,
+    ...readdirSync(join(root, 'assets/energy')).sort().map((name) => `assets/energy/${name}`),
+  ];
+  const fonts = readFileSync(join(root, 'index.html'), 'utf8').match(/https:\/\/fonts\.googleapis\.com\/[^"]+/)?.[0];
+  return digest(fonts, ...files.map((file) => createHash('sha256').update(readFileSync(join(root, file))).digest('hex')));
+}
+// The preview picture's quality, as a JPEG.
+const PREVIEW_QUALITY = 85;
 // How long a picture waits for its photos and filters before giving up on it until the next run.
 const PATIENCE = 15000;
 
 const escape = (text) => String(text).replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]);
-const plain = (text, most) => {
-  const flat = String(text ?? '').replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[#*_`>]/g, '').replace(/\s+/g, ' ').trim();
-  return flat.length > most ? `${flat.slice(0, most - 1).trimEnd()}…` : flat;
+// Text as it reads, cut to fit, a whole character at a time (an emoji isn't split in two). An article's Markdown is
+// taken out first; a note or caption is plain already, so its # and > are kept.
+const plain = (text, most, { markdown = false } = {}) => {
+  let flat = String(text ?? '');
+  if (markdown) flat = flat.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[#*_`>]/g, '');
+  const letters = Array.from(flat.replace(/\s+/g, ' ').trim());
+  return letters.length > most ? `${letters.slice(0, most - 1).join('').trimEnd()}…` : letters.join('');
 };
 
 // What each page says in a preview.
 function describe(kind, data) {
   if (kind === 'card') {
-    return { title: data.title, description: plain(data.body, 160) || plain(data.move?.text, 160) };
+    return { title: data.title, description: plain(data.body, 160, { markdown: true }) || plain(data.move?.text, 160) };
   }
   if (data.kind === 'snapshot') return { title: data.title || 'Snapshot', description: plain(data.text, 160) };
   return { title: `“${plain(data.text, 60)}”`, description: 'A note from the deck box.' };
 }
 
 // The home page, retitled for one card, with its picture for previews.
-function sharePage(template, { kind, key, title, description, hash }) {
+function sharePage(template, { kind, key, title, description, hash, words }) {
   const { html } = template;
+  if (!html.includes('  <link rel="icon"')) throw new Error('index.html has no `  <link rel="icon"` line to put the preview tags before');
   const url = `${SITE}/${KINDS[kind]}/${encodeURIComponent(key)}/`;
   const tags = [
     `<title>${escape(title)} · obishhh</title>`,
@@ -57,12 +71,12 @@ function sharePage(template, { kind, key, title, description, hash }) {
     `<meta property="og:title" content="${escape(title)}">`,
     `<meta property="og:description" content="${escape(description)}">`,
     `<meta property="og:url" content="${url}">`,
-    `<meta property="og:image" content="${url}card.png">`,
+    `<meta property="og:image" content="${url}card.jpg">`,
     `<meta property="og:image:width" content="1200">`,
     `<meta property="og:image:height" content="630">`,
     `<meta name="twitter:card" content="summary_large_image">`,
     `<meta name="share-hash" content="${hash}">`,
-    `<meta name="share-template" content="${template.hash}">`,
+    `<meta name="share-words" content="${words}">`,
   ].join('\n  ');
   return html
     .replace(/  <title>.*?<\/title>\n/, '')
@@ -72,9 +86,12 @@ function sharePage(template, { kind, key, title, description, hash }) {
 }
 
 const digest = (...parts) => createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 16);
-// A page's hash covers the card and how cards are drawn; its template hash, the home page it's made from. The
-// first changing means a new picture; only the second, just new words around the old one.
-const hashOf = (kind, data, drawing) => digest(VERSION, kind, data, drawing);
+// A page's hash covers what its picture shows and how cards are drawn; its words hash, the home page it's made from
+// and what it says. The first changing means a new picture; only the second, just new words around the old one. An
+// article's text, its address and when a card went up aren't in the picture, so changing them redraws nothing.
+const shown = ({ body, slug, at, ...data }) => data;
+const hashOf = (kind, data, drawing) => digest(VERSION, kind, shown(data), drawing);
+const wordsOf = (template, said) => digest(template.hash, said);
 const readMeta = (file, name) => (existsSync(file) ? readFileSync(file, 'utf8').match(new RegExp(`name="${name}" content="([^"]+)"`))?.[1] : null);
 const hashOn = (file) => readMeta(file, 'share-hash');
 
@@ -120,7 +137,7 @@ async function picture(page, { kind, data }, file) {
     document.body.append(holder);
     await settled(holder);
   }, { kind, data, stage: STAGE });
-  await page.locator('#share-stage').screenshot({ path: file });
+  await page.locator('#share-stage').screenshot({ path: file, type: 'jpeg', quality: PREVIEW_QUALITY });
 }
 
 // The card on its own, straight, with nothing behind it.
@@ -140,7 +157,14 @@ async function keepsake(page, { data }, file) {
     document.body.append(holder);
     await settled(holder);
   }, { data });
-  await page.locator('#share-stage > .card').screenshot({ path: file, omitBackground: true });
+  await page.locator('#share-stage > .card').screenshot({ path: file, type: 'png', omitBackground: true });
+  squeeze(file);
+}
+
+// The picture to save, in 256 colours: a fifth of the size, and the same to look at. Where pngquant isn't installed
+// (it is where the pages are built), it's kept as it is.
+function squeeze(file) {
+  spawnSync('pngquant', ['--quality=70-95', '--speed=1', '--skip-if-larger', '--force', '--output', file, file], { stdio: 'ignore' });
 }
 
 // Builds every page that's missing or out of date, and takes away pages for cards that have gone.
@@ -148,7 +172,7 @@ async function keepsake(page, { data }, file) {
 export async function generate(page, { saving, root = ROOT, log = console.log } = {}) {
   const html = readFileSync(join(root, 'index.html'), 'utf8');
   const template = { html, hash: digest(html) };
-  const drawing = digest(...DRAWN_BY.map((path) => (existsSync(join(root, path)) ? readFileSync(join(root, path), 'utf8') : '')));
+  const drawing = drawnBy(root);
   for (const each of [page, saving].filter(Boolean)) await each.evaluate(SETTLED);
   const cards = await cardsIn(page);
   const kept = new Set();
@@ -162,41 +186,51 @@ export async function generate(page, { saving, root = ROOT, log = console.log } 
     kept.add(folder);
     const file = join(folder, 'index.html');
     const hash = hashOf(entry.kind, entry.data, drawing);
-    const words = () => writeFileSync(file, sharePage(template, { ...entry, ...describe(entry.kind, entry.data), hash }));
+    const said = describe(entry.kind, entry.data);
+    const words = wordsOf(template, said);
+    const write = () => writeFileSync(file, sharePage(template, { ...entry, ...said, hash, words }));
     if (hashOn(file) === hash) {
-      // Same card, same picture: only the page around it may need the home page's latest head.
-      if (readMeta(file, 'share-template') !== template.hash) words();
+      // Same card, same picture: only what the page says, or the home page around it, may have changed.
+      if (readMeta(file, 'share-words') !== words) write();
       continue;
     }
     mkdirSync(folder, { recursive: true });
+    // Drawn beside the old pictures and only swapped in once both are done, so a run that fails halfway leaves the
+    // page as it was (and tries again next time) rather than half new.
+    const pictures = [['card.jpg', (to) => picture(page, entry, to)]];
+    if (saving && entry.kind === 'deck') pictures.push(['save.png', (to) => keepsake(saving, entry, to)]);
     try {
-      await picture(page, entry, join(folder, 'card.png'));
-      if (saving && entry.kind === 'deck') await keepsake(saving, entry, join(folder, 'save.png'));
+      for (const [name, draw] of pictures) await draw(join(folder, `${name}.part`));
     } catch (error) {
-      // Its page isn't written, so the next run tries again rather than keeping a bad picture.
+      for (const [name] of pictures) rmSync(join(folder, `${name}.part`), { force: true });
       log(`couldn't draw ${KINDS[entry.kind]}/${entry.key}, will try again: ${error.message}`);
       continue;
     }
-    words();
+    for (const [name] of pictures) renameSync(join(folder, `${name}.part`), join(folder, name));
+    rmSync(join(folder, 'card.png'), { force: true });
+    write();
     log(`drew ${KINDS[entry.kind]}/${entry.key}`);
   }
-  // Only folders this made (their page carries a share hash) are ever taken away.
-  for (const prefix of Object.values(KINDS)) {
+  // Folders for cards that have gone, and any left half made. If most of them would go at once, it's likelier that
+  // what came back was wrong than that the cards all went, so none do.
+  const folders = Object.values(KINDS).flatMap((prefix) => {
     const base = join(root, prefix);
-    if (!existsSync(base)) continue;
-    for (const name of readdirSync(base)) {
-      const folder = join(base, name);
-      if (!kept.has(folder) && hashOn(join(folder, 'index.html'))) {
-        rmSync(folder, { recursive: true });
-        log(`removed ${prefix}/${name}`);
-      }
+    return existsSync(base) ? readdirSync(base).map((name) => join(base, name)) : [];
+  });
+  const gone = folders.filter((folder) => !kept.has(folder));
+  if (gone.length > 2 && gone.length > folders.length / 2) {
+    log(`not removing ${gone.length} of ${folders.length} pages: that's most of them`);
+  } else {
+    for (const folder of gone) {
+      rmSync(folder, { recursive: true });
+      log(`removed ${folder.slice(root.length)}`);
     }
   }
   return cards.length;
 }
 
 // The repo's files, as GitHub Pages would serve them.
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.json': 'application/json' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.json': 'application/json' };
 function serve(root) {
   const server = createServer((request, response) => {
     const path = normalize(decodeURIComponent(new URL(request.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '');

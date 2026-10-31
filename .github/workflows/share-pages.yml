@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
 
 concurrency:
   group: share-pages
@@ -22,40 +21,34 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
+      # The newest main, not the commit that started the run: one that waited behind another starts from its pages.
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install a browser to draw the cards
+      - name: Install a browser to draw the cards, and pngquant to shrink the pictures to save
         run: |
           npm install --no-save --no-package-lock playwright@1.49.1
           npx playwright install --with-deps chromium
+          sudo apt-get install -y --no-install-recommends pngquant
 
       - name: Build the pages
         run: node scripts/share-pages.mjs
 
+      # Pushing starts the Pages build that publishes it.
       - name: Commit what changed
-        id: commit
         run: |
           git add -A d c
-          if git diff --cached --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+          git diff --cached --quiet && exit 0
           git config user.name "share-pages"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Refresh share pages"
           # Main may have moved while the pages were drawn: go on top of it rather than fail the push.
           git pull --rebase
           git push
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-
-      # A push made by a workflow doesn't start a Pages build on its own, so ask for one.
-      - name: Publish
-        if: steps.commit.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api --method POST "repos/${{ github.repository }}/pages/builds" || echo "Pages will pick it up on the next build."
