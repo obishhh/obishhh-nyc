@@ -121,7 +121,9 @@ const shelf = await binderPage();
 main.append(shelf.root);
 if (shelf.page) {
   fitToWindow(shelf.page);
-  decking.then((box) => box && shelf.root.append(box));
+  decking.then((box) => box && shelf.root.append(box.root));
 }
 await revealWhenReady(document.body, [shelf.ready]);
 shelf.reading?.openLinked();
+// A link to a deck card opens the deck on it, unless it's a link to an article too.
+if (shelf.page && !new URLSearchParams(location.search).get('card')) decking.then((box) => box?.openLinked());

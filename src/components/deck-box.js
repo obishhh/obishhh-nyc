@@ -62,6 +62,23 @@ const READ_MOST = 640;
 const clock = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit', minute: '2-digit' });
 const timeOf = (at) => (at && !Number.isNaN(Date.parse(at)) ? clock.format(new Date(at)) : '');
 
+// A deck card's own address, ?deck=001-100: its number, or its id if it has none.
+const keyOf = (entry) => (entry.number ? entry.number.replaceAll('/', '-') : String(entry.id ?? ''));
+const keyInUrl = () => new URLSearchParams(location.search).get('deck');
+function withDeckCard(key) {
+  const query = new URLSearchParams(location.search);
+  if (key) query.set('deck', key);
+  else query.delete('deck');
+  const search = query.toString();
+  return `${location.pathname}${search ? `?${search}` : ''}`;
+}
+// A tipped-out card lands this long after the deck opens; a linked one comes up once it has.
+const LANDED = 600;
+
+const SHARE = `<svg class="deck-spread__icon" viewBox="0 0 16 16" aria-hidden="true">
+  <path d="M6.5 9.5l3-3M7 4.5l1.2-1.2a2.6 2.6 0 0 1 3.7 3.7L10.7 8.2M9 11.5l-1.2 1.2a2.6 2.6 0 0 1-3.7-3.7L5.3 7.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;
+
 // The cards, tipped out of the box onto the desk: roughly in rows, but each landed a little off and
 // on top of the one before. Tap one and it comes up front and centre to read; tap it there and it's flipped over
 // and back; tap anywhere else (or its ✕, or Esc) and it goes back to its spot. Built once, then reused.
@@ -69,6 +86,8 @@ function spread(entries, make, title, onClose) {
   const close = h('button', { class: 'deck-spread__close', type: 'button', 'aria-label': 'Put the cards back' }, svg(CLOSE));
   const lower = h('button', { class: 'deck-spread__close deck-spread__lower', type: 'button', 'aria-label': 'Put this card down', hidden: true }, svg(CLOSE));
   const stamp = h('p', { class: 'deck-spread__time', hidden: true });
+  const share = h('button', { class: 'deck-spread__close deck-spread__share', type: 'button', 'aria-label': 'Share this card', title: 'Share this card', hidden: true }, svg(SHARE));
+  const shared = h('p', { class: 'deck-spread__shared', role: 'status', hidden: true });
   const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1 },
     h('header', { class: 'deck-spread__bar' },
       h('div', { class: 'deck-spread__heading' },
@@ -81,7 +100,7 @@ function spread(entries, make, title, onClose) {
       entries.map((entry, index) => {
         const toss = (key, most) => ((seeded(`${entry.id ?? index}:${key}`) * 2 - 1) * most).toFixed(1);
         return h('li', {
-          class: 'deck-spread__card', tabindex: 0, dataset: { time: timeOf(entry.at) },
+          class: 'deck-spread__card', tabindex: 0, dataset: { time: timeOf(entry.at), key: keyOf(entry) },
           style: {
             '--tilt': `${toss('tilt', SCATTER.tilt)}deg`, '--dx': `${toss('x', SCATTER.x)}px`, '--dy': `${toss('y', SCATTER.y)}px`,
             '--side': index % 2 ? '1' : '-1', '--index': String(index),
@@ -90,6 +109,8 @@ function spread(entries, make, title, onClose) {
       }),
     ),
     lower,
+    share,
+    shared,
     stamp,
   );
   let openedAt = 0;
@@ -133,6 +154,8 @@ function spread(entries, make, title, onClose) {
     lower.hidden = false;
     stamp.textContent = card.dataset.time;
     stamp.hidden = !card.dataset.time;
+    share.hidden = false;
+    history.replaceState(history.state, '', withDeckCard(card.dataset.key));
   }
 
   // Where the raised card goes: worked out from its spot as laid out, without its tilt or nudge.
@@ -157,6 +180,11 @@ function spread(entries, make, title, onClose) {
     const top = Math.max(tall / 2 - (spot.height * scale) / 2 - 22, 6);
     lower.style.setProperty('left', `${left.toFixed(1)}px`);
     lower.style.setProperty('top', `${top.toFixed(1)}px`);
+    // Share sits just under the ✕, and says so when it's copied a link.
+    share.style.setProperty('left', `${left.toFixed(1)}px`);
+    share.style.setProperty('top', `${(top + 44).toFixed(1)}px`);
+    shared.style.setProperty('left', `${(left - 8).toFixed(1)}px`);
+    shared.style.setProperty('top', `${(top + 52).toFixed(1)}px`);
     // The time it went up, just under the card.
     stamp.style.setProperty('top', `${(tall / 2 + (spot.height * scale) / 2 + 12).toFixed(1)}px`);
     stamp.style.setProperty('width', `${wide}px`);
@@ -171,7 +199,10 @@ function spread(entries, make, title, onClose) {
     card.classList.remove('is-front');
     dialog.classList.remove('has-front');
     lower.hidden = true;
+    share.hidden = true;
+    shared.hidden = true;
     stamp.hidden = true;
+    if (keyInUrl()) history.replaceState(history.state, '', withDeckCard(null));
     if (instantly) requestAnimationFrame(() => card.style.removeProperty('transition'));
   }
   lower.addEventListener('click', (event) => {
@@ -181,6 +212,27 @@ function spread(entries, make, title, onClose) {
     if (event.detail === 0) card?.focus({ preventScroll: true });
   });
   addEventListener('resize', place);
+
+  // The raised card's address: the share sheet where there is one (phones), the clipboard otherwise.
+  let sharedTimer;
+  share.addEventListener('click', async (event) => {
+    event.stopPropagation();
+    const url = location.href;
+    try {
+      if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+        await navigator.share({ url, title: document.title });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      shared.textContent = 'Link copied';
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      shared.textContent = 'Copy the address above';
+    }
+    shared.hidden = false;
+    clearTimeout(sharedTimer);
+    sharedTimer = setTimeout(() => (shared.hidden = true), 1800);
+  });
 
   // Turned over to its back and straight over again, the way you'd flip a card to check it.
   function flipOver(card) {
@@ -214,6 +266,14 @@ function spread(entries, make, title, onClose) {
   dialog.addEventListener('close', () => onClose({ byKey }));
 
   return {
+    // Open on one card, raised: for a link to it. A card that's no longer in the deck just opens the deck.
+    openOn(key) {
+      this.open();
+      const card = [...dialog.querySelectorAll('.deck-spread__card')].find((each) => each.dataset.key === key);
+      if (!card) return history.replaceState(history.state, '', withDeckCard(null));
+      card.scrollIntoView({ block: 'center' });
+      setTimeout(() => raise(card), reducedMotion.matches ? 0 : LANDED);
+    },
     open() {
       if (dialog.open) return;
       if (!dialog.isConnected) document.body.append(dialog);
@@ -278,5 +338,12 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
   if ('requestIdleCallback' in window) requestIdleCallback(ready, { timeout: 2000 });
   else setTimeout(ready, 1200);
   open.addEventListener('click', () => ready().open());
-  return box;
+  return {
+    root: box,
+    // A link straight to one card (?deck=001-100): open the deck on it.
+    openLinked() {
+      const key = keyInUrl();
+      if (key) ready().openOn(key);
+    },
+  };
 }
