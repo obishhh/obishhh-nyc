@@ -67,6 +67,12 @@ const keyInUrl = () => openedIn('deck');
 const withDeckCard = (key) => addressFor('deck', key);
 // A tipped-out card lands this long after the deck opens; a linked one comes up once it has.
 const LANDED = 600;
+// A deck card's picture to keep, drawn with its share page (see scripts/share-pages.mjs).
+const keepsakeOf = (key) => `/d/${encodeURIComponent(key)}/save.png`;
+
+const SAVE = `<svg class="deck-spread__icon" viewBox="0 0 16 16" aria-hidden="true">
+  <path d="M8 2.5v7.5M4.8 7l3.2 3.2L11.2 7M3 12.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
 
 // The cards, tipped out of the box onto the desk: roughly in rows, but each landed a little off and
 // on top of the one before. Tap one and it comes up front and centre to read; tap it there and it's flipped over
@@ -75,6 +81,7 @@ function spread(entries, make, title, onClose) {
   const close = h('button', { class: 'deck-spread__close', type: 'button', 'aria-label': 'Put the cards back' }, svg(CLOSE));
   const lower = h('button', { class: 'deck-spread__close deck-spread__lower', type: 'button', 'aria-label': 'Put this card down', hidden: true }, svg(CLOSE));
   const stamp = h('p', { class: 'deck-spread__time', hidden: true });
+  const save = h('button', { class: 'deck-spread__close deck-spread__save', type: 'button', 'aria-label': 'Save this card', title: 'Save this card', hidden: true }, svg(SAVE));
   const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1 },
     h('header', { class: 'deck-spread__bar' },
       h('div', { class: 'deck-spread__heading' },
@@ -96,6 +103,7 @@ function spread(entries, make, title, onClose) {
       }),
     ),
     lower,
+    save,
     stamp,
   );
   let openedAt = 0;
@@ -140,6 +148,15 @@ function spread(entries, make, title, onClose) {
     stamp.textContent = card.dataset.time;
     stamp.hidden = !card.dataset.time;
     history.replaceState(history.state, '', withDeckCard(card.dataset.key));
+    offerSave(card);
+  }
+
+  // Save shows once the card's picture is there to save: a card published since the pictures were last drawn has
+  // none yet.
+  async function offerSave(card) {
+    save.hidden = true;
+    const ok = await fetch(keepsakeOf(card.dataset.key), { method: 'HEAD' }).then((response) => response.ok, () => false);
+    if (ok && front === card) save.hidden = false;
   }
 
   // Where the raised card goes: worked out from its spot as laid out, without its tilt or nudge.
@@ -164,6 +181,9 @@ function spread(entries, make, title, onClose) {
     const top = Math.max(tall / 2 - (spot.height * scale) / 2 - 22, 6);
     lower.style.setProperty('left', `${left.toFixed(1)}px`);
     lower.style.setProperty('top', `${top.toFixed(1)}px`);
+    // Save at the raised card's bottom right corner, just off it, as the ✕ is at its top right.
+    save.style.setProperty('left', `${left.toFixed(1)}px`);
+    save.style.setProperty('top', `${(tall / 2 + (spot.height * scale) / 2 - 14).toFixed(1)}px`);
     // The time it went up, just under the card.
     stamp.style.setProperty('top', `${(tall / 2 + (spot.height * scale) / 2 + 12).toFixed(1)}px`);
     stamp.style.setProperty('width', `${wide}px`);
@@ -178,6 +198,7 @@ function spread(entries, make, title, onClose) {
     card.classList.remove('is-front');
     dialog.classList.remove('has-front');
     lower.hidden = true;
+    save.hidden = true;
     stamp.hidden = true;
     if (keyInUrl()) history.replaceState(history.state, '', withDeckCard(null));
     if (instantly) requestAnimationFrame(() => card.style.removeProperty('transition'));
@@ -189,6 +210,27 @@ function spread(entries, make, title, onClose) {
     if (event.detail === 0) card?.focus({ preventScroll: true });
   });
   addEventListener('resize', place);
+
+  // On a phone, the share sheet, where Save Image puts it in Photos; elsewhere, a download.
+  save.addEventListener('click', async (event) => {
+    event.stopPropagation();
+    const key = front?.dataset.key;
+    if (!key) return;
+    const name = `obishhh-${key}.png`;
+    try {
+      const blob = await (await fetch(keepsakeOf(key))).blob();
+      const file = new File([blob], name, { type: 'image/png' });
+      if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+      const link = h('a', { href: URL.createObjectURL(blob), download: name });
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    } catch {
+      // Cancelled, or the picture couldn't be fetched: nothing to do.
+    }
+  });
 
   // Turned over to its back and straight over again, the way you'd flip a card to check it.
   function flipOver(card) {

@@ -16,6 +16,8 @@ const SITE = 'https://obishhh.nyc';
 const VERSION = 1;
 // Previews are 1200 by 630: drawn at 750 by 394 and 1.6 times the pixels, so the card is sharp at its own size.
 const STAGE = { width: 750, height: 394, scale: 1.6 };
+// A deck card's picture to save to a phone: the card alone, three times its size, its corners left clear.
+const SAVE_SCALE = 3;
 const KINDS = { deck: 'd', card: 'c' };
 
 const escape = (text) => String(text).replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]);
@@ -96,8 +98,30 @@ async function picture(page, { kind, data }, file) {
   await page.locator('#share-stage').screenshot({ path: file });
 }
 
+// The card on its own, straight, with nothing behind it.
+async function keepsake(page, { data }, file) {
+  await page.evaluate(async ({ data }) => {
+    const { deckCard } = await import('/src/components/deck-cards.js');
+    const { handwriting } = await import('/src/lib/scrawl.js');
+    await handwriting();
+    document.getElementById('share-stage')?.remove();
+    const holder = document.createElement('div');
+    holder.id = 'share-stage';
+    holder.style.cssText = 'position:fixed;inset:0 auto auto 0;z-index:2147483647;padding:0;background:transparent';
+    holder.append(deckCard(data));
+    // Nothing of the page behind it, so the card's rounded corners come out clear.
+    for (const each of document.body.children) each.style.setProperty('display', 'none');
+    for (const each of [document.documentElement, document.body]) each.style.setProperty('background', 'transparent');
+    document.body.append(holder);
+    await Promise.all([...holder.querySelectorAll('img')].map((img) => img.decode().catch(() => {})));
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+  }, { data });
+  await page.locator('#share-stage > .card').screenshot({ path: file, omitBackground: true });
+}
+
 // Builds every page that's missing or out of date, and takes away pages for cards that have gone.
-export async function generate(page, { root = ROOT, log = console.log } = {}) {
+// `saving` draws the deck cards' pictures to save, at their own scale; without it, those are left alone.
+export async function generate(page, { saving, root = ROOT, log = console.log } = {}) {
   const template = readFileSync(join(root, 'index.html'), 'utf8');
   const cards = await cardsIn(page);
   const kept = new Set();
@@ -109,6 +133,7 @@ export async function generate(page, { root = ROOT, log = console.log } = {}) {
     if (hashOn(file) === hash) continue;
     mkdirSync(folder, { recursive: true });
     await picture(page, entry, join(folder, 'card.png'));
+    if (saving && entry.kind === 'deck') await keepsake(saving, entry, join(folder, 'save.png'));
     writeFileSync(file, sharePage(template, { ...entry, ...describe(entry.kind, entry.data), hash }));
     log(`drew ${KINDS[entry.kind]}/${entry.key}`);
   }
@@ -148,9 +173,12 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const server = await serve(ROOT);
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: STAGE.width, height: STAGE.height }, deviceScaleFactor: STAGE.scale });
-  await page.goto(`http://127.0.0.1:${server.address().port}/`);
-  await page.waitForLoadState('networkidle');
-  const count = await generate(page);
+  const saving = await browser.newPage({ viewport: { width: 400, height: 500 }, deviceScaleFactor: SAVE_SCALE });
+  for (const each of [page, saving]) {
+    await each.goto(`http://127.0.0.1:${server.address().port}/`);
+    await each.waitForLoadState('networkidle');
+  }
+  const count = await generate(page, { saving });
   console.log(`${count} cards have share pages.`);
   await browser.close();
   server.close();

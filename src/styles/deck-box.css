@@ -272,7 +272,16 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
 }
 
-.deck-spread__lower[hidden] { display: none; }
+.deck-spread__lower[hidden],
+.deck-spread__save[hidden] { display: none; }
+
+/* Save, at the raised card's bottom right corner. */
+.deck-spread__save {
+  position: fixed;
+  z-index: 6;
+  animation: page-in 0.3s var(--ease-out) 0.3s backwards;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
+}
 
 /* When the raised card went up: just the time, centred under it. */
 .deck-spread__time {
