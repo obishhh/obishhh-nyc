@@ -1,4 +1,4 @@
-import { deckCard, SNAPSHOT_RULE } from '../../src/components/deck-cards.js';
+import { deckCard, linkTo, SNAPSHOT_RULE } from '../../src/components/deck-cards.js';
 import { h, svg } from '../../src/lib/dom.js';
 import { trackPointer } from '../../src/lib/pointer.js';
 import { LOOKS } from '../../src/lib/looks.js';
@@ -16,11 +16,15 @@ const NAMES = { note: 'note', snapshot: 'Snapshot' };
 const MAX_TEXT = { note: 140, snapshot: 200 };
 // The preview's handwriting waits for a pause in the typing, rather than redrawing on every key.
 const PREVIEW_PAUSE = 60;
-// What the form edits; the rest of a record (its id, status and times) is the server's.
-const EDITABLE = ['kind', 'number', 'type', 'title', 'text', 'rule', 'place', 'photo', 'date'];
+// What the form edits for each kind; the rest of a record (its id, status and times, and the other kind's fields,
+// blank until it's first saved) isn't anything to save.
+const EDITABLE = {
+  note: ['kind', 'number', 'type', 'text', 'link', 'date'],
+  snapshot: ['kind', 'number', 'title', 'text', 'rule', 'place', 'photo', 'date'],
+};
 
 const today = () => new Date().toLocaleDateString('en-CA');
-const editable = (data) => JSON.stringify(EDITABLE.map((key) => data[key]));
+const editable = (data) => JSON.stringify(EDITABLE[data.kind].map((key) => data[key]));
 const trim = (value) => (typeof value === 'string' ? value.trim() : value);
 
 // A fresh card for the deck: today's date and the next number along.
@@ -28,7 +32,7 @@ function blankDeckCard(kind, deck) {
   const numbers = deck.map(({ number }) => parseInt(number, 10)).filter(Number.isFinite);
   const next = String(Math.max(0, ...numbers) + 1).padStart(3, '0');
   const set = deck.find(({ number }) => number.includes('/'))?.number.split('/')[1] ?? '100';
-  return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', rule: '', place: '', photo: { src: '', alt: '', position: '', zoom: '', look: '' }, date: today() };
+  return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', rule: '', place: '', link: '', photo: { src: '', alt: '', position: '', zoom: '', look: '' }, date: today() };
 }
 
 // An upload button that puts the uploaded photo's address in a hidden field and says what it did.
@@ -206,6 +210,10 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
         ? section('Note',
           select('type', 'Type', TYPES),
           textarea('text', 'Words', { ...words, placeholder: 'Two pigeons fought over one fry. Both lost.' }),
+          text('link', 'Link', {
+            placeholder: 'nytimes.com/…', maxlength: 512, inputmode: 'url', autocapitalize: 'off', spellcheck: 'false',
+            hint: 'Somewhere to send people. It goes at the bottom, and makes it a Special Note.',
+          }),
         )
         : section('Snapshot',
           ...photo.rows,
@@ -229,6 +237,8 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     const data = { ...record, ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, trim(value)])), kind };
     data.photo = Object.fromEntries(Object.entries(values.photo).map(([key, value]) => [key, trim(value)]));
     data.date ||= today();
+    // An address typed without its https:// gets one.
+    data.link = data.link && !/^https?:\/\//i.test(data.link) ? `https://${data.link}` : data.link ?? '';
     return data;
   }
 
@@ -275,6 +285,13 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     return false;
   }
 
+  function linkOk({ link }) {
+    if (!link || (linkTo(link) && !/\s/.test(link))) return true;
+    flash('That link doesn’t look like a web address.', true);
+    form.elements.namedItem('link')?.focus();
+    return false;
+  }
+
   function busy(on) {
     actions.forEach((action) => (action.disabled = on));
   }
@@ -282,7 +299,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
   // The buttons save and head back to the binder; ⌘S saves and stays, for mid-writing.
   async function commit(status, message, { stay = false } = {}) {
     const data = current();
-    if (saving || (status === 'published' && !ready(data))) return;
+    if (saving || !linkOk(data) || (status === 'published' && !ready(data))) return;
     saving = true;
     busy(true);
     try {

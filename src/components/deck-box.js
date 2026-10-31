@@ -143,6 +143,9 @@ function spread(entries, make, title, onClose) {
   // the rest of the desk dims, and its ✕ and Save come up at its corner. The desk stops scrolling while it's up.
   let front = null;
   const cards = () => [...dialog.querySelectorAll('.deck-spread__card')];
+  // A note's link goes somewhere only from a raised card; on the desk, a tap on it raises the card like anywhere else.
+  const links = (card) => card.querySelectorAll('a[href]');
+  cards().forEach((card) => links(card).forEach((link) => (link.tabIndex = -1)));
   function raise(card) {
     clearTimeout(landing);
     if (front && front !== card) lowerCard({ instantly: true });
@@ -153,8 +156,9 @@ function spread(entries, make, title, onClose) {
     dialog.classList.add('has-front');
     place();
     card.classList.add('is-front');
-    // The rest of the desk is out of reach while a card's up, so Tab goes from the card to its ✕ and Save.
+    // The rest of the desk is out of reach while a card's up, so Tab goes from the card to its link, ✕ and Save.
     cards().forEach((each) => (each.inert = each !== card));
+    links(card).forEach((link) => link.removeAttribute('tabindex'));
     stamp.textContent = card.dataset.time;
     stamp.classList.toggle('is-ready', Boolean(card.dataset.time));
     history.replaceState(history.state, '', withDeckCard(card.dataset.key));
@@ -241,6 +245,7 @@ function spread(entries, make, title, onClose) {
     card.classList.remove('is-front');
     dialog.classList.remove('has-front');
     cards().forEach((each) => (each.inert = false));
+    links(card).forEach((link) => (link.tabIndex = -1));
     save.classList.remove('is-ready');
     if (keyInUrl()) history.replaceState(history.state, '', withDeckCard(null));
     if (instantly) requestAnimationFrame(() => card.style.removeProperty('transition'));
@@ -288,6 +293,10 @@ function spread(entries, make, title, onClose) {
   const tap = (card) => (card === front ? flipOver(card) : raise(card));
   dialog.addEventListener('click', (event) => {
     const card = event.target.closest('.deck-spread__card');
+    if (event.target.closest('a[href]')) {
+      if (card && card === front) return;
+      event.preventDefault();
+    }
     // With a card up, a tap on it turns it over; a tap anywhere else (another card, the desk) puts it down.
     if (front) {
       if (card === front) flipOver(card);
@@ -299,7 +308,7 @@ function spread(entries, make, title, onClose) {
   });
   dialog.addEventListener('keydown', (event) => {
     const card = event.target.closest('.deck-spread__card');
-    if (!card || (event.key !== 'Enter' && event.key !== ' ')) return;
+    if (!card || event.target.closest('a[href]') || (event.key !== 'Enter' && event.key !== ' ')) return;
     event.preventDefault();
     if (front && card !== front) lowerCard();
     tap(card);

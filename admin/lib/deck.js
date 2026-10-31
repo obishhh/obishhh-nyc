@@ -5,8 +5,8 @@ const deck = () => supabase.from('deck');
 // Rows use the database's column names; everything else uses the deck card components'.
 const fromRow = ({ posted_on: date, ...row }) => ({ ...row, date });
 
-const toRow = ({ kind, number, type, title, text, rule, place, photo, date }, status) =>
-  ({ status, kind, number, type, title, text, rule, place, photo, posted_on: date });
+const toRow = ({ kind, number, type, title, text, rule, place, link, photo, date }, status) =>
+  ({ status, kind, number, type, title, text, rule, place, link, photo, posted_on: date });
 
 // Newest first, the way the deck box shows them.
 export const listDeck = async () =>
