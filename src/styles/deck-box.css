@@ -68,13 +68,13 @@
   transform-origin: 0 0;
 }
 
-/* Rises for a real pointer, a keyboard, or a finger pressing it; never left up by a tap elsewhere. */
+/* Rises for a mouse going over it or pressing it, and for the keyboard. Not for a finger: a tap just opens the box. */
 @media (hover: hover) {
-  .deck-box:hover .deck-box__peek { transform: var(--up); }
+  .deck-box:hover .deck-box__peek,
+  .deck-box:has(> .deck-box__open:active) .deck-box__peek { transform: var(--up); }
 }
 
-.deck-box:has(> .deck-box__open:focus-visible) .deck-box__peek,
-.deck-box:has(> .deck-box__open:active) .deck-box__peek { transform: var(--up); }
+.deck-box:has(> .deck-box__open:focus-visible) .deck-box__peek { transform: var(--up); }
 
 /* The deck box: off the binder's right edge on a computer, mirroring the tabs; in the header's corner otherwise.
    It arrives a moment after the binder, so it fades in rather than popping up. */
@@ -109,10 +109,16 @@
   .tabbed { --box-width: 104px; }
 }
 
-/* Phones: bigger, and hanging off past the cards into the gutter, short of the screen's edge. */
+/* Phones: bigger, up by the site's name and down over the first card's corner, and hanging off past the cards into
+   the gutter, short of the screen's edge. In front of the card it overlaps. */
 @media (max-width: 519px) {
-  .tabbed { --box-width: 96px; }
-  .tabbed > .deck-box { right: calc(-1 * min(28px, (100vw - var(--binder-width)) / 2 - 8px)); }
+  .tabbed { --box-width: 136px; }
+
+  .tabbed > .deck-box {
+    z-index: 2;
+    top: calc(max(var(--binder-width), 560px) * 94 / 1240 + 52px - var(--box-width) * 860 / 688);
+    right: calc(-1 * min(28px, (100vw - var(--binder-width)) / 2 - 8px));
+  }
 }
 
 /* Opened: the cards tipped out over the page. */
@@ -266,29 +272,29 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 .deck-spread.has-front .deck-spread__card:not(.is-front) { opacity: 0.25; }
 .deck-spread.has-front .deck-spread__bar { opacity: 0.35; transition: opacity 0.3s; }
 
-/* The raised card's ✕, at its top right corner. */
-.deck-spread__lower {
+/* What comes up with a raised card: its ✕ and Save at its bottom right corner, and the time it went up under it.
+   They come in together as the card lands, and go straight away when it's put down. */
+.deck-spread__tool {
   position: fixed;
   z-index: 6;
-  animation: page-in 0.3s var(--ease-out) 0.25s backwards;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: opacity 0.12s, transform 0.12s, visibility 0s 0.12s;
 }
 
-.deck-spread__lower[hidden],
-.deck-spread__save[hidden] { display: none; }
-
-/* Save, at the raised card's bottom right corner. */
-.deck-spread__save {
-  position: fixed;
-  z-index: 6;
-  animation: page-in 0.3s var(--ease-out) 0.3s backwards;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
+.deck-spread.has-front .deck-spread__tool.is-ready {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.24s var(--ease-out) 0.3s, transform 0.24s var(--ease-out) 0.3s, visibility 0s 0.3s;
 }
 
-/* When the raised card went up: just the time, centred under it. */
+.deck-spread__lower,
+.deck-spread__save { box-shadow: 0 4px 12px rgb(0 0 0 / 0.18); }
+
+/* Just the time, centred under the card. */
 .deck-spread__time {
-  position: fixed;
-  z-index: 6;
   left: 0;
   margin: 0;
   color: var(--page-muted);
@@ -296,7 +302,6 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   letter-spacing: 0.04em;
   text-align: center;
   pointer-events: none;
-  animation: page-in 0.3s var(--ease-out) 0.25s backwards;
 }
 
 /* The card at full size, shrunk to fit; inside it, the card and its back, turned as one. */
@@ -358,6 +363,8 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
   .deck-box__peek,
+  .deck-spread__tool,
+  .deck-spread.has-front .deck-spread__tool.is-ready,
   .deck-spread__card,
   .deck-spread__card.is-picked,
   .deck-spread__card.is-front,

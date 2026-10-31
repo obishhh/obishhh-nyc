@@ -79,9 +79,11 @@ const SAVE = `<svg class="deck-spread__icon" viewBox="0 0 16 16" aria-hidden="tr
 // and back; tap anywhere else (or its ✕, or Esc) and it goes back to its spot. Built once, then reused.
 function spread(entries, make, title, onClose) {
   const close = h('button', { class: 'deck-spread__close', type: 'button', 'aria-label': 'Put the cards back' }, svg(CLOSE));
-  const lower = h('button', { class: 'deck-spread__close deck-spread__lower', type: 'button', 'aria-label': 'Put this card down', hidden: true }, svg(CLOSE));
-  const stamp = h('p', { class: 'deck-spread__time', hidden: true });
-  const save = h('button', { class: 'deck-spread__close deck-spread__save', type: 'button', 'aria-label': 'Save this card', title: 'Save this card', hidden: true }, svg(SAVE));
+  // What comes up with a raised card: its ✕ and Save side by side at its bottom right corner, and under it the time
+  // it went up. They show when they're ready (`is-ready`) and a card is up, and arrive together as it lands.
+  const lower = h('button', { class: 'deck-spread__close deck-spread__tool deck-spread__lower is-ready', type: 'button', 'aria-label': 'Put this card down' }, svg(CLOSE));
+  const stamp = h('p', { class: 'deck-spread__tool deck-spread__time' });
+  const save = h('button', { class: 'deck-spread__close deck-spread__tool deck-spread__save', type: 'button', 'aria-label': 'Save this card', title: 'Save this card' }, svg(SAVE));
   const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1 },
     h('header', { class: 'deck-spread__bar' },
       h('div', { class: 'deck-spread__heading' },
@@ -102,9 +104,9 @@ function spread(entries, make, title, onClose) {
         }, h('div', { class: 'deck-spread__flip' }, h('div', { class: 'deck-spread__turn' }, make(entry), cardBack())));
       }),
     ),
+    stamp,
     lower,
     save,
-    stamp,
   );
   let openedAt = 0;
   let pressedOnDesk = false;
@@ -138,7 +140,7 @@ function spread(entries, make, title, onClose) {
   // Only a press and release both on the desk put the cards back, so dragging across a caption doesn't.
   dialog.addEventListener('pointerdown', (event) => (pressedOnDesk = onDesk(event.target)));
   // Up front and centre, big enough to read: the card slides from its spot to the middle of the window and grows,
-  // the rest of the desk dims, and a ✕ sits at its corner. The desk stops scrolling while it's up.
+  // the rest of the desk dims, and its ✕ and Save come up at its corner. The desk stops scrolling while it's up.
   let front = null;
   const cards = () => [...dialog.querySelectorAll('.deck-spread__card')];
   function raise(card) {
@@ -153,33 +155,52 @@ function spread(entries, make, title, onClose) {
     card.classList.add('is-front');
     // The rest of the desk is out of reach while a card's up, so Tab goes from the card to its ✕ and Save.
     cards().forEach((each) => (each.inert = each !== card));
-    lower.hidden = false;
     stamp.textContent = card.dataset.time;
-    stamp.hidden = !card.dataset.time;
+    stamp.classList.toggle('is-ready', Boolean(card.dataset.time));
     history.replaceState(history.state, '', withDeckCard(card.dataset.key));
     offerSave(card);
   }
 
-  // Save shows once the card's picture is here to save: a card published since the pictures were last drawn has
-  // none yet. It's fetched when the card goes up and kept, so a tap on Save can share it at once: a phone only lets a
-  // page share right after a tap, not after waiting on a download.
-  const keepsakes = new Map();
-  const kept = new Map();
-  function keepsake(key) {
-    if (!keepsakes.has(key)) {
-      keepsakes.set(key, fetch(keepsakeOf(key))
-        .then((response) => (response.ok ? response.blob() : null))
-        .then((blob) => blob?.type.startsWith('image/') && kept.set(key, new File([blob], `obishhh-${key}.png`, { type: 'image/png' })))
-        .catch(() => {})
-        .finally(() => keepsakes.delete(key)));
+  // Save is for a card whose picture is there to save: one published since the pictures were last drawn has none yet.
+  // Which ones do is asked as the deck opens, so Save comes up with the card. The picture itself is fetched as its card
+  // goes up and kept, so a tap on Save can share it at once: a phone only lets a page share right after a tap.
+  const saveable = new Map();
+  const asked = new Map();
+  const files = new Map();
+  const ask = (key) => {
+    if (!asked.has(key)) {
+      asked.set(key, fetch(keepsakeOf(key), { method: 'HEAD' })
+        .then((response) => response.ok, () => false)
+        .then((ok) => {
+          saveable.set(key, ok);
+          if (!ok) asked.delete(key);
+          return ok;
+        }));
     }
-    return keepsakes.get(key);
+    return asked.get(key);
+  };
+  function fileOf(key) {
+    if (!files.has(key)) {
+      files.set(key, fetch(keepsakeOf(key))
+        .then((response) => (response.ok ? response.blob() : null))
+        .then((blob) => (blob?.type.startsWith('image/') ? new File([blob], `obishhh-${key}.png`, { type: 'image/png' }) : null))
+        .catch(() => null)
+        .then((file) => {
+          if (file) files.set(key, file);
+          else files.delete(key);
+          return file;
+        }));
+    }
+    return files.get(key);
   }
-  async function offerSave(card) {
-    save.hidden = true;
+  function offerSave(card) {
     const key = card.dataset.key;
-    if (!kept.has(key)) await keepsake(key);
-    if (kept.has(key) && front === card) save.hidden = false;
+    save.classList.toggle('is-ready', saveable.get(key) === true);
+    ask(key).then((ok) => {
+      if (!ok || front !== card) return;
+      save.classList.add('is-ready');
+      fileOf(key);
+    });
   }
 
   // Where the raised card goes: worked out from its spot as laid out, without its tilt or nudge.
@@ -199,16 +220,15 @@ function spread(entries, make, title, onClose) {
     front.style.setProperty('--front-x', `${x.toFixed(1)}px`);
     front.style.setProperty('--front-y', `${y.toFixed(1)}px`);
     front.style.setProperty('--front-scale', scale.toFixed(3));
-    // The ✕ at the raised card's top right corner, just off it, but never off the screen.
+    // Save on the raised card's bottom right corner, half off it but never off the screen, and the ✕ just left of it,
+    // or in the corner itself for a card with no picture to save yet.
     const left = Math.min(wide / 2 + (spot.width * scale) / 2 - 14, wide - 42);
-    const top = Math.max(tall / 2 - (spot.height * scale) / 2 - 22, 6);
-    lower.style.setProperty('left', `${left.toFixed(1)}px`);
-    lower.style.setProperty('top', `${top.toFixed(1)}px`);
-    // Save at the raised card's bottom right corner, just off it, as the ✕ is at its top right.
+    const bottom = tall / 2 + (spot.height * scale) / 2;
     save.style.setProperty('left', `${left.toFixed(1)}px`);
-    save.style.setProperty('top', `${(tall / 2 + (spot.height * scale) / 2 - 14).toFixed(1)}px`);
+    lower.style.setProperty('left', `${(saveable.get(front.dataset.key) === false ? left : left - 44).toFixed(1)}px`);
+    for (const tool of [save, lower]) tool.style.setProperty('top', `${(bottom - 14).toFixed(1)}px`);
     // The time it went up, just under the card.
-    stamp.style.setProperty('top', `${(tall / 2 + (spot.height * scale) / 2 + 12).toFixed(1)}px`);
+    stamp.style.setProperty('top', `${(bottom + 12).toFixed(1)}px`);
     stamp.style.setProperty('width', `${wide}px`);
   }
 
@@ -221,9 +241,7 @@ function spread(entries, make, title, onClose) {
     card.classList.remove('is-front');
     dialog.classList.remove('has-front');
     cards().forEach((each) => (each.inert = false));
-    lower.hidden = true;
-    save.hidden = true;
-    stamp.hidden = true;
+    save.classList.remove('is-ready');
     if (keyInUrl()) history.replaceState(history.state, '', withDeckCard(null));
     if (instantly) requestAnimationFrame(() => card.style.removeProperty('transition'));
   }
@@ -241,9 +259,13 @@ function spread(entries, make, title, onClose) {
     link.click();
     setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   }
-  save.addEventListener('click', (event) => {
+  save.addEventListener('click', async (event) => {
     event.stopPropagation();
-    const file = kept.get(front?.dataset.key);
+    const key = front?.dataset.key;
+    if (!key) return;
+    const fetched = files.get(key);
+    // Usually here already; if not, waited for, and a phone that won't share by then gets a download instead.
+    const file = fetched instanceof File ? fetched : await fileOf(key);
     if (!file) return;
     if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
       // Cancelling the sheet is fine; anything else falls back to a download.
@@ -302,6 +324,7 @@ function spread(entries, make, title, onClose) {
       // that way as if it had been tabbed to. Tab still goes straight to it.
       dialog.focus({ preventScroll: true });
       openedAt = performance.now();
+      cards().forEach((card) => ask(card.dataset.key));
     },
   };
 }
