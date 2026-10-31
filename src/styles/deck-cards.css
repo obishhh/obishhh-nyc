@@ -165,30 +165,6 @@
   text-align: center;
 }
 
-/* A Special Note's rules box, as a Special Energy has one saying what it does: here, where the note links to. */
-.note-card__link {
-  position: relative;
-  z-index: 1;
-  flex: none;
-  margin: 0 3px 5px;
-  padding: 5px 8px;
-  overflow: hidden;
-  border: 1px solid #ffffff;
-  border-radius: 3px;
-  background: rgb(255 255 255 / 0.86);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
-  font: italic 500 9.5px/1.25 var(--font-body);
-  color: var(--ink-900);
-  text-align: center;
-  text-decoration: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.note-card__link b { font-style: normal; font-weight: 700; }
-.note-card__link:hover b { text-decoration: underline; text-underline-offset: 1.5px; }
-.note-card__link:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 1px; }
-
 /* No maker's mark on the left of a note, so the copyright needs centring on its own. */
 .note-card .card__footer {
   display: grid;

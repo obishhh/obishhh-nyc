@@ -1,6 +1,7 @@
 import { addressFor, deckKey, openedIn } from '../lib/addresses.js';
 import { h, svg } from '../lib/dom.js';
 import { cardBack } from './card-back.js';
+import { linkTo } from './deck-cards.js';
 import { HAND, handwriting, INK, random, roughen, scrawl } from '../lib/scrawl.js';
 import { seeded } from '../lib/seeded.js';
 import { plural } from '../lib/words.js';
@@ -59,6 +60,8 @@ function label(text) {
 // How big a card comes up to read: most of the window's height, but never past this many pixels tall.
 const READ_HEIGHT = 0.8;
 const READ_MOST = 640;
+// The room a note's link takes under its raised card: the time, then the box.
+const LINK_ROOM = 104;
 // When a card went up, in New York time on a 24-hour clock, as it shows under a raised card: just the time.
 const clock = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit', minute: '2-digit' });
 const timeOf = (at) => (at && !Number.isNaN(Date.parse(at)) ? clock.format(new Date(at)) : '');
@@ -84,6 +87,12 @@ function spread(entries, make, title, onClose) {
   const lower = h('button', { class: 'deck-spread__close deck-spread__tool deck-spread__lower is-ready', type: 'button', 'aria-label': 'Put this card down' }, svg(CLOSE));
   const stamp = h('p', { class: 'deck-spread__tool deck-spread__time' });
   const save = h('button', { class: 'deck-spread__close deck-spread__tool deck-spread__save', type: 'button', 'aria-label': 'Save this card', title: 'Save this card' }, svg(SAVE));
+  // A note's link, under it in a battle's text box: a wild link appears, and a tap goes to it.
+  const site = h('b');
+  const go = h('a', { class: 'deck-spread__tool deck-spread__go', target: '_blank', rel: 'noopener noreferrer' },
+    h('span', {}, 'A wild link appeared!'),
+    h('span', { class: 'deck-spread__go-to' }, 'Go to ', site),
+  );
   const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1 },
     h('header', { class: 'deck-spread__bar' },
       h('div', { class: 'deck-spread__heading' },
@@ -96,7 +105,7 @@ function spread(entries, make, title, onClose) {
       entries.map((entry, index) => {
         const toss = (key, most) => ((seeded(`${entry.id ?? index}:${key}`) * 2 - 1) * most).toFixed(1);
         return h('li', {
-          class: 'deck-spread__card', tabindex: 0, dataset: { time: timeOf(entry.at), key: deckKey(entry) },
+          class: 'deck-spread__card', tabindex: 0, dataset: { time: timeOf(entry.at), key: deckKey(entry), link: linkTo(entry.link)?.href ?? '' },
           style: {
             '--tilt': `${toss('tilt', SCATTER.tilt)}deg`, '--dx': `${toss('x', SCATTER.x)}px`, '--dy': `${toss('y', SCATTER.y)}px`,
             '--side': index % 2 ? '1' : '-1', '--index': String(index),
@@ -107,6 +116,7 @@ function spread(entries, make, title, onClose) {
     stamp,
     lower,
     save,
+    go,
   );
   let openedAt = 0;
   let pressedOnDesk = false;
@@ -143,9 +153,6 @@ function spread(entries, make, title, onClose) {
   // the rest of the desk dims, and its ✕ and Save come up at its corner. The desk stops scrolling while it's up.
   let front = null;
   const cards = () => [...dialog.querySelectorAll('.deck-spread__card')];
-  // A note's link goes somewhere only from a raised card; on the desk, a tap on it raises the card like anywhere else.
-  const links = (card) => card.querySelectorAll('a[href]');
-  cards().forEach((card) => links(card).forEach((link) => (link.tabIndex = -1)));
   function raise(card) {
     clearTimeout(landing);
     if (front && front !== card) lowerCard({ instantly: true });
@@ -156,11 +163,16 @@ function spread(entries, make, title, onClose) {
     dialog.classList.add('has-front');
     place();
     card.classList.add('is-front');
-    // The rest of the desk is out of reach while a card's up, so Tab goes from the card to its link, ✕ and Save.
+    // The rest of the desk is out of reach while a card's up, so Tab goes from the card to its ✕, Save and link.
     cards().forEach((each) => (each.inert = each !== card));
-    links(card).forEach((link) => link.removeAttribute('tabindex'));
     stamp.textContent = card.dataset.time;
     stamp.classList.toggle('is-ready', Boolean(card.dataset.time));
+    const linked = linkTo(card.dataset.link);
+    go.classList.toggle('is-ready', Boolean(linked));
+    if (linked) {
+      go.href = linked.href;
+      site.textContent = linked.site;
+    } else go.removeAttribute('href');
     history.replaceState(history.state, '', withDeckCard(card.dataset.key));
     offerSave(card);
   }
@@ -217,23 +229,31 @@ function spread(entries, make, title, onClose) {
     front.style.removeProperty('transform');
     front.getBoundingClientRect();
     front.style.removeProperty('transition');
-    // The middle of the desk as shown: the dialog's own box, without any scrollbar.
+    // The middle of the desk as shown: the dialog's own box, without any scrollbar. A note with a link needs room
+    // under it for the link: it's kept clear of the window's foot, the card going up only as far as it has to.
     const [wide, tall] = [dialog.clientWidth, dialog.clientHeight];
-    const scale = Math.min(Math.min(tall * READ_HEIGHT, READ_MOST) / spot.height, (wide * 0.92) / spot.width);
-    const [x, y] = [wide / 2 - (spot.left + spot.width / 2), tall / 2 - (spot.top + spot.height / 2)];
+    const room = front.dataset.link ? LINK_ROOM : 0;
+    const scale = Math.min(Math.min(tall * READ_HEIGHT, READ_MOST, tall - 16 - room) / spot.height, (wide * 0.92) / spot.width);
+    const middle = tall / 2 - Math.max(0, (spot.height * scale) / 2 + room + 8 - tall / 2);
+    const [x, y] = [wide / 2 - (spot.left + spot.width / 2), middle - (spot.top + spot.height / 2)];
     front.style.setProperty('--front-x', `${x.toFixed(1)}px`);
     front.style.setProperty('--front-y', `${y.toFixed(1)}px`);
     front.style.setProperty('--front-scale', scale.toFixed(3));
     // Save on the raised card's bottom right corner, half off it but never off the screen, and the ✕ just left of it,
     // or in the corner itself for a card with no picture to save yet.
     const left = Math.min(wide / 2 + (spot.width * scale) / 2 - 14, wide - 42);
-    const bottom = tall / 2 + (spot.height * scale) / 2;
+    const bottom = middle + (spot.height * scale) / 2;
     save.style.setProperty('left', `${left.toFixed(1)}px`);
     lower.style.setProperty('left', `${(saveable.get(front.dataset.key) === false ? left : left - 44).toFixed(1)}px`);
     for (const tool of [save, lower]) tool.style.setProperty('top', `${(bottom - 14).toFixed(1)}px`);
     // The time it went up, just under the card.
     stamp.style.setProperty('top', `${(bottom + 12).toFixed(1)}px`);
     stamp.style.setProperty('width', `${wide}px`);
+    // The link's box under that, as wide as the card, up to a point.
+    const box = Math.min(spot.width * scale, 340);
+    go.style.setProperty('left', `${((wide - box) / 2).toFixed(1)}px`);
+    go.style.setProperty('top', `${(bottom + 36).toFixed(1)}px`);
+    go.style.setProperty('width', `${box.toFixed(1)}px`);
   }
 
   // Back to its spot on the desk. It stays on top of the pile until it's landed.
@@ -245,7 +265,6 @@ function spread(entries, make, title, onClose) {
     card.classList.remove('is-front');
     dialog.classList.remove('has-front');
     cards().forEach((each) => (each.inert = false));
-    links(card).forEach((link) => (link.tabIndex = -1));
     save.classList.remove('is-ready');
     if (keyInUrl()) history.replaceState(history.state, '', withDeckCard(null));
     if (instantly) requestAnimationFrame(() => card.style.removeProperty('transition'));
@@ -293,10 +312,6 @@ function spread(entries, make, title, onClose) {
   const tap = (card) => (card === front ? flipOver(card) : raise(card));
   dialog.addEventListener('click', (event) => {
     const card = event.target.closest('.deck-spread__card');
-    if (event.target.closest('a[href]')) {
-      if (card && card === front) return;
-      event.preventDefault();
-    }
     // With a card up, a tap on it turns it over; a tap anywhere else (another card, the desk) puts it down.
     if (front) {
       if (card === front) flipOver(card);
@@ -308,7 +323,7 @@ function spread(entries, make, title, onClose) {
   });
   dialog.addEventListener('keydown', (event) => {
     const card = event.target.closest('.deck-spread__card');
-    if (!card || event.target.closest('a[href]') || (event.key !== 'Enter' && event.key !== ' ')) return;
+    if (!card || (event.key !== 'Enter' && event.key !== ' ')) return;
     event.preventDefault();
     if (front && card !== front) lowerCard();
     tap(card);

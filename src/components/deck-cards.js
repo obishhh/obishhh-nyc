@@ -50,9 +50,6 @@ function wisp() {
 // Notes are written as big as they'll fit on the card, the way you would: shorter ones bigger. A little room is left
 // around the edges.
 const MARKER = { size: 46, width: 200, height: 236 };
-// A Special Note's rules box takes some of that room.
-const LINKED_HEIGHT = 206;
-
 // Where a note links to, if it's a web address: the address, and the site's name without its www.
 export function linkTo(url) {
   if (!/^https?:\/\//i.test(url ?? '')) return null;
@@ -68,12 +65,11 @@ const day = (date, options) => (date ? new Date(`${date}T12:00:00`).toLocaleDate
 
 // A note: a blank energy card somebody wrote on in marker. Silver bars top and bottom, the type's
 // symbol glowing in the middle. The writing is a picture, so it carries the words for screen readers.
-// One with a link is a Special Note, the way an energy that does more than the basics is a Special Energy, and says
-// what it does in a rules box at the bottom: where it links to.
+// One with a link is a Special Note, the way an energy that does more than the basics is a Special Energy; the link
+// itself comes up under it when it's raised (see deck-box.js).
 export function noteCard({ type: given, text, date, number, link }) {
   const type = knownType(given);
-  const linked = linkTo(link);
-  const ink = text ? scribble(text, { hand: HAND, ...MARKER, height: linked ? LINKED_HEIGHT : MARKER.height }) : null;
+  const ink = text ? scribble(text, { hand: HAND, ...MARKER }) : null;
   ink?.classList.add('note-card__ink');
   ink?.setAttribute('role', 'img');
   ink?.setAttribute('aria-label', text);
@@ -81,7 +77,7 @@ export function noteCard({ type: given, text, date, number, link }) {
   const look = LOOKS[Math.floor(seeded(number || text || type) * LOOKS.length)];
   return h('article', { class: 'card note-card', dataset: { type, finish: 'standard', look }, 'aria-label': `${typeName(type)} Type note` },
     h('div', { class: 'card__panel' },
-      h('header', { class: 'note-card__bar' }, h('span', { class: 'note-card__label' }, linked ? 'Special Note' : 'Basic Note'), energy(type)),
+      h('header', { class: 'note-card__bar' }, h('span', { class: 'note-card__label' }, linkTo(link) ? 'Special Note' : 'Basic Note'), energy(type)),
       h('div', { class: 'note-card__energy', 'aria-hidden': 'true' },
         h('span', { class: 'note-card__trace' }, look === 'wisp' && svg(wisp())),
         h('span', { class: 'note-card__orb' }, svg(energyGlyphs[type])),
@@ -90,8 +86,6 @@ export function noteCard({ type: given, text, date, number, link }) {
       // The card's handling goes under the writing: the marker went on after, over the top of it.
       wear(number || text),
       h('div', { class: 'note-card__writing' }, ink),
-      linked && h('a', { class: 'note-card__link', href: linked.href, target: '_blank', rel: 'noopener noreferrer' },
-        'This note links to ', h('b', {}, linked.site), h('span', { class: 'note-card__out', 'aria-hidden': 'true' }, ' ↗')),
       h('p', { class: 'note-card__base' }, posted && `Posted ${posted}`),
       smallPrint('', number),
     ),
