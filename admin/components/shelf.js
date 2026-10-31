@@ -3,7 +3,7 @@ import { h, svg } from '../../src/lib/dom.js';
 import { plural } from '../../src/lib/words.js';
 import { GRIP } from '../lib/icons.js';
 import { sortable } from '../lib/sortable.js';
-import { tile } from './tile.js';
+import { tile, tiles } from './tile.js';
 
 function cardTile(data) {
   const title = data.title || 'Untitled';
@@ -13,14 +13,12 @@ function cardTile(data) {
   });
 }
 
-const newTile = () =>
-  h('li', { class: 'shelf__new' }, h('a', { class: 'shelf__new-link', href: '#/new' }, 'New card'));
-
 // Every card in binder order, drafts included. Drag (or arrow-key the handle) to reorder.
 export function shelf({ onSort }) {
   const grid = h('ol', { class: 'shelf__grid', 'aria-label': 'Cards in binder order' });
   const summary = h('p', { class: 'shelf__summary' });
   const status = h('p', { class: 'shelf__status', role: 'status', 'aria-live': 'polite' });
+  const tilesFor = tiles(cardTile);
   let flashTimer;
 
   const root = h('section', { class: 'shelf' },
@@ -53,7 +51,7 @@ export function shelf({ onSort }) {
     update(cards) {
       const live = cards.filter(({ status: state }) => state === 'published').length;
       summary.textContent = `${plural(cards.length, 'card')}, ${live} live.`;
-      grid.replaceChildren(...cards.map(cardTile), newTile());
+      grid.replaceChildren(...tilesFor(cards));
     },
   };
 }

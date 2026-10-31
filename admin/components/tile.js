@@ -3,6 +3,21 @@ import { seeded } from '../../src/lib/seeded.js';
 
 const MAX_TILT = 0.8;
 
+// Tiles for the cards on a shelf, kept from one look at the shelf to the next: a card's only drawn again once it's
+// been saved since.
+export function tiles(make) {
+  const kept = new Map();
+  return (cards) => {
+    const next = new Map(cards.map((data) => {
+      const was = kept.get(data.id);
+      return [data.id, was?.stamp === data.updated_at ? was : { stamp: data.updated_at, tile: make(data) }];
+    }));
+    kept.clear();
+    next.forEach((value, id) => kept.set(id, value));
+    return cards.map(({ id }) => kept.get(id).tile);
+  };
+}
+
 // A card on the editor's shelf: the card itself, a little askew in its pocket, with its name and whether it's live.
 // The name can stay off when the card already says it all.
 export function tile({ href, name, status, card, seed, data = {}, extra, showName = true }) {

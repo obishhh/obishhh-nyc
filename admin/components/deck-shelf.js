@@ -1,7 +1,7 @@
 import { deckCard } from '../../src/components/deck-cards.js';
 import { h } from '../../src/lib/dom.js';
 import { plural } from '../../src/lib/words.js';
-import { tile } from './tile.js';
+import { tile, tiles } from './tile.js';
 
 // A note's name on the shelf is its first few words.
 const nameOf = (data) => (data.kind === 'snapshot' ? data.title : data.text.split(/\s+/).slice(0, 5).join(' ')) || 'Untitled';
@@ -13,6 +13,7 @@ const deckTile = (data) =>
 export function deckShelf() {
   const grid = h('ol', { class: 'shelf__grid', 'aria-label': 'Deck box, newest first' });
   const summary = h('p', { class: 'shelf__summary' });
+  const tilesFor = tiles(deckTile);
   const root = h('section', { class: 'shelf deck-shelf' },
     h('header', { class: 'shelf__header' },
       h('h2', { class: 'shelf__title' }, 'Deck box'),
@@ -32,7 +33,7 @@ export function deckShelf() {
       summary.textContent = entries.length
         ? `${plural(entries.length, 'card')}, ${live} live.`
         : 'Empty.';
-      grid.replaceChildren(...entries.map(deckTile));
+      grid.replaceChildren(...tilesFor(entries));
     },
   };
 }

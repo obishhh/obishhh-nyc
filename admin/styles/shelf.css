@@ -160,21 +160,6 @@
 .tile__grip:hover { color: var(--ink-900); }
 .tile__grip:focus-visible { outline: 2px solid var(--ink-900); }
 
-.shelf__new-link {
-  display: grid;
-  place-items: center;
-  width: var(--pocket-width);
-  height: var(--pocket-height);
-  border: 1px dashed var(--line-strong);
-  border-radius: 12px;
-  font-size: 14px;
-  color: var(--page-muted);
-  text-decoration: none;
-}
-
-.shelf__new-link:hover { border-color: var(--ink-900); color: var(--ink-900); }
-.shelf__new-link:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 4px; }
-
 @media (max-width: 599px) {
   .shelf__title { font-size: 32px; }
   .shelf__grid { --scale: 0.6; gap: 28px 12px; }

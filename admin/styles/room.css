@@ -46,6 +46,5 @@
 
 @media (max-width: 599px) {
   .topbar { padding: 18px 16px 12px; }
-  .topbar .button[target] { display: none; }
   .room__view { padding: 4px 16px 112px; }
 }
