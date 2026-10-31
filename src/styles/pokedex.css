@@ -45,6 +45,41 @@
 
 .pokedex:has(> .pokedex__open:active) { scale: 0.97; }
 
+/* The little green light on its left edge lights up and flashes while a pointer's over it, or it has the focus. */
+.pokedex__light {
+  position: absolute;
+  top: 60.5%;
+  left: 1.5%;
+  width: 2.9%;
+  height: 2%;
+  border-radius: 30%;
+  background: radial-gradient(closest-side, #f4ffee, #9bff9a 45%, #46e266);
+  box-shadow: 0 0 5px 2px rgb(90 255 120 / 0.65), 0 0 12px 3px rgb(90 255 120 / 0.3);
+  opacity: 0;
+  transform: skewX(-18deg);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .pokedex:hover > .pokedex__light { animation: flash 0.9s ease-in-out infinite; }
+}
+
+.pokedex:has(> .pokedex__open:focus-visible) > .pokedex__light { animation: flash 0.9s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pokedex:hover > .pokedex__light,
+  .pokedex:has(> .pokedex__open:focus-visible) > .pokedex__light {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+@keyframes flash {
+  0%, 40% { opacity: 1; }
+  55%, 90% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
 @media (min-width: 1040px) {
   .tabbed > .pokedex {
     top: calc(var(--box-top) + var(--box-width) * 860 / 688 - 18px);

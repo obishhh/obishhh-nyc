@@ -14,6 +14,7 @@ export function pokedex(cards) {
   const screen = h('dialog', { class: 'pokedex-screen', 'aria-label': 'Pokédex' });
   const root = h('div', { class: 'pokedex', dataset: { overBinder: '' } },
     h('img', { class: 'pokedex__photo', src: PHOTO.src, alt: '', width: PHOTO.width, height: PHOTO.height, decoding: 'async' }),
+    h('span', { class: 'pokedex__light', 'aria-hidden': 'true' }),
     open,
     screen,
   );
