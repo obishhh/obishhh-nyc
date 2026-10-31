@@ -3,9 +3,12 @@ import { h } from '../../src/lib/dom.js';
 let count = 0;
 const uid = () => `field-${++count}`;
 
+// What a row's label names: the field you type or pick in, not a file picker, a slider or a list of choices.
+const FIELD = 'textarea, select, input:not([type=file], [type=radio], [type=range], [type=hidden])';
+
 // A label on the left, the control on the right.
 export function row(label, control, hint) {
-  const input = control.matches('input, select, textarea') ? control : control.querySelector('input, select, textarea');
+  const input = control.matches(FIELD) ? control : control.querySelector(FIELD);
   if (input) input.id ||= uid();
   return h('div', { class: 'row' },
     input ? h('label', { class: 'row__label', for: input.id }, label) : h('span', { class: 'row__label' }, label),

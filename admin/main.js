@@ -191,21 +191,25 @@ async function reorder(ids) {
 }
 
 async function enter() {
-  if (!(await isAdmin())) {
-    await signOut();
-    entrance.show('This account can’t edit the cards.');
-    return;
-  }
   entrance.hide();
   room.hidden = false;
   view.replaceChildren(notice('Loading the cards…'));
-  try {
-    // Notes are written in marker, so its font comes in with the cards.
-    [cards, deck] = await Promise.all([listCards(), listDeck(), handwriting()]);
-  } catch (error) {
-    view.replaceChildren(notice(`Couldn’t load the cards: ${error.message}`));
+  // Whether this account may edit, and the cards, asked for together. Notes are written in marker, so its font comes
+  // in with them.
+  const [admin, lists] = await Promise.allSettled([isAdmin(), Promise.all([listCards(), listDeck(), handwriting()])]);
+  if (admin.status === 'fulfilled' && !admin.value) {
+    await signOut();
+    room.hidden = true;
+    view.replaceChildren();
+    entrance.show('This account can’t edit the cards.');
     return;
   }
+  const failed = admin.status === 'rejected' ? admin.reason : lists.status === 'rejected' && lists.reason;
+  if (failed) {
+    view.replaceChildren(notice(`Couldn’t load the cards: ${failed.message}`));
+    return;
+  }
+  [cards, deck] = lists.value;
   shown = location.hash;
   render();
   drawLooks();
@@ -239,7 +243,7 @@ async function leave() {
 }
 
 document.addEventListener('keydown', (event) => {
-  if ((event.metaKey || event.ctrlKey) && event.key === 's' && editing()) {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's' && editing()) {
     event.preventDefault();
     bench().save();
   }

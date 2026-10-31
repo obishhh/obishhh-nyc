@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js';
+import { supabase, unwrap } from './supabase.js';
 
 const EMAIL_KEY = 'obishhh.admin.email';
 
@@ -18,9 +18,7 @@ export async function signIn(email, password) {
   return data.session;
 }
 
-export async function isAdmin() {
-  const { data, error } = await supabase.rpc('is_admin');
-  return !error && data === true;
-}
+// Whether this account may edit. A server that can't be reached throws, rather than answering no.
+export const isAdmin = async () => unwrap(await supabase.rpc('is_admin')) === true;
 
 export const signOut = () => supabase.auth.signOut();
