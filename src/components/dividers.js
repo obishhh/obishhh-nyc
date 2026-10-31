@@ -40,7 +40,8 @@ function mark(index, label, side) {
       '--inside': `${(MARK.inside / PHOTO.thickness) * 100}%`, '--across': `${((MARK.inside + MARK.outside) / PHOTO.thickness) * 100}%`,
     },
   });
-  const pen = canvas.getContext('2d');
+  // Roughened pixel by pixel once it's drawn, so it's kept where reading it back is quick.
+  const pen = canvas.getContext('2d', { willReadFrequently: true });
   // Down the side the words read upwards, so the line runs bottom to top along their right.
   if (side) {
     pen.translate(0, length);
@@ -86,7 +87,8 @@ export function dividers(tabs, { active, onSelect, hand = HAND }) {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(photo, 0, 0, width, height);
     const ink = Object.assign(document.createElement('canvas'), { width, height });
-    const pen = ink.getContext('2d');
+    // The writing's roughened pixel by pixel before it goes on the photo, so it's kept where reading it back is quick.
+    const pen = ink.getContext('2d', { willReadFrequently: true });
     const [thickness, length] = side ? [width, height] : [height, width];
     shown.forEach((tab, index) => {
       const [from, to, middle] = SLOTS[index];

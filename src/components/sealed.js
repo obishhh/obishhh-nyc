@@ -41,7 +41,10 @@ export function sealed(data) {
   root.addEventListener('click', () => {
     if (reducedMotion.matches || root.getAnimations().length) return;
     const { frames, duration } = notYet();
-    root.animate(frames, { duration, easing: 'ease-out', composite: 'add' });
+    // On top of its own tilt and size, written into every frame: a shake that adds to them can't run off the page.
+    const own = getComputedStyle(root).transform;
+    const on = own === 'none' ? '' : `${own} `;
+    root.animate(frames.map(({ transform }) => ({ transform: `${on}${transform}` })), { duration, easing: 'ease-out' });
   });
   return root;
 }

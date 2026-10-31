@@ -62,11 +62,12 @@ function snapshotPicture({ src, alt, position, zoom, look, baked, second }) {
   const other = safeImage(second?.src ?? '');
   const firstBaked = safeImage(baked ?? '');
   if (!first) return null;
-  if (!other) return photo(first, { alt, position, zoom, look, baked: firstBaked });
+  // Only fetched once it's shown: the deck's cards are made before anyone opens it, and may never be.
+  if (!other) return photo(first, { alt, position, zoom, look, baked: firstBaked, loading: 'lazy' });
   return h('div', { class: 'snapshot__halves', role: 'img', 'aria-label': alt },
-    h('div', { class: 'snapshot__half', dataset: { half: '0' } }, photo(first, { alt: '', position, zoom, look, baked: firstBaked })),
+    h('div', { class: 'snapshot__half', dataset: { half: '0' } }, photo(first, { alt: '', position, zoom, look, baked: firstBaked, loading: 'lazy' })),
     h('div', { class: 'snapshot__half', dataset: { half: '1' } },
-      photo(other, { alt: '', position: second.position, zoom: second.zoom, look, baked: safeImage(second.baked ?? '') })),
+      photo(other, { alt: '', position: second.position, zoom: second.zoom, look, baked: safeImage(second.baked ?? ''), loading: 'lazy' })),
   );
 }
 

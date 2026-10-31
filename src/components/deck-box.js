@@ -43,7 +43,8 @@ function label(text) {
     },
   });
   handwriting().then(() => {
-    const pen = canvas.getContext('2d');
+    // Roughened pixel by pixel once it's written, so it's kept where reading it back is quick.
+    const pen = canvas.getContext('2d', { willReadFrequently: true });
     const word = scrawl(text, { hand: HAND });
     const scale = Math.min(LABEL.length / word.width, LABEL.thickness / word.height);
     const angle = (LABEL.angle * Math.PI) / 180;
@@ -428,11 +429,14 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
     box.style.setProperty('--peek-scale', ((entry.contentRect.width * PEEK) / 252).toFixed(4));
   }).observe(box);
 
-  // Lay the spread out while nothing else is happening, so opening the box is instant.
+  // The deck's cards are made while nothing else is happening, a few at a time (a note's handwriting is the slow
+  // part), and then the spread's laid out from them, so opening the box is instant and no one moment pays for it all.
+  const made = new Map();
+  const madeFor = (entry) => made.get(entry) ?? make(entry);
   let view;
   const ready = () => {
     fillPeeks();
-    return (view ??= spread(entries, make, title, ({ byKey }) => {
+    return (view ??= spread(entries, madeFor, title, ({ byKey }) => {
       // The dialog hands focus back to the box on its own as it shuts; keep it only for the keyboard.
       if (byKey) open.focus({ preventScroll: true });
       else open.blur();
@@ -442,8 +446,20 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
   open.addEventListener('focus', fillPeeks, { once: true });
   box.addEventListener('pointerenter', () => fanOut(peeks, Math.random));
   open.addEventListener('focus', () => fanOut(peeks, Math.random));
-  if ('requestIdleCallback' in window) requestIdleCallback(ready, { timeout: 2000 });
-  else setTimeout(ready, 1200);
+  const idle = (work) => ('requestIdleCallback' in window
+    ? requestIdleCallback(work, { timeout: 2000 })
+    : setTimeout(() => work({ timeRemaining: () => 0 }), 300));
+  const prepare = (deadline) => {
+    if (view) return;
+    for (const entry of entries) {
+      if (made.has(entry)) continue;
+      // At least one a time, and more while the moment lasts.
+      if (made.size && deadline.timeRemaining() < 8) return idle(prepare);
+      made.set(entry, make(entry));
+    }
+    ready();
+  };
+  idle(prepare);
   open.addEventListener('click', () => ready().open());
   return {
     root: box,

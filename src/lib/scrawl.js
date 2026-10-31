@@ -33,32 +33,15 @@ const measure = (font) => {
   return measurer;
 };
 
-// Crops a sheet down to the ink on it, so the word can be measured and fitted exactly. Each edge is found by working in
-// from it until there's ink, so the empty margins are all it looks at.
-function trim(sheet) {
-  const { width, height } = sheet;
-  const { data } = sheet.getContext('2d').getImageData(0, 0, width, height);
-  const inked = (x, y) => data[(y * width + x) * 4 + 3] >= 8;
-  const rowInked = (y) => {
-    for (let x = 0; x < width; x += 1) if (inked(x, y)) return true;
-    return false;
-  };
-  const columnInked = (x, from, to) => {
-    for (let y = from; y <= to; y += 1) if (inked(x, y)) return true;
-    return false;
-  };
-  let top = 0;
-  while (top < height && !rowInked(top)) top += 1;
-  if (top === height) return sheet;
-  let bottom = height - 1;
-  while (!rowInked(bottom)) bottom -= 1;
-  let left = 0;
-  while (!columnInked(left, top, bottom)) left += 1;
-  let right = width - 1;
-  while (!columnInked(right, top, bottom)) right -= 1;
-  const trimmed = Object.assign(document.createElement('canvas'), { width: right - left + 1, height: bottom - top + 1 });
-  trimmed.getContext('2d').drawImage(sheet, -left, -top);
-  return trimmed;
+// Crops a sheet down to the ink on it, so the word can be measured and fitted exactly. Where the ink is comes from
+// each letter's own ink box, as the font measures it, where it was put: nothing's read back off the sheet to find it.
+function crop(sheet, [left, top, right, bottom]) {
+  const [x, y] = [Math.max(0, Math.floor(left)), Math.max(0, Math.floor(top))];
+  const [width, height] = [Math.min(sheet.width, Math.ceil(right)) - x, Math.min(sheet.height, Math.ceil(bottom)) - y];
+  if (width <= 0 || height <= 0) return sheet;
+  const cropped = Object.assign(document.createElement('canvas'), { width, height });
+  cropped.getContext('2d').drawImage(sheet, -x, -y);
+  return cropped;
 }
 
 // Writes a word in marker on its own scrap: crooked overall, every letter leaning, sitting and sizing a bit differently.
@@ -84,6 +67,7 @@ export function scrawl(text, { hand }) {
   pen.textAlign = 'center';
   pen.textBaseline = 'middle';
   let cursor = -total / 2;
+  const inked = [Infinity, Infinity, -Infinity, -Infinity];
   letters.forEach((char, index) => {
     pen.save();
     pen.translate(cursor + spans[index] / 2, wobble(`rise:${index}`) * EM * 0.09);
@@ -92,10 +76,25 @@ export function scrawl(text, { hand }) {
     pen.lineWidth = EM * (0.05 + wobble(`press:${index}`) * 0.015);
     pen.fillText(char, 0, 0);
     pen.strokeText(char, 0, 0);
+    if (char.trim()) {
+      // The letter's ink, measured round the point it's centred on, and out by half the stroke and a pixel of soft edge.
+      const ink = pen.measureText(char);
+      const out = pen.lineWidth / 2 + 1;
+      const [left, top] = [-ink.actualBoundingBoxLeft - out, -ink.actualBoundingBoxAscent - out];
+      const [right, bottom] = [ink.actualBoundingBoxRight + out, ink.actualBoundingBoxDescent + out];
+      const placed = pen.getTransform();
+      for (const [x, y] of [[left, top], [right, top], [left, bottom], [right, bottom]]) {
+        const corner = placed.transformPoint(new DOMPoint(x, y));
+        inked[0] = Math.min(inked[0], corner.x);
+        inked[1] = Math.min(inked[1], corner.y);
+        inked[2] = Math.max(inked[2], corner.x);
+        inked[3] = Math.max(inked[3], corner.y);
+      }
+    }
     pen.restore();
     cursor += spans[index];
   });
-  return trim(sheet);
+  return Number.isFinite(inked[0]) ? crop(sheet, inked) : sheet;
 }
 
 // A quick marker line along a canvas, a little bowed, pressing hard where the pen lands and lifting off at the end.
@@ -192,7 +191,8 @@ function write(text, { hand, size: biggest, width, height = Infinity }) {
     width: Math.ceil(width * ratio),
     height: Math.ceil((lines.length * leading + size * 0.5) * ratio),
   });
-  const ink = sheet.getContext('2d');
+  // It's roughened pixel by pixel once it's written, so it's kept where reading it back is quick.
+  const ink = sheet.getContext('2d', { willReadFrequently: true });
   lines.forEach((line, index) => {
     const word = scrawl(line, { hand });
     const fit = Math.min(scale * ratio, sheet.width / word.width);

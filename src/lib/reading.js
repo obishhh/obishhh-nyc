@@ -80,9 +80,9 @@ export function enableReading(binder, cards) {
     const state = { view, pushed, closing: null };
     current = state;
 
-    // Lay the article out and paint it once, unseen, so the first frames of the
-    // flight don't have to.
-    view.root.style.opacity = '0';
+    // Lay the article out and paint it once, all but unseen (quite unseen, and a browser wouldn't paint it), so the
+    // first frames of the flight don't have to.
+    view.root.style.opacity = '0.001';
     document.body.append(view.root);
     document.documentElement.classList.add('is-reading');
     outside.forEach((element) => (element.inert = true));
@@ -103,7 +103,7 @@ export function enableReading(binder, cards) {
     view.root.style.opacity = '';
     view.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], fadeIn);
     view.sheet.animate([{ opacity: 0, transform: still ? 'none' : 'translateY(28px)' }, { opacity: 1, transform: 'none' }], fadeIn);
-    view.text.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { ...fadeIn, duration: still ? 160 : 420, delay: still ? 0 : 90 });
+    view.text.animate([{ opacity: 0, transform: still ? 'none' : 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { ...fadeIn, duration: still ? 160 : 420, delay: still ? 0 : 90 });
 
     if (still) {
       state.opening = Promise.resolve();

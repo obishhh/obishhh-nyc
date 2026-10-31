@@ -26,12 +26,13 @@ askEarly('binder')?.then((cards) => {
   }
 }, () => {});
 
-// Only the newest deck card shows before the box is opened.
+// Only the newest deck card shows before the box is opened, in the box's photo; with no cards, there's no box.
 askEarly('deck')?.then(([newest]) => {
-  warmArt(newest?.photo);
-  if (newest?.photo?.second?.src) warmArt({ ...newest.photo.second, look: newest.photo.look });
+  if (!newest) return;
+  warm('/assets/deck/box-front.webp');
+  warmArt(newest.photo);
+  if (newest.photo?.second?.src) warmArt({ ...newest.photo.second, look: newest.photo.look });
 }, () => {});
 
 // The tabs' photo: down the side on a wide screen, across the top otherwise.
 warm(matchMedia(WIDE).matches ? '/assets/tabs/side.webp' : '/assets/tabs/top.webp');
-warm('/assets/deck/box-front.webp');
