@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://sevwmqmzawqldbnoyeng.supabase.co; connect-src https://sevwmqmzawqldbnoyeng.supabase.co wss://sevwmqmzawqldbnoyeng.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://sevwmqmzawqldbnoyeng.supabase.co; connect-src https://sevwmqmzawqldbnoyeng.supabase.co wss://sevwmqmzawqldbnoyeng.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
   <meta name="robots" content="noindex, nofollow">
   <title>Editor’s room · obishhh</title>
   <link rel="icon" href="/favicon.ico" sizes="48x48">
@@ -11,7 +11,8 @@
   <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cabin+Condensed:wght@500;700&family=Cabin:ital,wght@0,400;0,700;1,700&family=Lilita+One&family=Reenie+Beanie&display=swap">
+  <link rel="preconnect" href="https://sevwmqmzawqldbnoyeng.supabase.co" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cabin+Condensed:wght@500;700&family=Cabin:ital,wght@0,400;0,700;1,400;1,700&family=Lilita+One&family=Reenie+Beanie&display=swap">
   <link rel="stylesheet" href="/src/styles/tokens.css">
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/styles/energy.css">
@@ -33,6 +34,64 @@
   <link rel="stylesheet" href="styles/composer.css">
   <link rel="stylesheet" href="styles/preview.css">
   <script type="module" src="main.js"></script>
+  <!-- modules: written by scripts/preloads.mjs -->
+  <link rel="modulepreload" href="/admin/components/art-picker.js">
+  <link rel="modulepreload" href="/admin/components/composer.js">
+  <link rel="modulepreload" href="/admin/components/deck-editor.js">
+  <link rel="modulepreload" href="/admin/components/deck-shelf.js">
+  <link rel="modulepreload" href="/admin/components/door.js">
+  <link rel="modulepreload" href="/admin/components/editor.js">
+  <link rel="modulepreload" href="/admin/components/fields.js">
+  <link rel="modulepreload" href="/admin/components/focus-picker.js">
+  <link rel="modulepreload" href="/admin/components/preview.js">
+  <link rel="modulepreload" href="/admin/components/save-bar.js">
+  <link rel="modulepreload" href="/admin/components/shelf.js">
+  <link rel="modulepreload" href="/admin/components/tile.js">
+  <link rel="modulepreload" href="/admin/components/topbar.js">
+  <link rel="modulepreload" href="/admin/components/upload-button.js">
+  <link rel="modulepreload" href="/admin/data/options.js">
+  <link rel="modulepreload" href="/admin/lib/auth.js">
+  <link rel="modulepreload" href="/admin/lib/cards.js">
+  <link rel="modulepreload" href="/admin/lib/deck.js">
+  <link rel="modulepreload" href="/admin/lib/form.js">
+  <link rel="modulepreload" href="/admin/lib/format.js">
+  <link rel="modulepreload" href="/admin/lib/icons.js">
+  <link rel="modulepreload" href="/admin/lib/look-image.js">
+  <link rel="modulepreload" href="/admin/lib/photo-gestures.js">
+  <link rel="modulepreload" href="/admin/lib/prefs.js">
+  <link rel="modulepreload" href="/admin/lib/sealed-image.js">
+  <link rel="modulepreload" href="/admin/lib/sortable.js">
+  <link rel="modulepreload" href="/admin/lib/storage.js">
+  <link rel="modulepreload" href="/admin/lib/supabase.js">
+  <link rel="modulepreload" href="/admin/lib/text-edit.js">
+  <link rel="modulepreload" href="/src/components/article.js">
+  <link rel="modulepreload" href="/src/components/battle-stats.js">
+  <link rel="modulepreload" href="/src/components/card-back.js">
+  <link rel="modulepreload" href="/src/components/card.js">
+  <link rel="modulepreload" href="/src/components/deck-cards.js">
+  <link rel="modulepreload" href="/src/components/energy.js">
+  <link rel="modulepreload" href="/src/components/notice.js">
+  <link rel="modulepreload" href="/src/components/prose.js">
+  <link rel="modulepreload" href="/src/components/rarity.js">
+  <link rel="modulepreload" href="/src/components/sealed.js">
+  <link rel="modulepreload" href="/src/components/small-print.js">
+  <link rel="modulepreload" href="/src/components/wear.js">
+  <link rel="modulepreload" href="/src/data/art.js">
+  <link rel="modulepreload" href="/src/data/licenses.js">
+  <link rel="modulepreload" href="/src/data/types.js">
+  <link rel="modulepreload" href="/src/lib/dom.js">
+  <link rel="modulepreload" href="/src/lib/fade.js">
+  <link rel="modulepreload" href="/src/lib/flip.js">
+  <link rel="modulepreload" href="/src/lib/glyphs.js">
+  <link rel="modulepreload" href="/src/lib/looks.js">
+  <link rel="modulepreload" href="/src/lib/markdown.js">
+  <link rel="modulepreload" href="/src/lib/pointer.js">
+  <link rel="modulepreload" href="/src/lib/scrawl.js">
+  <link rel="modulepreload" href="/src/lib/sections.js">
+  <link rel="modulepreload" href="/src/lib/seeded.js">
+  <link rel="modulepreload" href="/src/lib/supabase.js">
+  <link rel="modulepreload" href="/src/lib/words.js">
+  <!-- /modules -->
 </head>
 <body></body>
 </html>
