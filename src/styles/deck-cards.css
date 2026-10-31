@@ -223,6 +223,27 @@
 
 .snapshot__art { height: 146px; }
 
+/* Two photos split down the middle, each filling its half. */
+.snapshot__halves {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  height: 100%;
+}
+
+.snapshot__half {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.snapshot__half > img,
+.snapshot__half > .look {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .snapshot__text {
   flex: 1;
   /* The lines as typed, a blank one included; anything past the box is cut off rather than spilling. */

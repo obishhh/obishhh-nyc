@@ -79,20 +79,31 @@ export function noteCard({ type: given, text, date, number }) {
   );
 }
 
-// A Snapshot: a photo as a trainer card. Silver frame, a banner across the top, the caption as its rule.
 // What a Snapshot says under its caption when it hasn't been given a line of its own.
 export const SNAPSHOT_RULE = 'Play as many Snapshots as you like. Nobody’s counting.';
 
+// A Snapshot's picture: one photo, or two side by side, each half cropped to its own position. The halves are
+// numbered, so the editor can tell which one is being dragged.
+function snapshotPicture({ src, alt, position, look, second }) {
+  const first = safeImage(src ?? '');
+  const other = safeImage(second?.src ?? '');
+  if (!first) return null;
+  if (!other) return photo(first, { alt, position, look });
+  return h('div', { class: 'snapshot__halves', role: 'img', 'aria-label': alt },
+    h('div', { class: 'snapshot__half', dataset: { half: '0' } }, photo(first, { alt: '', position, look })),
+    h('div', { class: 'snapshot__half', dataset: { half: '1' } }, photo(other, { alt: '', position: second.position, look })),
+  );
+}
+
+// A Snapshot: a photo as a trainer card. Silver frame, a banner across the top, the caption as its rule.
 export function snapshotCard({ title, photo: picked, text, rule, place, date, number }) {
   const when = day(date, { month: 'short', day: 'numeric' });
-  const { src, alt, position, look } = picked && typeof picked === 'object' ? picked : {};
-  const picture = safeImage(src ?? '');
+  const shot = picked && typeof picked === 'object' ? picked : {};
   return h('article', { class: 'card snapshot', dataset: { finish: 'standard' }, 'aria-label': title },
     h('div', { class: 'card__panel' },
       h('p', { class: 'snapshot__banner' }, 'Snapshot'),
       h('h2', { class: 'card__title' }, title),
-      h('figure', { class: 'card__art snapshot__art' },
-        picture && photo(picture, { alt: alt || title || '', position, look })),
+      h('figure', { class: 'card__art snapshot__art' }, snapshotPicture({ ...shot, alt: shot.alt || title || '' })),
       h('p', { class: 'snapshot__text' }, text),
       h('p', { class: 'snapshot__rule' }, rule || SNAPSHOT_RULE),
       smallPrint([place, when].filter(Boolean).join(', '), number),

@@ -140,9 +140,10 @@ async function remove({ id }) {
 const letGo = (src) => deleteImage(src).catch(() => {});
 
 async function saveToDeck(data, status, id) {
-  const before = deck.find((other) => other.id === id)?.photo?.src;
+  const was = deck.find((other) => other.id === id)?.photo;
   const saved = await saveDeckCard(id, data, status);
-  if (before && before !== saved.photo?.src) letGo(before);
+  if (was?.src && was.src !== saved.photo?.src) letGo(was.src);
+  if (was?.second?.src && was.second.src !== saved.photo?.second?.src) letGo(was.second.src);
   deck = (id ? deck.map((other) => (other.id === id ? saved : other)) : [saved, ...deck])
     .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
   shown = `#/deck/${saved.id}`;
@@ -153,6 +154,7 @@ async function saveToDeck(data, status, id) {
 async function removeFromDeck({ id, photo }) {
   await deleteDeckCard(id);
   if (photo?.src) letGo(photo.src);
+  if (photo?.second?.src) letGo(photo.second.src);
   deck = deck.filter((other) => other.id !== id);
   go('#/');
   binder.flash('Taken out of the deck.');

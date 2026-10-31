@@ -30,6 +30,62 @@ function blankDeckCard(kind, deck) {
   return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', rule: '', place: '', photo: { src: '', alt: '', position: '', look: '' }, date: today() };
 }
 
+// An upload button that puts the uploaded photo's address in a hidden field and says what it did.
+function uploader({ uploadPhoto, onError, name, empty, filled }) {
+  const src = h('input', { type: 'hidden', name });
+  const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
+  const label = h('span', {}, empty);
+  let uploading = false;
+  file.addEventListener('change', async () => {
+    const [picked] = file.files;
+    if (!picked) return;
+    uploading = true;
+    label.textContent = 'Uploading…';
+    try {
+      src.value = await uploadPhoto(picked);
+      src.dispatchEvent(new Event('uploaded'));
+      src.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (error) {
+      onError(error);
+    } finally {
+      uploading = false;
+      label.textContent = src.value ? filled : empty;
+      file.value = '';
+    }
+  });
+  return {
+    src,
+    file,
+    button: h('label', { class: 'button button--quiet art__upload' }, file, label),
+    show(value) {
+      if (!uploading) label.textContent = value ? filled : empty;
+    },
+  };
+}
+
+// The second photo, for a Snapshot split down the middle: add one, swap it, or take it away again.
+function secondRows({ uploadPhoto, onError }) {
+  const upload = uploader({ uploadPhoto, onError, name: 'photo.second.src', empty: 'Add a second photo…', filled: 'Change the second photo…' });
+  const position = h('input', { type: 'hidden', name: 'photo.second.position' });
+  const drop = h('button', { class: 'button button--quiet', type: 'button' }, 'Remove');
+  upload.src.addEventListener('uploaded', () => (position.value = ''));
+  drop.addEventListener('click', () => {
+    upload.src.value = '';
+    position.value = '';
+    upload.src.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const shown = row('Second photo', h('div', { class: 'inline' }, upload.button, drop, upload.src, position),
+    'Two photos split the picture down the middle. Drag either half in the preview to line it up.');
+  return {
+    rows: [shown],
+    show(first, second) {
+      shown.hidden = !first;
+      drop.hidden = !second;
+      upload.show(second);
+    },
+  };
+}
+
 // The photo: upload one, then pick what stays in frame.
 function photoRows({ uploadPhoto, onError }) {
   const focus = focusPicker('photo.position');
@@ -88,8 +144,54 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
   let saving = false;
   let counter;
   let photo;
+  let second;
 
   trackPointer(preview, '.card');
+
+  // Drag a photo in the preview to slide it within its frame: either half of a split Snapshot, or the whole photo.
+  // The preview is redrawn as the form changes, so the frame is found again on every move.
+  let dragging = null;
+  const frameAt = (half) => preview.querySelector(half === null ? '.snapshot__art' : `.snapshot__half[data-half="${half}"]`);
+  const fieldFor = (half) => form.elements.namedItem(half === '1' ? 'photo.second.position' : 'photo.position');
+  preview.addEventListener('pointerdown', (event) => {
+    const frame = event.target.closest('.snapshot__half, .snapshot__art');
+    const picture = frame?.querySelector('img, canvas');
+    if (!frame || !picture || kind !== 'snapshot') return;
+    event.preventDefault();
+    preview.setPointerCapture(event.pointerId);
+    const [x = 50, y = 50] = (fieldFor(frame.dataset.half ?? null).value.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+    dragging = { half: frame.dataset.half ?? null, x, y, from: [event.clientX, event.clientY] };
+  });
+  preview.addEventListener('pointermove', (event) => {
+    if (!dragging || !preview.hasPointerCapture(event.pointerId)) return;
+    const frame = frameAt(dragging.half);
+    const picture = frame?.querySelector('img, canvas');
+    if (!picture) return;
+    // How far the photo overhangs its frame when it covers it: that's the room it has to slide.
+    const box = frame.getBoundingClientRect();
+    const [wide, tall] = picture instanceof HTMLImageElement ? [picture.naturalWidth, picture.naturalHeight] : [picture.width, picture.height];
+    if (!wide || !tall) return;
+    const scale = Math.max(box.width / wide, box.height / tall);
+    const [spareX, spareY] = [wide * scale - box.width, tall * scale - box.height];
+    const [dx, dy] = [event.clientX - dragging.from[0], event.clientY - dragging.from[1]];
+    const clamp = (v) => Math.min(100, Math.max(0, v));
+    const x = spareX > 0.5 ? clamp(dragging.x - (dx / spareX) * 100) : 50;
+    const y = spareY > 0.5 ? clamp(dragging.y - (dy / spareY) * 100) : 50;
+    const value = `${Math.round(x)}% ${Math.round(y)}%`;
+    picture.style.setProperty('object-position', value);
+    const field = fieldFor(dragging.half);
+    if (field.value !== value) {
+      field.value = value;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+  const stopDragging = () => {
+    if (!dragging) return;
+    dragging = null;
+    photo?.focus.sync();
+  };
+  preview.addEventListener('pointerup', stopDragging);
+  preview.addEventListener('pointercancel', stopDragging);
 
   const root = h('div', { class: 'editor deck-editor' },
     h('div', { class: 'editor__bar' },
@@ -119,7 +221,9 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
   function build() {
     counter = h('span');
     const words = { rows: 3, maxlength: MAX_TEXT[kind], hint: counter };
-    photo = kind === 'snapshot' ? photoRows({ uploadPhoto, onError: (error) => flash(`Upload failed. ${error.message}`, true) }) : null;
+    const onError = (error) => flash(`Upload failed. ${error.message}`, true);
+    photo = kind === 'snapshot' ? photoRows({ uploadPhoto, onError }) : null;
+    second = kind === 'snapshot' ? secondRows({ uploadPhoto, onError }) : null;
     form.replaceChildren(
       kind === 'note'
         ? section('Note',
@@ -128,6 +232,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
         )
         : section('Snapshot',
           ...photo.rows,
+          ...second.rows,
           text('photo.alt', 'Alt text', { placeholder: 'Describe the photo', maxlength: 160 }),
           text('title', 'Title', { placeholder: 'Bodega Cat', maxlength: 24 }),
           textarea('text', 'Caption', { ...words, placeholder: 'Search your deck for a cat. He’s already on the counter.' }),
@@ -143,7 +248,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
 
   // What's in the form, tidied: trimmed, with a blank date read as today.
   function current() {
-    const values = { photo: { src: '', alt: '', position: '', look: '' }, ...readForm(form) };
+    const values = { photo: { src: '', alt: '', position: '', look: '', second: { src: '', position: '' } }, ...readForm(form) };
     const data = { ...record, ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, trim(value)])), kind };
     data.photo = Object.fromEntries(Object.entries(values.photo).map(([key, value]) => [key, trim(value)]));
     data.date ||= today();
@@ -175,6 +280,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     const data = current();
     counter.textContent = `${data.text.length} of ${MAX_TEXT[kind]}.${kind === 'note' ? ' Shorter gets written bigger.' : ''}`;
     photo?.show(data.photo.src);
+    second?.show(data.photo.src, data.photo.second?.src);
     dirty = editable(data) !== snapshot;
     renderState();
     clearTimeout(previewTimer);
@@ -243,6 +349,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     }
     const data = next ? structuredClone(next) : blankDeckCard(kind, deck());
     data.photo = { src: '', alt: '', position: '', look: '', ...data.photo };
+    data.photo.second = { src: '', position: '', ...data.photo.second };
     writeForm(form, data);
     photo?.focus.sync();
     snapshot = editable(current());

@@ -70,3 +70,11 @@
 @media (max-width: 599px) {
   .preview { --scale: 1; gap: 16px; }
 }
+
+/* In the deck editor, a Snapshot's photo is dragged to line it up: no scrolling the page from it, and a hand. */
+.deck-editor .snapshot__art {
+  touch-action: none;
+  cursor: grab;
+}
+
+.deck-editor .snapshot__art:active { cursor: grabbing; }
