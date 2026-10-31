@@ -15,20 +15,21 @@ async function lookKey(src, look) {
 
 const encode = (canvas, type) => new Promise((resolve) => canvas.toBlob(resolve, type, QUALITY));
 
-// The picture of a photo in a look: the one it has if that's still it, or a fresh one. None for no look, or when it
-// can't be drawn or saved, and the site draws it itself as before.
+// The picture of a photo in a look: the one it has if that's still it, or a fresh one. Undefined for no look; null
+// when it can't be drawn or saved, and then the site draws it itself. Pictures are never taken down: they're small,
+// named for what's in them, and another card, or this one open somewhere else, may still show one.
 export async function lookImage(src, look, previous) {
   if (!src || !isLook(look)) return undefined;
   try {
     const key = await lookKey(src, look);
     if (previous?.includes(key)) return previous;
     const canvas = await draw(src, look);
-    if (!canvas) return undefined;
+    if (!canvas) return null;
     // The pixel looks stay exact. The rest are photos: WebP, or JPEG where the browser can't make WebP (Safari).
     let image = await encode(canvas, pixelated(look) ? 'image/png' : 'image/webp');
     if (!pixelated(look) && image?.type !== 'image/webp') image = await encode(canvas, 'image/jpeg');
     return await uploadImage(image, { folder: 'looks', name: key });
   } catch {
-    return undefined;
+    return null;
   }
 }

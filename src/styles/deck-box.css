@@ -429,7 +429,8 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   .tabbed > .deck-box,
   .deck-spread__card,
   .deck-spread__go::after,
-  .deck-spread.has-front .deck-spread__go.is-ready > *,
+  .deck-spread.has-front .deck-spread__go.is-ready > :first-child,
+  .deck-spread.has-front .deck-spread__go.is-ready > .deck-spread__go-to,
   .deck-spread[open]::backdrop,
   .deck-spread[open] .deck-spread__bar { animation: none; }
 }

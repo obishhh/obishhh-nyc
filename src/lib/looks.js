@@ -322,8 +322,9 @@ function comic({ data, width, height }) {
 }
 
 // One drawing per photo and look, shared by every card that shows it: a canvas can only be in one place, so each
-// gets a copy.
+// gets a copy. Once one's drawn, it's kept to hand (`ready`), so a card drawn again shows it straight away.
 const drawn = new Map();
+const ready = new Map();
 
 export function draw(src, look) {
   const key = `${look} ${src}`;
@@ -342,6 +343,7 @@ export function draw(src, look) {
       const pixels = pen.getImageData(0, 0, width, height);
       paint({ data: pixels.data, width, height });
       pen.putImageData(pixels, 0, 0);
+      ready.set(key, canvas);
       return canvas;
     })().catch(() => {
       drawn.delete(key);
@@ -357,15 +359,16 @@ function copy(canvas) {
   return twin;
 }
 
-// Drawing a look is heavy, so a photo only starts once it's on the page with a size: a card on a tab that isn't open,
-// or in the closed deck, costs nothing until it's shown. Not when it scrolls into view: the open deck draws them all,
-// so none is blank as it comes up.
+// Drawing a look is heavy, so a photo only starts once it's on the page with a size (a card on a tab that isn't open,
+// or in the closed deck, costs nothing until it's shown), and then when the page has a moment, so it doesn't stall
+// whatever's moving as it appears. Not when it scrolls into view: the open deck draws them all, so none is blank.
+const idle = (start) => ('requestIdleCallback' in window ? requestIdleCallback(start, { timeout: 500 }) : setTimeout(start, 50));
 const soon = (element, start) => {
   if (!('ResizeObserver' in window)) return start();
   const watch = new ResizeObserver((entries) => {
     if (!entries.some(({ contentRect }) => contentRect.width && contentRect.height)) return;
     watch.disconnect();
-    start();
+    idle(start);
   });
   watch.observe(element);
 };
@@ -379,11 +382,11 @@ const lookClass = (look) => `look look--${look}${pixelated(look) ? ' look--pixel
 // everything around it stay as they are.
 export const MOST_ZOOM = 3;
 export const zoomOf = (zoom) => Math.min(MOST_ZOOM, Math.max(1, Number(zoom) || 1));
-export function framing(position = '', zoom = '') {
+export function framing(position, zoom) {
   const style = position ? { 'object-position': position } : {};
   const z = zoomOf(zoom);
   if (z === 1) return style;
-  const [x = 50, y = 50] = (position.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+  const [x = 50, y = 50] = (String(position || '').match(/\d+(\.\d+)?/g) ?? []).map(Number);
   const trim = 1 - 1 / z;
   const cut = (value) => `${+(value * trim).toFixed(3)}%`;
   return {
@@ -400,24 +403,36 @@ export function frame(element, position, zoom) {
   for (const [name, value] of Object.entries(framing(position, zoom))) element.style.setProperty(name, value);
 }
 
-// A photo in a look. Default is the plain <img>; a look saved already drawn is that picture; the others swap the
-// plain photo for their drawing once it's ready, cropped and focused the same way.
+// A look's drawing, as a photo in its frame.
+function drawing(canvas, { look, alt, position, zoom }) {
+  const shown = copy(canvas);
+  shown.className = lookClass(look);
+  shown.setAttribute('role', 'img');
+  shown.setAttribute('aria-label', alt);
+  frame(shown, position, zoom);
+  return shown;
+}
+
+// A photo in a look. Default is the plain <img>. A look saved already drawn is that picture (or, if it's gone missing,
+// drawn here after all); one drawn here before is that drawing; otherwise the plain photo goes up and is swapped for
+// its drawing once it's ready, cropped and focused the same way. A photo that can't be drawn stays plain.
 export function photo(src, { look = '', baked = '', alt = '', position = '', zoom = '', ...props } = {}) {
   const filtered = isLook(look);
   const style = framing(position, zoom);
-  if (filtered && baked) return h('img', { ...props, class: lookClass(look), src: baked, alt, decoding: 'async', style });
+  if (filtered && baked) {
+    const picture = h('img', { ...props, class: lookClass(look), src: baked, alt, decoding: 'async', style });
+    picture.addEventListener('error', () => picture.replaceWith(photo(src, { look, alt, position, zoom, ...props })), { once: true });
+    return picture;
+  }
+  if (filtered && ready.has(`${look} ${src}`)) return drawing(ready.get(`${look} ${src}`), { look, alt, position, zoom });
   // A look reads the photo's pixels, so ask for it that way from the start (before src), and it's only fetched once.
   const image = h('img', { ...props, crossorigin: filtered ? 'anonymous' : null, src, alt, decoding: 'async', style });
   if (!filtered) return image;
   image.dataset.look = look;
   soon(image, () => draw(src, look).then((canvas) => {
+    if (!canvas) delete image.dataset.look;
     if (!canvas || !image.parentNode) return;
-    const shown = copy(canvas);
-    shown.className = lookClass(look);
-    shown.setAttribute('role', 'img');
-    shown.setAttribute('aria-label', alt);
-    frame(shown, position, zoom);
-    image.replaceWith(shown);
+    image.replaceWith(drawing(canvas, { look, alt, position, zoom }));
   }));
   return image;
 }

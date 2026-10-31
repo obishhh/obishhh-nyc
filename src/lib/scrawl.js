@@ -165,9 +165,19 @@ function write(text, { hand, size: biggest, width, height = Infinity }) {
     }
     return { lines, fine: !split && lines.length * size * 0.95 + size * 0.5 <= height };
   };
+  // The biggest whole size that fits, found by halving the gap; the smallest if even that doesn't.
   let size = biggest;
   let { lines, fine } = wrap(size);
-  while (!fine && size > SMALLEST) ({ lines, fine } = wrap((size -= 1)));
+  if (!fine) {
+    let [low, high] = [SMALLEST, biggest - 1];
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      if (wrap(mid).fine) low = mid;
+      else high = mid - 1;
+    }
+    size = low;
+    ({ lines } = wrap(size));
+  }
   const scale = size / EM;
   const leading = size * 0.95;
   const sheet = Object.assign(document.createElement('canvas'), {

@@ -1,4 +1,4 @@
-import { addressFor, deckKey, openedIn } from '../lib/addresses.js';
+import { addressFor, deckKey, goodKey, openedIn } from '../lib/addresses.js';
 import { h, svg } from '../lib/dom.js';
 import { cardBack } from './card-back.js';
 import { linkTo } from './deck-cards.js';
@@ -131,12 +131,7 @@ function spread(entries, make, title, onClose) {
     clearTimeout(landing);
     byKey = withKey;
     dialog.classList.add('is-closing');
-    setTimeout(() => {
-      dialog.classList.remove('is-closing');
-      lowerCard({ instantly: true });
-      dialog.querySelector('.is-picked')?.classList.remove('is-picked');
-      dialog.close();
-    }, reducedMotion.matches ? 0 : PUT_BACK);
+    setTimeout(() => dialog.close(), reducedMotion.matches ? 0 : PUT_BACK);
   }
 
   const onDesk = (target) => !target.closest('.deck-spread__card, .deck-spread__bar');
@@ -156,6 +151,8 @@ function spread(entries, make, title, onClose) {
   function raise(card) {
     clearTimeout(landing);
     if (front && front !== card) lowerCard({ instantly: true });
+    // Still tipping out (a linked card comes up as the deck lands): it's landed now, so it's measured where it rests.
+    card.getAnimations().forEach((animation) => animation.animationName === 'tip-out' && animation.finish());
     dialog.querySelector('.is-picked')?.classList.remove('is-picked');
     card.classList.add('is-picked');
     front = card;
@@ -173,23 +170,24 @@ function spread(entries, make, title, onClose) {
       go.href = linked.href;
       site.textContent = linked.site;
     } else go.removeAttribute('href');
-    history.replaceState(history.state, '', withDeckCard(card.dataset.key));
+    if (goodKey(card.dataset.key)) history.replaceState(history.state, '', withDeckCard(card.dataset.key));
     offerSave(card);
   }
 
   // Save is for a card whose picture is there to save: one published since the pictures were last drawn has none yet.
-  // Which ones do is asked as the deck opens, so Save comes up with the card. The picture itself is fetched as its card
-  // goes up and kept, so a tap on Save can share it at once: a phone only lets a page share right after a tap.
+  // Which ones do is asked as the deck opens, so Save comes up with the card. On a phone the picture itself is fetched
+  // as its card goes up, so a tap on Save can share it at once: a phone only shares right after a tap. A computer just
+  // downloads it, so it's fetched then.
   const saveable = new Map();
   const asked = new Map();
   const files = new Map();
+  const sharing = () => matchMedia('(pointer: coarse)').matches && 'share' in navigator;
   const ask = (key) => {
     if (!asked.has(key)) {
       asked.set(key, fetch(keepsakeOf(key), { method: 'HEAD' })
         .then((response) => response.ok, () => false)
         .then((ok) => {
           saveable.set(key, ok);
-          if (!ok) asked.delete(key);
           return ok;
         }));
     }
@@ -213,15 +211,20 @@ function spread(entries, make, title, onClose) {
     const key = card.dataset.key;
     save.classList.toggle('is-ready', saveable.get(key) === true);
     ask(key).then((ok) => {
-      if (!ok || front !== card) return;
-      save.classList.add('is-ready');
-      fileOf(key);
+      if (front !== card) return;
+      save.classList.toggle('is-ready', ok);
+      placeLower();
+      if (ok && sharing()) fileOf(key);
     });
   }
 
+  // The ✕ beside Save, or in the corner itself for a card with no picture to save yet.
+  let corner = 0;
+  const placeLower = () => lower.style.setProperty('left', `${(saveable.get(front.dataset.key) === false ? corner : corner - 44).toFixed(1)}px`);
+
   // Where the raised card goes: worked out from its spot as laid out, without its tilt or nudge.
   function place() {
-    if (!front) return;
+    if (!front || !dialog.open) return;
     // Measured with no transform and no transition, so the reading is the spot itself, not a step on the way.
     front.style.setProperty('transition', 'none');
     front.style.setProperty('transform', 'none');
@@ -239,12 +242,11 @@ function spread(entries, make, title, onClose) {
     front.style.setProperty('--front-x', `${x.toFixed(1)}px`);
     front.style.setProperty('--front-y', `${y.toFixed(1)}px`);
     front.style.setProperty('--front-scale', scale.toFixed(3));
-    // Save on the raised card's bottom right corner, half off it but never off the screen, and the ✕ just left of it,
-    // or in the corner itself for a card with no picture to save yet.
-    const left = Math.min(wide / 2 + (spot.width * scale) / 2 - 14, wide - 42);
+    // Save on the raised card's bottom right corner, half off it but never off the screen, and the ✕ by it.
+    corner = Math.min(wide / 2 + (spot.width * scale) / 2 - 14, wide - 42);
     const bottom = middle + (spot.height * scale) / 2;
-    save.style.setProperty('left', `${left.toFixed(1)}px`);
-    lower.style.setProperty('left', `${(saveable.get(front.dataset.key) === false ? left : left - 44).toFixed(1)}px`);
+    save.style.setProperty('left', `${corner.toFixed(1)}px`);
+    placeLower();
     for (const tool of [save, lower]) tool.style.setProperty('top', `${(bottom - 14).toFixed(1)}px`);
     // The time it went up, just under the card.
     stamp.style.setProperty('top', `${(bottom + 12).toFixed(1)}px`);
@@ -328,7 +330,17 @@ function spread(entries, make, title, onClose) {
     if (front && card !== front) lowerCard();
     tap(card);
   });
-  dialog.addEventListener('close', () => onClose({ byKey }));
+  // However it shuts (put away, or closed from outside, like going Forward to an article), it's left tidy.
+  dialog.addEventListener('close', () => {
+    clearTimeout(landing);
+    dialog.classList.remove('is-closing');
+    lowerCard({ instantly: true });
+    dialog.querySelector('.is-picked')?.classList.remove('is-picked');
+    onClose({ byKey });
+    byKey = false;
+  });
+  // A tap on a note's link opens it, and the card stays up.
+  go.addEventListener('click', (event) => event.stopPropagation());
 
   return {
     // Open on one card, raised: for a link to it. A card that's no longer in the deck just opens the deck.

@@ -92,7 +92,7 @@ function go(hash) {
 const bench = () => [workbench, deckBench].find((each) => view.contains(each.root));
 const editing = () => Boolean(bench());
 const unsaved = () => Boolean(bench()?.dirty);
-const canLeave = () => !unsaved() || confirm('You have unsaved changes. Ditch them?');
+const canLeave = () => !unsaved() || confirm('Ditch your unsaved changes?');
 
 addEventListener('hashchange', () => {
   if (room.hidden) return;
@@ -118,10 +118,9 @@ async function withSealedImage(data, id) {
 
 async function save(data, status, id) {
   const was = cards.find((card) => card.id === id)?.art;
-  const art = { ...data.art, baked: await lookImage(data.art.src, data.art.look, was?.baked) };
+  const art = { ...data.art, baked: (await lookImage(data.art.src, data.art.look, was?.baked)) ?? undefined };
   const saved = await saveCard(id, { ...data, art: await withSealedImage({ ...data, art }, id) }, status);
   cards = id ? cards.map((other) => (other.id === id ? saved : other)) : [...cards, saved];
-  letGoLooks([was?.baked]);
   shown = `#/card/${saved.id}`;
   history.replaceState(null, '', shown);
   return saved;
@@ -133,10 +132,9 @@ function backToBinder(message) {
   binder.flash(message);
 }
 
-async function remove({ id, art }) {
+async function remove({ id }) {
   await deleteCard(id);
   cards = cards.filter((other) => other.id !== id);
-  letGoLooks([art?.baked]);
   go('#/');
   binder.flash('Deleted.');
 }
@@ -144,35 +142,26 @@ async function remove({ id, art }) {
 // A photo nothing points at any more shouldn't stay online. Tidying up never gets in the way of the save itself.
 const letGo = (src) => deleteImage(src).catch(() => {});
 
-// A look's picture is named for its photo and look, so two cards showing the same photo the same way share one: it's
-// only taken down once nothing shows it.
-function letGoLooks(pictures) {
-  const shown = new Set([
-    ...cards.map(({ art }) => art?.baked),
-    ...deck.flatMap(({ photo }) => [photo?.baked, photo?.second?.baked]),
-  ]);
-  pictures.filter((picture) => picture && !shown.has(picture)).forEach(letGo);
-}
-
-// A Snapshot's photos with their look drawn (they share one look).
+// A Snapshot's photos with their look drawn (they share one look). A photo whose look couldn't be drawn has none, and
+// the site draws it; `failed` says if that happened.
 async function withLookImages(photo, was) {
-  if (!photo) return photo;
+  if (!photo) return { photo, failed: false };
   const { src, look, second } = photo;
+  const baked = await lookImage(src, look, was?.baked);
+  const secondBaked = second?.src ? await lookImage(second.src, look, was?.second?.baked) : undefined;
   return {
-    ...photo,
-    baked: await lookImage(src, look, was?.baked),
-    second: second?.src ? { ...second, baked: await lookImage(second.src, look, was?.second?.baked) } : second,
+    photo: { ...photo, baked: baked ?? undefined, second: second?.src ? { ...second, baked: secondBaked ?? undefined } : second },
+    failed: baked === null || secondBaked === null,
   };
 }
 
 async function saveToDeck(data, status, id) {
   const was = deck.find((other) => other.id === id)?.photo;
-  const saved = await saveDeckCard(id, { ...data, photo: await withLookImages(data.photo, was) }, status);
+  const saved = await saveDeckCard(id, { ...data, photo: (await withLookImages(data.photo, was)).photo }, status);
   if (was?.src && was.src !== saved.photo?.src) letGo(was.src);
   if (was?.second?.src && was.second.src !== saved.photo?.second?.src) letGo(was.second.src);
   deck = (id ? deck.map((other) => (other.id === id ? saved : other)) : [saved, ...deck])
     .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
-  letGoLooks([was?.baked, was?.second?.baked]);
   shown = `#/deck/${saved.id}`;
   history.replaceState(null, '', shown);
   return saved;
@@ -183,9 +172,8 @@ async function removeFromDeck({ id, photo }) {
   if (photo?.src) letGo(photo.src);
   if (photo?.second?.src) letGo(photo.second.src);
   deck = deck.filter((other) => other.id !== id);
-  letGoLooks([photo?.baked, photo?.second?.baked]);
   go('#/');
-  binder.flash('Taken out of the deck.');
+  binder.flash('Deleted.');
 }
 
 async function reorder(ids) {
@@ -230,17 +218,13 @@ async function drawLooks() {
     const baked = await lookImage(art?.src, art?.look, art?.baked);
     if (!baked || baked === art.baked) continue;
     const saved = await saveArt(id, { ...art, baked }, since).catch(() => null);
-    if (!saved) continue;
-    cards = cards.map((other) => (other.id === id ? saved : other));
-    letGoLooks([art.baked]);
+    if (saved) cards = cards.map((other) => (other.id === id ? saved : other));
   }
   for (const { id, photo, updated_at: since } of deck) {
-    const drawn = await withLookImages(photo, photo);
-    if (drawn?.baked === photo?.baked && drawn?.second?.baked === photo?.second?.baked) continue;
+    const { photo: drawn, failed } = await withLookImages(photo, photo);
+    if (failed || (drawn?.baked === photo?.baked && drawn?.second?.baked === photo?.second?.baked)) continue;
     const saved = await savePhoto(id, drawn, since).catch(() => null);
-    if (!saved) continue;
-    deck = deck.map((other) => (other.id === id ? saved : other));
-    letGoLooks([photo.baked, photo.second?.baked]);
+    if (saved) deck = deck.map((other) => (other.id === id ? saved : other));
   }
 }
 
