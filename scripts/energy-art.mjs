@@ -1,13 +1,16 @@
 // Paints the backgrounds of the deck's energy notes, one per type, into assets/energy/<type>.webp: the way each type's
 // energy looks on a real card, from water's ripples to fire's flames. Painted once here, so a card just shows a picture.
 //
-// By hand, after changing a type's look: npm i --no-save playwright, then node scripts/energy-art.mjs [type …].
+// By hand, after changing a type's look: npm i --no-save playwright, then node scripts/energy-art.mjs [type …]. `classic`
+// paints the light the first cards had instead, for every type (deck-cards.css).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const OUT = fileURLToPath(new URL('../assets/energy/', import.meta.url));
 // The card's panel, at twice its size.
 const SIZE = { width: 480, height: 672 };
+// The first cards' light is all soft edges, so it's drawn at the panel's own size.
+const CLASSIC = { width: 240, height: 336 };
 const QUALITY = 0.86;
 
 // Runs in the page: everything it needs is in here.
@@ -429,7 +432,69 @@ function paint([type, { width, height, quality }]) {
   return canvas.toDataURL('image/webp', quality);
 }
 
-const TYPES = ['ink', 'ember', 'wire', 'spark', 'stone', 'ghost', 'plain', 'dark'];
+// The first cards' look, the same for every type: no painting, just white light round the orb that shoots up to the
+// top and spreads out to the bottom corners. Clear everywhere else, so it goes over the type's plain colour
+// (deck-cards.css). Drawn on the panel as laid out there, the orb's middle 63% of the way down.
+function paintClassic([, { width, height, quality }]) {
+  const canvas = Object.assign(document.createElement('canvas'), { width, height });
+  const pen = canvas.getContext('2d');
+  const [cx, cy, orb] = [width / 2, height * 0.63, width * 0.27];
+  const glow = (stops, radius = 1) => {
+    const light = pen.createRadialGradient(cx, cy, 0, cx, cy, width * radius);
+    stops.forEach(([at, alpha]) => light.addColorStop(at, `rgb(255 255 255 / ${alpha})`));
+    return light;
+  };
+  const shape = (blur, fill, draw) => {
+    pen.save();
+    pen.filter = `blur(${blur}px)`;
+    pen.fillStyle = fill;
+    pen.beginPath();
+    draw();
+    pen.fill();
+    pen.restore();
+  };
+
+  // Faint shafts of light coming down through the top half.
+  [0.13, 0.31, 0.5, 0.69, 0.87].forEach((x, i) => {
+    const shaft = pen.createLinearGradient(0, 0, 0, height * 0.5);
+    shaft.addColorStop(0, `rgb(255 255 255 / ${i % 2 ? 0.13 : 0.08})`);
+    shaft.addColorStop(1, 'rgb(255 255 255 / 0)');
+    shape(width * 0.03, shaft, () => pen.ellipse(width * x, height * 0.2, width * 0.045, height * 0.28, 0, 0, Math.PI * 2));
+  });
+
+  // The two horns: out from under the orb to the bottom corners, leaving an arch of colour between them.
+  const reach = orb / width;
+  shape(width * 0.014, glow([[0, 1], [reach * 1.1, 1], [reach * 1.6, 0.85], [reach * 2.6, 0.5], [1, 0.3]]), () => {
+    pen.moveTo(cx - orb, cy - orb * 0.1);
+    pen.quadraticCurveTo(cx - orb * 1.55, cy + orb * 0.55, -width * 0.03, height * 0.93);
+    pen.lineTo(-width * 0.03, height * 1.02);
+    pen.quadraticCurveTo(width * 0.2, height * 0.97, cx - orb * 0.55, cy + orb * 1.12);
+    pen.quadraticCurveTo(cx, cy + orb * 1.3, cx + orb * 0.55, cy + orb * 1.12);
+    pen.quadraticCurveTo(width * 0.8, height * 0.97, width * 1.03, height * 1.02);
+    pen.lineTo(width * 1.03, height * 0.93);
+    pen.quadraticCurveTo(cx + orb * 1.55, cy + orb * 0.55, cx + orb, cy - orb * 0.1);
+    pen.closePath();
+  });
+
+  // The flame of light up from the orb, narrowing to a wisp near the top.
+  const flame = pen.createLinearGradient(0, cy - orb, 0, height * 0.12);
+  flame.addColorStop(0, 'rgb(255 255 255 / 0.95)');
+  flame.addColorStop(0.5, 'rgb(255 255 255 / 0.55)');
+  flame.addColorStop(1, 'rgb(255 255 255 / 0)');
+  shape(width * 0.012, flame, () => {
+    pen.moveTo(cx - orb * 0.36, cy - orb * 0.8);
+    pen.bezierCurveTo(cx - orb * 0.3, cy - orb * 1.6, cx - width * 0.012, height * 0.3, cx, height * 0.12);
+    pen.bezierCurveTo(cx + width * 0.012, height * 0.3, cx + orb * 0.3, cy - orb * 1.6, cx + orb * 0.36, cy - orb * 0.8);
+    pen.closePath();
+  });
+
+  // And a ring of light all round the orb, brightest at its edge.
+  shape(0, glow([[0, 1], [reach, 1], [reach * 1.12, 0.75], [reach * 1.5, 0]]), () => pen.rect(0, 0, width, height));
+
+  return canvas.toDataURL('image/webp', quality);
+}
+
+const TYPES = ['ink', 'ember', 'wire', 'spark', 'stone', 'ghost', 'plain', 'dark', 'classic'];
 const wanted = process.argv.slice(2).length ? process.argv.slice(2) : TYPES;
 
 const { chromium } = await import('playwright');
@@ -437,7 +502,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 mkdirSync(OUT, { recursive: true });
 for (const type of wanted) {
-  const url = await page.evaluate(paint, [type, { ...SIZE, quality: QUALITY }]).catch((error) => {
+  const url = await page.evaluate(type === 'classic' ? paintClassic : paint, [type, { ...(type === 'classic' ? CLASSIC : SIZE), quality: QUALITY }]).catch((error) => {
     throw new Error(`${type}: ${error.message}`);
   });
   writeFileSync(`${OUT}${type}.webp`, Buffer.from(url.split(',')[1], 'base64'));

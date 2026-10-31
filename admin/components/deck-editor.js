@@ -3,7 +3,7 @@ import { h } from '../../src/lib/dom.js';
 import { LOOKS } from '../../src/lib/looks.js';
 import { trackPointer } from '../../src/lib/pointer.js';
 import { linkTo } from '../../src/lib/urls.js';
-import { TYPES } from '../data/options.js';
+import { DESIGNS, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { photoGestures } from '../lib/photo-gestures.js';
 import { row, section, select, text, textarea } from './fields.js';
@@ -19,7 +19,7 @@ const MAX_TEXT = { note: 140, snapshot: 200 };
 // What the form edits for each kind; the rest of a record (its id, status and times, and the other kind's fields,
 // blank until it's first saved) isn't anything to save.
 const EDITABLE = {
-  note: ['kind', 'number', 'type', 'text', 'link', 'date'],
+  note: ['kind', 'number', 'type', 'design', 'text', 'link', 'date'],
   snapshot: ['kind', 'number', 'title', 'text', 'rule', 'place', 'photo', 'date'],
 };
 
@@ -31,7 +31,7 @@ function blankDeckCard(kind, deck) {
   const numbers = deck.map(({ number }) => parseInt(number, 10)).filter(Number.isFinite);
   const next = String(Math.max(0, ...numbers) + 1).padStart(3, '0');
   const set = deck.find(({ number }) => number.includes('/'))?.number.split('/')[1] ?? '100';
-  return { kind, number: `${next}/${set}`, type: 'plain', date: today() };
+  return { kind, number: `${next}/${set}`, type: 'plain', design: 'painted', date: today() };
 }
 
 // An upload button that puts the uploaded photo's address in a hidden field.
@@ -170,6 +170,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
       kind === 'note'
         ? section('Note',
           select('type', 'Type', TYPES),
+          select('design', 'Design', DESIGNS),
           textarea('text', 'Words', { ...words, placeholder: 'Two pigeons fought over one fry. Both lost.' }),
           text('link', 'Link', { placeholder: 'nytimes.com/…', maxlength: 512, inputmode: 'url', autocapitalize: 'off', spellcheck: 'false' }),
         )

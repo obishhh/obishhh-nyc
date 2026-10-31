@@ -10,31 +10,74 @@
     radial-gradient(circle at 50% 50%, var(--type-energy) 30%, color-mix(in srgb, var(--type-energy) 58%, #000000) 100%);
 }
 
-/* The silver bar across the top, with the type's symbol where a real card says ENERGY's. */
+/* The chrome bar right across the top, the way they were from 2010 on: what it is in big letters the type's colour,
+   then a slash into a sunken track that holds the type's symbol. */
 .note-card__bar {
+  --chrome: linear-gradient(#ffffff, #eef0f3 30%, #c6cad1 52%, #e2e5e9 54%, #f7f8fa 82%, #cdd0d6);
+
   position: relative;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex: none;
-  height: 24px;
-  padding: 0 1px 0 9px;
-  border-radius: 3px 12px 12px 3px;
-  background: linear-gradient(#ffffff, #d7dae0 45%, #b9bdc6 55%, #eef0f3);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35), inset 0 1px 0 #ffffff;
+  height: 26px;
+  margin: -6px -6px 0;
+  padding: 0 7px 0 9px;
+  border-radius: 6px 6px 0 0;
+  background: var(--chrome);
+  box-shadow: 0 1px 0 #5c6069, 0 2px 0 rgb(255 255 255 / 0.5), 0 3px 4px rgb(0 0 0 / 0.3);
 }
 
+/* The track, and its slash's dark edge just behind it. */
+.note-card__bar::before,
+.note-card__bar::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 4px;
+  bottom: 5px;
+  width: 36%;
+  clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.note-card__bar::before {
+  z-index: -1;
+  background: linear-gradient(#d3d6dc, #ffffff 55%, #eceef1);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.3);
+}
+
+.note-card__bar::after {
+  z-index: -2;
+  right: 5px;
+  width: calc(36% + 2px);
+  background: #8a8f99;
+}
+
+.note-card {
+  --letters: color-mix(in srgb, var(--type-energy) 90%, #000000);
+  --letters-edge: color-mix(in srgb, var(--type-energy) 40%, #000000);
+}
+
+.note-card[data-type='plain'] {
+  --letters: #a19d95;
+  --letters-edge: #5f5b54;
+}
+
+/* The font leaves its capitals high in the line, so they're nudged down to sit low in the bar, as printed ones do. */
 .note-card__label {
-  font: italic 700 13px/1 var(--font-display);
-  letter-spacing: 0.08em;
+  translate: 0 1.5px;
+  font: 400 17px/1 var(--font-logo);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #5f636d;
+  color: var(--letters);
+  -webkit-text-stroke: 1.2px var(--letters-edge);
+  paint-order: stroke fill;
   text-shadow: 0 1px 0 #ffffff;
 }
 
 .note-card__bar .energy {
-  box-shadow: 0 0 0 2px #ffffff, 0 1px 3px rgb(0 0 0 / 0.4), inset 0 -1.5px 1.5px rgb(0 0 0 / 0.28);
+  box-shadow: 0 0 0 1.5px #ffffff, 0 0 0 2.5px #8a8f99, 0 1px 3px rgb(0 0 0 / 0.4), inset 0 -1.5px 1.5px rgb(0 0 0 / 0.28);
 }
 
 /* The orb and its light, behind everything else in the middle of the card. */
@@ -45,6 +88,22 @@
   border-radius: inherit;
   pointer-events: none;
 }
+
+/* Faint over the painting, the white light every energy card had round its orb until 2014 (scripts/energy-art.mjs).
+   Its picture has the orb 63% of the way down and 124px across; here it's halfway and 140px, so it's moved to match. */
+.note-card__energy::before {
+  content: '';
+  position: absolute;
+  top: -21%;
+  left: -6.4%;
+  width: 112.7%;
+  height: 112.7%;
+  background: url('/assets/energy/classic.webp') center / 100% 100% no-repeat;
+  opacity: 0.55;
+}
+
+/* Dark's silver writing needs the light kept low behind it. */
+.note-card[data-type='dark'] .note-card__energy::before { opacity: 0.3; }
 
 .note-card__orb {
   position: absolute;
@@ -122,16 +181,16 @@
   padding: 4px;
 }
 
-/* The silver strip along the bottom, with the date it went up. */
+/* A chrome bar right across the bottom to match, with the date it went up and the small print. */
 .note-card__base {
   position: relative;
   z-index: 1;
   flex: none;
   height: 13px;
-  border-radius: 2px;
-  background: linear-gradient(#ffffff, #cfd2d8 60%, #eceef1);
-  box-shadow: 0 -1px 1px rgb(0 0 0 / 0.15);
-  font: italic 700 7.5px/13px var(--font-body);
+  margin: 0 -6px;
+  background: linear-gradient(#5c6069 0 1px, #ffffff 1px, #e8eaee 50%, #d5d8de);
+  box-shadow: 0 -1px 0 rgb(255 255 255 / 0.45), 0 -2px 4px rgb(0 0 0 / 0.25);
+  font: italic 700 7.5px/14px var(--font-body);
   color: #5f636d;
   text-align: center;
 }
@@ -140,18 +199,16 @@
 .note-card .card__footer {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  /* On the type's colour, so light, with a shadow to lift it off the darker ones. */
-  color: rgb(255 255 255 / 0.92);
-  text-shadow: 0 0.5px 1px rgb(0 0 0 / 0.45);
+  height: 11px;
+  margin: 0 -6px;
+  padding: 0 8px 1px;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(#d5d8de, #c4c8cf);
+  color: #4e525b;
+  text-shadow: 0 0.5px 0 rgb(255 255 255 / 0.6);
 }
 
 .note-card .card__number { justify-self: end; }
-
-/* Normal's grey is too pale under white: dark print there instead. */
-.note-card[data-type='plain'] .card__footer {
-  color: var(--ink-900);
-  text-shadow: 0 0.5px 0 rgb(255 255 255 / 0.4);
-}
 
 /* Plain marker, straight on the card. Long notes shrink to fit. */
 .note-card__ink {
@@ -168,7 +225,55 @@
 /* With writing over it, the black symbol steps back a little so the marker still reads where they cross. */
 .note-card:has(.note-card__ink) .note-card__orb svg { opacity: 0.5; }
 
-/* Snapshots get a silver frame and a cool grey panel, so they don't pass for binder cards. */
+/* A classic note, like the energy cards before the paintings: the type's plain colour, and white light round a lower
+   orb that shoots up to the top and out to the bottom corners (scripts/energy-art.mjs). Across the top, a plain silver
+   header with no slash or track, and the small print straight on the card. */
+.note-card[data-design='classic'] { --field: var(--type-energy); }
+
+.note-card[data-design='classic'][data-type='plain'] { --field: #c9c5bd; }
+
+.note-card[data-design='classic'][data-type='dark'] { --field: #5b5478; }
+
+.note-card[data-design='classic'] .card__panel {
+  background:
+    url('/assets/energy/classic.webp') center / 100% 100% no-repeat,
+    radial-gradient(ellipse 110% 70% at 50% 63%, color-mix(in srgb, var(--field) 72%, #ffffff), var(--field) 60%, color-mix(in srgb, var(--field) 85%, #000000));
+}
+
+.note-card[data-design='classic'] .note-card__bar {
+  height: 28px;
+  background: linear-gradient(#ffffff, #f3f4f6 45%, #dadde2 80%, #c9ccd2);
+  box-shadow: 0 1px 0 #7d818a, 0 2px 0 rgb(255 255 255 / 0.4), 0 3px 4px rgb(0 0 0 / 0.2);
+}
+
+.note-card[data-design='classic'] .note-card__bar::before,
+.note-card[data-design='classic'] .note-card__bar::after,
+.note-card[data-design='classic'] .note-card__energy::before { content: none; }
+
+.note-card[data-design='classic'] .note-card__label {
+  font-family: var(--font-energy);
+  font-size: 18px;
+  letter-spacing: 0.05em;
+}
+
+.note-card[data-design='classic'] .note-card__orb {
+  top: 63%;
+  width: 124px;
+  height: 124px;
+  box-shadow: inset 0 -7px 11px rgb(0 0 0 / 0.25);
+}
+
+/* Black marker shows on the light; even a Dark one's written on in it. */
+.note-card[data-design='classic'] .note-card__ink { filter: none; }
+
+.note-card[data-design='classic'] .note-card__base,
+.note-card[data-design='classic'] .card__footer {
+  background: none;
+  box-shadow: none;
+  color: var(--ink-900);
+  text-shadow: 0 0.5px 0 rgb(255 255 255 / 0.4);
+}
+
 .snapshot {
   --border-300: #f4f5f8;
   --border-500: #c3c7d0;

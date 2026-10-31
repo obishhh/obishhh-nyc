@@ -4,6 +4,8 @@
   --font-body: 'Cabin', 'Helvetica Neue', Arial, sans-serif;
   --font-display: 'Cabin Condensed', 'Arial Narrow', 'Helvetica Neue', sans-serif;
   --font-logo: 'Lilita One', 'Arial Black', sans-serif;
+  /* Square and heavy, like the ENERGY on the energy cards before the paintings. */
+  --font-energy: 'Russo One', 'Arial Black', sans-serif;
 
   --page: #ffffff;
   --page-line: #efefec;

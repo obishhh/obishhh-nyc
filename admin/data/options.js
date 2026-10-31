@@ -1,5 +1,11 @@
 export { TYPES } from '../../src/data/types.js';
 
+// How a note's drawn: over its type's painting, or plain like the first energy cards.
+export const DESIGNS = [
+  { value: 'painted', label: 'Painted' },
+  { value: 'classic', label: 'Classic' },
+];
+
 export const FINISHES = [
   { value: 'standard', label: 'Standard' },
   { value: 'reverse', label: 'Reverse holo' },
