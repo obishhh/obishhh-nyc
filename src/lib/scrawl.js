@@ -121,8 +121,9 @@ function copy(sheet) {
 }
 
 // Writes a few lines in marker, wrapped to a width, on a clear canvas at the screen's resolution. Lay it on with multiply.
+// Given a height too, `size` is the biggest it's written: it comes down until the lines fit, without splitting words.
 export function scribble(text, options) {
-  const key = JSON.stringify([text, options.hand, options.size, options.width, devicePixelRatio > 1]);
+  const key = JSON.stringify([text, options.hand, options.size, options.width, options.height, devicePixelRatio > 1]);
   if (!written.has(key)) {
     if (written.size >= KEEP) written.delete(written.keys().next().value);
     written.set(key, write(text, options));
@@ -130,34 +131,44 @@ export function scribble(text, options) {
   return copy(written.get(key));
 }
 
-function write(text, { hand, size, width }) {
+const SMALLEST = 20;
+
+function write(text, { hand, size: biggest, width, height = Infinity }) {
   const ratio = devicePixelRatio > 1 ? 2 : 1;
-  const scale = size / EM;
   const pen = measure(`${EM}px "${hand}"`);
-  // Letters come out a little wider than the font sets them, so wrap a little early.
-  const fits = (words) => pen.measureText(words).width * 1.12 * scale <= width;
-  // A word too long for a line of its own breaks wherever it runs out of room.
-  const pieces = (word) => {
-    const broken = [''];
-    for (const char of word) {
-      if (broken.at(-1) && !fits(broken.at(-1) + char)) broken.push('');
-      broken[broken.length - 1] += char;
-    }
-    return broken;
-  };
-  // Each line typed is kept; within one, words wrap.
-  const lines = [];
-  for (const typed of text.split('\n')) {
-    let line = '';
-    for (const word of typed.split(/\s+/).filter(Boolean).flatMap(pieces)) {
-      if (line && fits(`${line} ${word}`)) line = `${line} ${word}`;
-      else {
-        if (line) lines.push(line);
-        line = word;
+  const wrap = (size) => {
+    // Letters come out a little wider than the font sets them, so wrap a little early.
+    const fits = (words) => pen.measureText(words).width * 1.12 * (size / EM) <= width;
+    let split = false;
+    // A word too long for a line of its own breaks wherever it runs out of room.
+    const pieces = (word) => {
+      const broken = [''];
+      for (const char of word) {
+        if (broken.at(-1) && !fits(broken.at(-1) + char)) broken.push('');
+        broken[broken.length - 1] += char;
       }
+      split ||= broken.length > 1;
+      return broken;
+    };
+    // Each line typed is kept; within one, words wrap.
+    const lines = [];
+    for (const typed of text.split('\n')) {
+      let line = '';
+      for (const word of typed.split(/\s+/).filter(Boolean).flatMap(pieces)) {
+        if (line && fits(`${line} ${word}`)) line = `${line} ${word}`;
+        else {
+          if (line) lines.push(line);
+          line = word;
+        }
+      }
+      lines.push(line);
     }
-    lines.push(line);
-  }
+    return { lines, fine: !split && lines.length * size * 0.95 + size * 0.5 <= height };
+  };
+  let size = biggest;
+  let { lines, fine } = wrap(size);
+  while (!fine && size > SMALLEST) ({ lines, fine } = wrap((size -= 1)));
+  const scale = size / EM;
   const leading = size * 0.95;
   const sheet = Object.assign(document.createElement('canvas'), {
     width: Math.ceil(width * ratio),

@@ -47,8 +47,9 @@ function wisp() {
 </svg>`;
 }
 
-// Shorter notes get written bigger, the way you would on a card.
-const markerSize = (text) => (text.length <= 32 ? 40 : text.length <= 72 ? 31 : text.length <= 110 ? 26 : 22);
+// Notes are written as big as they'll fit on the card, the way you would: shorter ones bigger. A little room is left
+// around the edges.
+const MARKER = { size: 46, width: 200, height: 236 };
 // Dates come as 'YYYY-MM-DD'. Midday, so no timezone tips them into the day before.
 const day = (date, options) => (date ? new Date(`${date}T12:00:00`).toLocaleDateString('en-US', options) : '');
 
@@ -56,7 +57,7 @@ const day = (date, options) => (date ? new Date(`${date}T12:00:00`).toLocaleDate
 // symbol glowing in the middle. The writing is a picture, so it carries the words for screen readers.
 export function noteCard({ type: given, text, date, number }) {
   const type = knownType(given);
-  const ink = text ? scribble(text, { hand: HAND, size: markerSize(text), width: 200 }) : null;
+  const ink = text ? scribble(text, { hand: HAND, ...MARKER }) : null;
   ink?.classList.add('note-card__ink');
   ink?.setAttribute('role', 'img');
   ink?.setAttribute('aria-label', text);
