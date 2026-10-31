@@ -10,12 +10,22 @@
 }
 
 .masthead__name {
-  font: 700 22px/1 var(--font-display);
-  letter-spacing: -0.01em;
+  font: 700 44px/1 var(--font-display);
+  letter-spacing: -0.015em;
   color: inherit;
   text-decoration: none;
 }
 
+/* The home page on a computer: in line with the tabs down the binder's left edge rather than its cards. They hang
+   10px plus 77.6 of a card's pixels out from it (see dividers.css), so the header reaches as far either side. */
+@media (min-width: 1040px) {
+  .masthead:has(.masthead__heading) { width: calc(var(--binder-width) + 2 * (10px + 77.6px * var(--scale))); }
+}
+
+/* A phone: as big as fits with room to spare before the deck box (which keeps its size, so on a narrow phone the name
+   gives way), and hanging out past the cards on the left as far as the box hangs out on the right. */
 @media (max-width: 519px) {
   .masthead { padding: 20px 0; }
+  .masthead__name { font-size: min(44px, calc(23vw - 42px)); }
+  .masthead:has(.masthead__heading) .masthead__name { margin-left: calc(-1 * min(28px, (100vw - var(--binder-width)) / 2 - 8px)); }
 }
