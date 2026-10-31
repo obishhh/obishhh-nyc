@@ -55,7 +55,7 @@
   color: var(--ink-900);
 }
 
-.preview__view:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 3px; }
+.preview__view:focus-visible { outline-offset: 3px; }
 
 @media (max-width: 999px) {
   .preview { --scale: 1.1; }
@@ -67,11 +67,9 @@
 
 /* A card's picture in the preview is dragged and pinched to line it up: no scrolling or zooming the page from it,
    and a hand. */
-.deck-editor .snapshot__art,
 .preview .card__art {
   touch-action: none;
   cursor: grab;
 }
 
-.deck-editor .snapshot__art:active,
 .preview .card__art:active { cursor: grabbing; }

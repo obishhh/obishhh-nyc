@@ -48,7 +48,7 @@ export function focusPicker(name) {
     'aria-valuemin': 0,
     'aria-valuemax': 100,
   }, image, dot);
-  const reset = h('button', { class: 'focus__reset', type: 'button' }, 'Center');
+  const reset = h('button', { class: 'button--link', type: 'button' }, 'Center');
   let x = 50;
   let y = 50;
 

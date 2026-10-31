@@ -23,7 +23,7 @@
 
 .editor__back .icon { width: 14px; height: 14px; }
 .editor__back:hover { color: var(--ink-900); }
-.editor__back:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 4px; }
+.editor__back:focus-visible { outline-offset: 4px; }
 
 .editor__state {
   min-width: 0;
@@ -57,8 +57,8 @@
   max-width: 600px;
 }
 
-/* Folds every section but the article. Just a chevron, on its own line, drawn and placed
-   exactly like the sections' own so it sits straight above the Card one. */
+/* Folds every section but the article. Just a chevron (drawn in controls.css with the sections' own), on its own
+   line, placed so it sits straight above the Card one. */
 .editor__fold {
   display: flex;
   justify-content: flex-end;
@@ -72,25 +72,8 @@
   cursor: pointer;
 }
 
-.editor__fold::after {
-  content: '';
-  align-self: center;
-  width: 6px;
-  height: 6px;
-  margin-right: 4px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: translateY(-2px) rotate(45deg);
-  transition: transform 0.2s var(--ease-out);
-}
-
-.editor__fold[aria-pressed='true']::after { transform: rotate(-45deg); }
+.editor__fold::after { align-self: center; }
 .editor__fold:hover { color: #000000; }
-.editor__fold:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 2px; }
-
-@media (prefers-reduced-motion: reduce) {
-  .editor__fold::after { transition: none; }
-}
 .editor__form .form-section { scroll-margin-top: 80px; }
 
 .editor__preview {

@@ -1,10 +1,3 @@
-:root {
-  --line-strong: var(--page-rule);
-  --line-hover: #bdb9af;
-}
-
-[hidden] { display: none !important; }
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -41,7 +34,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 .button:hover { background: var(--page-line); }
-.button:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 2px; }
 .button:disabled { opacity: 0.5; cursor: progress; }
 
 .button--primary {
@@ -55,11 +47,22 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .button--quiet:hover { background: none; color: var(--ink-900); }
 .button--danger { color: var(--hp-600); }
 
+/* A button that reads as a link, in among other words. */
+.button--link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-900);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .input {
   width: 100%;
   padding: 6px 0 7px;
   border: 0;
-  border-bottom: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--page-rule);
   border-radius: 0;
   background: transparent;
   font: 400 15px/1.4 var(--font-body);
@@ -70,8 +73,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .input { font-size: 16px; }
 }
 
-.input::placeholder { color: #bab6ad; }
-.input:hover { border-bottom-color: var(--line-hover); }
+.input::placeholder { color: var(--page-faint); }
+.input:hover { border-bottom-color: var(--page-faint); }
 
 .input:focus {
   outline: none;
@@ -146,9 +149,11 @@ select.input {
 .form-section:not([open]) > .form-section__title { margin-bottom: 0; color: var(--page-muted); }
 .form-section__title::-webkit-details-marker { display: none; }
 .form-section__title:hover { color: var(--ink-900); }
-.form-section__title:focus-visible { outline: 2px solid var(--ink-900); outline-offset: 4px; }
+.form-section__title:focus-visible { outline-offset: 4px; }
 
-.form-section__title::after {
+/* The chevron that folds a section away, and the editor's own that folds them all but the article. */
+.form-section__title::after,
+.editor__fold::after {
   content: '';
   width: 6px;
   height: 6px;
@@ -159,15 +164,12 @@ select.input {
   transition: transform 0.2s var(--ease-out);
 }
 
-.form-section:not([open]) > .form-section__title::after { transform: rotate(-45deg); }
+.form-section:not([open]) > .form-section__title::after,
+.editor__fold[aria-pressed='true']::after { transform: rotate(-45deg); }
 
 .form-section__name {
   margin: 0;
   font: inherit;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .form-section__title::after { transition: none; }
 }
 
 .row {

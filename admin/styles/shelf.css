@@ -58,10 +58,7 @@
   -webkit-touch-callout: none;
 }
 
-.tile__open:focus-visible {
-  outline: 2px solid var(--ink-900);
-  outline-offset: 10px;
-}
+.tile__open:focus-visible { outline-offset: 10px; }
 
 .tile .binder__pocket > .card {
   transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out), opacity 0.3s var(--ease-out), filter 0.3s var(--ease-out);
@@ -152,13 +149,13 @@
   border: 0;
   border-radius: 6px;
   background: none;
-  color: #b5b1a8;
+  color: var(--page-faint);
   cursor: grab;
   touch-action: none;
 }
 
 .tile__grip:hover { color: var(--ink-900); }
-.tile__grip:focus-visible { outline: 2px solid var(--ink-900); }
+.tile__grip:focus-visible { outline-offset: 0; }
 
 @media (max-width: 599px) {
   .shelf__title { font-size: 32px; }
@@ -167,10 +164,6 @@
 
 @media (max-width: 359px) {
   .shelf__grid { --scale: 0.54; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tile .binder__pocket > .card { transition: none; }
 }
 
 /* The deck box, under the binder. */

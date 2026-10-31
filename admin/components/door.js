@@ -18,7 +18,7 @@ export function door({ onSignedIn }) {
   const email = h('input', { class: 'input', id: 'door-email', name: 'email', type: 'email', autocomplete: 'username', required: true });
   const password = h('input', { class: 'input', id: 'door-password', name: 'password', type: 'password', autocomplete: 'current-password', required: true });
   const emailField = h('div', { class: 'door__field' }, h('label', { for: 'door-email' }, 'Email'), email);
-  const notMe = h('button', { class: 'door__not-me', type: 'button' }, 'Not you?');
+  const notMe = h('button', { class: 'button--link', type: 'button' }, 'Not you?');
   const lede = h('p', { class: 'door__lede' });
   const error = h('p', { class: 'door__error', role: 'alert' });
   const submit = h('button', { class: 'button button--primary door__submit', type: 'submit' }, 'Sign in');
