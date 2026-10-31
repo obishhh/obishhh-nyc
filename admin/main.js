@@ -9,24 +9,14 @@ import { editor } from './components/editor.js';
 import { shelf } from './components/shelf.js';
 import { topbar } from './components/topbar.js';
 import { currentSession, isAdmin, signOut } from './lib/auth.js';
-import { deleteCard, deleteImage, listCards, listUploads, reorderCards, saveArt, saveCard, uploadImage } from './lib/cards.js';
+import { deleteCard, listCards, reorderCards, saveArt, saveCard } from './lib/cards.js';
 import { deleteDeckCard, listDeck, saveDeckCard, savePhoto } from './lib/deck.js';
-import { prepareImage } from './lib/image.js';
 import { lookImage } from './lib/look-image.js';
 import { paintSealed, sealedKey } from './lib/sealed-image.js';
+import { deleteImage, listUploads, upload, uploadImage } from './lib/storage.js';
 
 let cards = [];
 let deck = [];
-
-async function upload(file, options) {
-  let image;
-  try {
-    image = await prepareImage(file);
-  } catch {
-    throw new Error('That file didn’t read as an image. Try a JPG or PNG.');
-  }
-  return uploadImage(image, options);
-}
 
 const entrance = door({ onSignedIn: enter });
 const binder = shelf({ onSort: reorder });

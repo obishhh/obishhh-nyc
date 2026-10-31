@@ -25,14 +25,13 @@ const EDITABLE = {
 
 const today = () => new Date().toLocaleDateString('en-CA');
 const editable = (data) => JSON.stringify(EDITABLE[data.kind].map((key) => data[key]));
-const trim = (value) => (typeof value === 'string' ? value.trim() : value);
 
 // A fresh card for the deck: today's date and the next number along.
 function blankDeckCard(kind, deck) {
   const numbers = deck.map(({ number }) => parseInt(number, 10)).filter(Number.isFinite);
   const next = String(Math.max(0, ...numbers) + 1).padStart(3, '0');
   const set = deck.find(({ number }) => number.includes('/'))?.number.split('/')[1] ?? '100';
-  return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', rule: '', place: '', link: '', photo: { src: '', alt: '', position: '', zoom: '', look: '' }, date: today() };
+  return { kind, number: `${next}/${set}`, type: 'plain', date: today() };
 }
 
 // An upload button that puts the uploaded photo's address in a hidden field and says what it did.
@@ -204,11 +203,9 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     );
   }
 
-  // What's in the form, tidied: trimmed, with a blank date read as today.
+  // What's in the form, with a blank date read as today.
   function current() {
-    const values = { photo: { src: '', alt: '', position: '', zoom: '', look: '', second: { src: '', position: '', zoom: '' } }, ...readForm(form) };
-    const data = { ...record, ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, trim(value)])), kind };
-    data.photo = Object.fromEntries(Object.entries(values.photo).map(([key, value]) => [key, trim(value)]));
+    const data = { ...record, ...readForm(form), kind };
     data.date ||= today();
     // An address typed without its https:// gets one.
     data.link = data.link && !/^https?:\/\//i.test(data.link) ? `https://${data.link}` : data.link ?? '';
@@ -314,10 +311,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
       kind = wanted;
       build();
     }
-    const data = next ? structuredClone(next) : blankDeckCard(kind, deck());
-    data.photo = { src: '', alt: '', position: '', zoom: '', look: '', ...data.photo };
-    data.photo.second = { src: '', position: '', zoom: '', ...data.photo.second };
-    writeForm(form, data);
+    writeForm(form, next ?? blankDeckCard(kind, deck()));
     photo?.focus.sync();
     second?.zoom.sync();
     snapshot = editable(current());

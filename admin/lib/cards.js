@@ -1,9 +1,6 @@
 import { supabase, unwrap } from './supabase.js';
 
-const BUCKET = 'card-art';
-
 const cards = () => supabase.from('cards');
-const art = () => supabase.storage.from(BUCKET);
 
 // Rows use the database's column names; everything else uses the card component's.
 const fromRow = ({ first_print: firstPrint, ...row }) => ({ ...row, firstPrint });
@@ -16,7 +13,9 @@ export const listCards = async () =>
 
 export async function saveCard(id, card, status) {
   const row = toRow(card, status);
-  return fromRow(unwrap(await (id ? cards().update(row).eq('id', id) : cards().insert(row)).select().single()));
+  const saved = await (id ? cards().update(row).eq('id', id) : cards().insert(row)).select().single();
+  if (saved.error?.code === '23505') throw new Error('Another card already uses that address.');
+  return fromRow(unwrap(saved));
 }
 
 export const deleteCard = async (id) => unwrap(await cards().delete().eq('id', id));
@@ -28,25 +27,3 @@ export async function saveArt(id, art, since) {
 }
 
 export const reorderCards = async (ids) => unwrap(await supabase.rpc('reorder_cards', { ids }));
-
-const publicUrl = (name) => art().getPublicUrl(name).data.publicUrl;
-
-export const listUploads = async () =>
-  unwrap(await art().list('', { limit: 200, sortBy: { column: 'created_at', order: 'desc' } }))
-    .filter(({ id, name }) => id && !name.startsWith('.'))
-    .map(({ name }) => publicUrl(name));
-
-// Takes an uploaded image back out of storage. Only ever one of ours: anything else, like library art, is left alone.
-export async function deleteImage(url) {
-  const ours = publicUrl('');
-  if (!url?.startsWith(ours)) return;
-  unwrap(await art().remove([decodeURIComponent(url.slice(ours.length))]));
-}
-
-// Card art sits at the top of the bucket, where the art picker lists it; post photos and sealed cards go in folders.
-export async function uploadImage(image, { folder, name = crypto.randomUUID() } = {}) {
-  const file = `${name}.${image.type.split('/')[1]}`;
-  const path = folder ? `${folder}/${file}` : file;
-  unwrap(await art().upload(path, image, { contentType: image.type, cacheControl: '31536000', upsert: true }));
-  return publicUrl(path);
-}

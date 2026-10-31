@@ -1,4 +1,5 @@
 import { zoomOf } from '../../src/lib/looks.js';
+import { digest, encode } from './storage.js';
 
 // Paints a card the way the binder shows it sealed (blurred, washed out, no words) into a small image,
 // so the site can show one picture instead of blurring a live card.
@@ -13,9 +14,7 @@ const SATURATION = 0.7;
 export async function sealedKey({ art, type, finish }) {
   // A zoom only joins the key when there is one, so cards without stay painted as they are.
   const zoom = zoomOf(art.zoom) === 1 ? [] : [zoomOf(art.zoom)];
-  const bytes = new TextEncoder().encode(JSON.stringify([VERSION, art.baked || art.src, art.position, type, finish, ...zoom]));
-  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
-  return [...digest.slice(0, 12)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  return digest([VERSION, art.baked || art.src, art.position, type, finish, ...zoom]);
 }
 
 function palette(type) {
@@ -211,7 +210,6 @@ export async function paintSealed(card) {
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
   soften(data);
   ctx.putImageData(data, 0, 0);
-  const encode = (type) => new Promise((resolve) => canvas.toBlob(resolve, type, 0.82));
-  const webp = await encode('image/webp');
-  return webp?.type === 'image/webp' ? webp : encode('image/png');
+  // Its corners are see-through, so where WebP can't be made it's a PNG.
+  return encode(canvas, { fallback: 'image/png', quality: 0.82 });
 }

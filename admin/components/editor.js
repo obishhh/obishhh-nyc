@@ -14,19 +14,11 @@ import { preview } from './preview.js';
 const STATUS = { new: 'New card', draft: 'Draft', published: 'Live' };
 const WRITING_KEY = 'obishhh.editor.writing';
 
-function trim(value) {
-  if (typeof value === 'string') return value.trim();
-  if (Array.isArray(value)) return value.map(trim);
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, trim(inner)]));
-  return value;
-}
-
 const slugify = (text) =>
   text.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 // The form's values, tidied into the shape the card component draws.
-function tidy(values) {
-  const data = trim(values);
+function tidy(data) {
   // An article needs an address; borrow one from the title if it has none.
   data.slug = slugify(data.slug || (data.body ? data.title : '')) || null;
   data.minutes ??= 0;

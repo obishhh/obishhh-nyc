@@ -1,4 +1,5 @@
-// Form controls are named by path ("move.cost.0"), so a whole card reads and writes in one go.
+// Form controls are named by path ("move.cost.0"), so a whole card reads and writes in one go. What's typed is read
+// trimmed, and a field with nothing to write in gets emptied.
 
 const keys = (name) => name.split('.');
 
@@ -27,7 +28,7 @@ function read(control) {
   }
   if (control.type === 'checkbox') return control.checked;
   if (control.type === 'number') return control.value === '' ? null : Number(control.value);
-  return control.value;
+  return control.value.trim();
 }
 
 function write(control, value) {
