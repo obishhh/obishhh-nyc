@@ -1,12 +1,12 @@
 /* Cards for the deck box: notes written on blank energy cards, photos as trainer-style Snapshots. */
 
-/* Laid out like a basic energy card: the type's colour, glowing out from an orb in the middle,
-   with the writing over the top of it. */
+/* Laid out like a basic energy card: the type's energy painted all over (water's ripples, fire's flames…), glowing
+   out from an orb in the middle, with the writing over the top of it. The type's colour shows until the painting's in. */
 .note-card .card__panel {
   gap: 0;
   padding: 6px 6px 0;
   background:
-    radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.95) 0, rgb(255 255 255 / 0.55) 22%, rgb(255 255 255 / 0) 52%),
+    var(--energy-art) center / cover no-repeat,
     radial-gradient(circle at 50% 50%, var(--type-energy) 30%, color-mix(in srgb, var(--type-energy) 58%, #000000) 100%);
 }
 
@@ -52,16 +52,16 @@
   left: 50%;
   display: grid;
   place-items: center;
-  width: 76px;
-  height: 76px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
   background:
     radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0) 42%),
     radial-gradient(circle at 50% 60%, var(--type-energy) 55%, color-mix(in srgb, var(--type-energy) 70%, #000000) 100%);
   box-shadow:
-    0 0 0 2px rgb(255 255 255 / 0.35),
-    0 0 26px 10px rgb(255 255 255 / 0.55),
-    inset 0 -4px 6px rgb(0 0 0 / 0.25);
+    0 0 0 3px rgb(255 255 255 / 0.4),
+    0 0 40px 14px rgb(255 255 255 / 0.5),
+    inset 0 -7px 11px rgb(0 0 0 / 0.25);
   transform: translate(-50%, -50%);
 }
 
@@ -69,35 +69,6 @@
   width: 64%;
   height: 64%;
   filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.35));
-}
-
-.note-card__trace {
-  position: absolute;
-  inset: 0;
-}
-
-/* Sun & Moon: a white wisp rising off the orb, with sparks. */
-.note-card__wisp {
-  position: absolute;
-  top: calc(50% - 112px);
-  left: calc(50% - 10px);
-  width: 74px;
-  height: 110px;
-  filter: drop-shadow(0 0 4px rgb(255 255 255 / 0.95)) drop-shadow(0 0 10px rgb(255 255 255 / 0.5));
-}
-
-/* XY: a beam of light fanning down from the orb to the bottom of the card. */
-.note-card[data-look='beam'] .note-card__trace {
-  background: linear-gradient(rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.45) 55%, rgb(255 255 255 / 0.12));
-  clip-path: polygon(46% 50%, 54% 50%, 100% 100%, 0 100%);
-  filter: blur(1.5px);
-}
-
-/* Classic: rays all the way round the orb. */
-.note-card[data-look='rays'] .note-card__trace {
-  background: repeating-conic-gradient(from 0deg at 50% 50%, rgb(255 255 255 / 0.32) 0deg 5deg, rgb(255 255 255 / 0) 5deg 15deg);
-  mask-image: radial-gradient(circle at 50% 50%, #000000 10%, rgb(0 0 0 / 0) 72%);
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000000 10%, rgb(0 0 0 / 0) 72%);
 }
 
 /* Under the writing, a light wash and a different fade for each type: it lifts the colour a touch, which helps the
@@ -190,6 +161,9 @@
   width: auto;
   height: auto;
 }
+
+/* A Dark card's too dark for black marker: it's written on in a silver paint pen. */
+.note-card[data-type='dark'] .note-card__ink { filter: invert(0.9); }
 
 /* With writing over it, the black symbol steps back a little so the marker still reads where they cross. */
 .note-card:has(.note-card__ink) .note-card__orb svg { opacity: 0.5; }

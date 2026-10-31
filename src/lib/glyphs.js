@@ -1,4 +1,5 @@
-// Type symbols: black shapes, with their cut-outs in the colour of the orb they sit on.
+// Type symbols: black shapes, with their cut-outs in the colour of the orb they sit on. Dark's orb is too dark for black,
+// so its moon is drawn in light, the way the real cards turn that one round.
 export const energyGlyphs = {
   wire: `<svg viewBox="0 0 15 15" aria-hidden="true">
     <path d="M7.5 1.4C11 3 12.7 6.1 11.9 9.2C11.3 11.4 9.5 12.7 7.5 12.9C5.5 12.7 3.7 11.4 3.1 9.2C2.3 6.1 4 3 7.5 1.4Z" fill="#1a1712"/>
@@ -27,6 +28,10 @@ export const energyGlyphs = {
   </svg>`,
   plain: `<svg viewBox="0 0 15 15" aria-hidden="true">
     <path d="M7.5 1.7L9.1 5.7L13.4 5.9L10 8.6L11.2 12.8L7.5 10.4L3.8 12.8L5 8.6L1.6 5.9L5.9 5.7L7.5 1.7Z" fill="#1a1712"/>
+  </svg>`,
+  dark: `<svg viewBox="0 0 15 15" aria-hidden="true">
+    <path d="M9.6 1.6A6.1 6.1 0 1 0 13.4 9.8A4.9 4.9 0 1 1 9.6 1.6Z" fill="#efeaff"/>
+    <path d="M11.7 2.4L12.1 3.5L13.2 3.9L12.1 4.3L11.7 5.4L11.3 4.3L10.2 3.9L11.3 3.5Z" fill="#efeaff"/>
   </svg>`,
 };
 

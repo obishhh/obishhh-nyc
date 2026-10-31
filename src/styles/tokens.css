@@ -48,3 +48,4 @@
 [data-type='ember'] { --type-edge: #f59a6e; --type-panel: #fddccb; --type-deep: #f9b994; --type-energy: #e5452c; }
 [data-type='ghost'] { --type-edge: #b3a9d2; --type-panel: #e6e1f3; --type-deep: #cdc4e6; --type-energy: #9b55c6; }
 [data-type='plain'] { --type-edge: #d3d0cb; --type-panel: #eeece8; --type-deep: #dddad4; --type-energy: #f1efe9; }
+[data-type='dark'] { --type-edge: #8b84a6; --type-panel: #dcd9e6; --type-deep: #bbb5cf; --type-energy: #4a4466; }
