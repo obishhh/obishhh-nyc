@@ -142,7 +142,11 @@ html { scrollbar-gutter: stable; }
     border-radius: 0;
   }
 
-  .reader__bar { padding: 14px 14px 0 20px; }
+  /* Scrolls away with the card above the article, rather than staying over the text. */
+  .reader__bar {
+    position: relative;
+    padding: 14px 14px 0 20px;
+  }
 
   .reader__layout {
     grid-template-columns: minmax(0, 1fr);
