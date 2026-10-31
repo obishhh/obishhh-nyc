@@ -22,7 +22,6 @@ export function zoomControl(name) {
   });
   return {
     root: h('label', { class: 'zoom' }, h('span', { class: 'zoom__label' }, 'Zoom'), slider, amount, input),
-    input,
     clear() {
       input.value = '';
       this.sync();

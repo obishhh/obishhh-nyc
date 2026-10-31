@@ -3,6 +3,7 @@ import { h } from '../../src/lib/dom.js';
 import { LOOKS } from '../../src/lib/looks.js';
 import { dropdown, row, select, text } from './fields.js';
 import { focusPicker } from './focus-picker.js';
+import { uploadButton } from './upload-button.js';
 
 const NO_CREDIT = { alt: '', illustrator: 'obishhh', title: '', author: '', license: '', source: '' };
 const CREDIT_KEYS = Object.keys(NO_CREDIT);
@@ -24,13 +25,20 @@ function option(src, label) {
 export function artPicker({ library, loadUploads, upload, creditFor, onError }) {
   const focus = focusPicker('art.position');
   const grid = h('div', { class: 'art__grid' }, library.map((work) => option(work.src, work.title)));
-  const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
-  const uploadLabel = h('span', {}, 'Upload…');
-  const uploader = h('label', { class: 'button button--quiet art__upload' }, file, uploadLabel);
+  const uploader = uploadButton({
+    label: 'Upload…',
+    upload,
+    onError,
+    onUploaded(src) {
+      const radio = addUpload(src);
+      radio.checked = true;
+      pick(radio);
+    },
+  });
   const license = dropdown('art.license', LICENSE_CHOICES);
   const focusRow = row('Focus', focus.root);
   const lookRow = select('art.look', 'Filter', LOOKS);
-  const root = h('div', { class: 'art' }, grid, uploader);
+  const root = h('div', { class: 'art' }, grid, uploader.root);
 
   const rows = [
     row('Image', root),
@@ -77,24 +85,6 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
     if (target.name === 'art.src') pick(target);
   });
 
-  file.addEventListener('change', async () => {
-    const [chosen] = file.files;
-    file.value = '';
-    if (!chosen) return;
-    uploader.classList.add('is-busy');
-    uploadLabel.textContent = 'Uploading…';
-    try {
-      const radio = addUpload(await upload(chosen));
-      radio.checked = true;
-      pick(radio);
-    } catch (error) {
-      onError(error);
-    } finally {
-      uploader.classList.remove('is-busy');
-      uploadLabel.textContent = 'Upload…';
-    }
-  });
-
   // Uploads are listed once signed in, the first time a card opens. A failed list tries again next time.
   let uploads = null;
   function listUploads() {
@@ -117,7 +107,7 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
       focus.sync();
     },
     focus() {
-      (radios().find((radio) => radio.checked) ?? file).focus();
+      (radios().find((radio) => radio.checked) ?? uploader.file).focus();
       root.scrollIntoView({ behavior: 'smooth', block: 'center' });
     },
   };
