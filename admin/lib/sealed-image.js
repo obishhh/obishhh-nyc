@@ -9,7 +9,7 @@ const BLUR_RADII = [7, 6, 7];
 const SATURATION = 0.7;
 
 export async function sealedKey({ art, type, finish }) {
-  const bytes = new TextEncoder().encode(JSON.stringify([VERSION, art.src, art.position, type, finish]));
+  const bytes = new TextEncoder().encode(JSON.stringify([VERSION, art.baked || art.src, art.position, type, finish]));
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
   return [...digest.slice(0, 12)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
@@ -195,7 +195,8 @@ function soften(data) {
 }
 
 export async function paintSealed(card) {
-  const image = await loadImage(card.art.src).catch(() => null);
+  // Painted from the photo in its look, if it has one, so a draft matches the card it'll be.
+  const image = await loadImage(card.art.baked || card.art.src).catch(() => null);
   const canvas = Object.assign(document.createElement('canvas'), { width: WIDTH + PAD * 2, height: HEIGHT + PAD * 2 });
   const ctx = canvas.getContext('2d');
   ctx.translate(PAD, PAD);

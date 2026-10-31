@@ -85,14 +85,16 @@ export const SNAPSHOT_RULE = 'Play as many Snapshots as you like. Nobody’s cou
 
 // A Snapshot's picture: one photo, or two side by side, each half cropped to its own position. The halves are
 // numbered, so the editor can tell which one is being dragged.
-function snapshotPicture({ src, alt, position, look, second }) {
+function snapshotPicture({ src, alt, position, look, baked, second }) {
   const first = safeImage(src ?? '');
   const other = safeImage(second?.src ?? '');
+  const firstBaked = safeImage(baked ?? '');
   if (!first) return null;
-  if (!other) return photo(first, { alt, position, look });
+  if (!other) return photo(first, { alt, position, look, baked: firstBaked });
   return h('div', { class: 'snapshot__halves', role: 'img', 'aria-label': alt },
-    h('div', { class: 'snapshot__half', dataset: { half: '0' } }, photo(first, { alt: '', position, look })),
-    h('div', { class: 'snapshot__half', dataset: { half: '1' } }, photo(other, { alt: '', position: second.position, look })),
+    h('div', { class: 'snapshot__half', dataset: { half: '0' } }, photo(first, { alt: '', position, look, baked: firstBaked })),
+    h('div', { class: 'snapshot__half', dataset: { half: '1' } },
+      photo(other, { alt: '', position: second.position, look, baked: safeImage(second.baked ?? '') })),
   );
 }
 

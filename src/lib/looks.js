@@ -1,7 +1,8 @@
 import { h } from './dom.js';
 
-// How a photo can be shown on a card. Drawn live in the visitor's browser for now: the plain photo goes up first,
-// and the filtered version replaces it once it's drawn. A photo that can't be read back (no CORS) stays plain.
+// How a photo can be shown on a card. The editor draws a photo's look when it's saved and keeps the picture beside
+// it (`baked`), so the site just shows that. One saved before then is drawn here instead: the plain photo goes up
+// first, and the filtered version replaces it once it's drawn. A photo that can't be read back (no CORS) stays plain.
 export const LOOKS = [
   { value: '', label: 'Default' },
   { value: 'watercolour', label: 'Watercolour' },
@@ -13,7 +14,7 @@ export const LOOKS = [
   { value: 'ds', label: 'DS (Gen 5)' },
 ];
 
-const known = (look) => LOOKS.some(({ value }) => value && value === look);
+export const isLook = (look) => LOOKS.some(({ value }) => value && value === look);
 
 // The four greens of the original Game Boy, darkest first.
 const GAMEBOY = [[15, 56, 15], [48, 98, 48], [139, 172, 15], [155, 188, 15]];
@@ -324,7 +325,7 @@ function comic({ data, width, height }) {
 // gets a copy.
 const drawn = new Map();
 
-function draw(src, look) {
+export function draw(src, look) {
   const key = `${look} ${src}`;
   if (!drawn.has(key)) {
     drawn.set(key, (async () => {
@@ -356,31 +357,37 @@ function copy(canvas) {
   return twin;
 }
 
-// Drawing a look is heavy, so a photo only starts once it's about to be seen: a card on another tab or in the
-// closed deck costs nothing until it's shown.
+// Drawing a look is heavy, so a photo only starts once it's on the page with a size: a card on a tab that isn't open,
+// or in the closed deck, costs nothing until it's shown. Not when it scrolls into view: the open deck draws them all,
+// so none is blank as it comes up.
 const soon = (element, start) => {
-  if (!('IntersectionObserver' in window)) return start();
-  const watch = new IntersectionObserver((entries) => {
-    if (!entries.some((entry) => entry.isIntersecting)) return;
+  if (!('ResizeObserver' in window)) return start();
+  const watch = new ResizeObserver((entries) => {
+    if (!entries.some(({ contentRect }) => contentRect.width && contentRect.height)) return;
     watch.disconnect();
     start();
-  }, { rootMargin: '300px' });
+  });
   watch.observe(element);
 };
 
-// A photo in a look. Default is the plain <img>; the others swap that for their drawing once it's ready, cropped and
-// focused the same way.
-export function photo(src, { look = '', alt = '', position = '', ...props } = {}) {
-  const filtered = known(look);
+// The pixel looks are drawn small and shown big, every pixel a hard square.
+export const pixelated = (look) => Boolean(DRAW[look]?.pixelated);
+const lookClass = (look) => `look look--${look}${pixelated(look) ? ' look--pixelated' : ''}`;
+
+// A photo in a look. Default is the plain <img>; a look saved already drawn is that picture; the others swap the
+// plain photo for their drawing once it's ready, cropped and focused the same way.
+export function photo(src, { look = '', baked = '', alt = '', position = '', ...props } = {}) {
+  const filtered = isLook(look);
+  const style = position && { 'object-position': position };
+  if (filtered && baked) return h('img', { ...props, class: lookClass(look), src: baked, alt, decoding: 'async', style });
   // A look reads the photo's pixels, so ask for it that way from the start (before src), and it's only fetched once.
-  const image = h('img', { ...props, crossorigin: filtered ? 'anonymous' : null, src, alt, decoding: 'async', style: position && { 'object-position': position } });
+  const image = h('img', { ...props, crossorigin: filtered ? 'anonymous' : null, src, alt, decoding: 'async', style });
   if (!filtered) return image;
   image.dataset.look = look;
   soon(image, () => draw(src, look).then((canvas) => {
     if (!canvas || !image.parentNode) return;
     const shown = copy(canvas);
-    shown.className = `look look--${look}`;
-    if (DRAW[look].pixelated) shown.classList.add('look--pixelated');
+    shown.className = lookClass(look);
     shown.setAttribute('role', 'img');
     shown.setAttribute('aria-label', alt);
     if (position) shown.style.setProperty('object-position', position);

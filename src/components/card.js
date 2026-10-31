@@ -22,9 +22,9 @@ function nameBar({ title, minutes, type }) {
   );
 }
 
-function artwork({ src, alt, position, look }) {
+function artwork({ src, alt, position, look, baked }) {
   const picture = safeImage(src ?? '');
-  return h('figure', { class: 'card__art' }, picture && photo(picture, { alt, position, look, width: 202, height: 128 }));
+  return h('figure', { class: 'card__art' }, picture && photo(picture, { alt, position, look, baked: safeImage(baked ?? ''), width: 202, height: 128 }));
 }
 
 function dexStrip({ dex, firstPrint }) {

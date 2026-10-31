@@ -21,6 +21,12 @@ export async function saveCard(id, card, status) {
 
 export const deleteCard = async (id) => unwrap(await cards().delete().eq('id', id));
 
+// Just a card's art, and only if the card is as it was at `since`: the card as saved, or null if it had moved on.
+export async function saveArt(id, art, since) {
+  const [row] = unwrap(await cards().update({ art }).eq('id', id).eq('updated_at', since).select());
+  return row ? fromRow(row) : null;
+}
+
 export const reorderCards = async (ids) => unwrap(await supabase.rpc('reorder_cards', { ids }));
 
 const publicUrl = (name) => art().getPublicUrl(name).data.publicUrl;

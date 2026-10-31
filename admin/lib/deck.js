@@ -18,3 +18,9 @@ export async function saveDeckCard(id, data, status) {
 }
 
 export const deleteDeckCard = async (id) => unwrap(await deck().delete().eq('id', id));
+
+// Just a card's photo, and only if the card is as it was at `since`: the card as saved, or null if it had moved on.
+export async function savePhoto(id, photo, since) {
+  const [row] = unwrap(await deck().update({ photo }).eq('id', id).eq('updated_at', since).select());
+  return row ? fromRow(row) : null;
+}
