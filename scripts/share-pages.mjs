@@ -38,6 +38,9 @@ function drawnBy(root) {
 const PREVIEW_QUALITY = 85;
 // How long a picture waits for its photos and filters before giving up on it until the next run.
 const PATIENCE = 15000;
+// How long a run draws for. The workflow stops a run at ten minutes and keeps nothing; one that stops drawing here
+// keeps what it drew, and the next run carries on from there.
+const BUDGET = 7 * 60 * 1000;
 
 const escape = (text) => String(text).replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]);
 // Text as it reads, cut to fit, a whole character at a time (an emoji isn't split in two). An article's Markdown is
@@ -169,7 +172,9 @@ function squeeze(file) {
 
 // Builds every page that's missing or out of date, and takes away pages for cards that have gone.
 // `saving` draws the deck cards' pictures to save, at their own scale; without it, those are left alone.
-export async function generate(page, { saving, root = ROOT, log = console.log } = {}) {
+export async function generate(page, { saving, root = ROOT, log = console.log, budget = BUDGET } = {}) {
+  const until = Date.now() + budget;
+  let left = 0;
   const html = readFileSync(join(root, 'index.html'), 'utf8');
   const template = { html, hash: digest(html) };
   const drawing = drawnBy(root);
@@ -194,6 +199,11 @@ export async function generate(page, { saving, root = ROOT, log = console.log } 
       if (readMeta(file, 'share-words') !== words) write();
       continue;
     }
+    // Out of time: its page stays as it is, for the next run.
+    if (Date.now() > until) {
+      left += 1;
+      continue;
+    }
     mkdirSync(folder, { recursive: true });
     // Drawn beside the old pictures and only swapped in once both are done, so a run that fails halfway leaves the
     // page as it was (and tries again next time) rather than half new.
@@ -207,10 +217,10 @@ export async function generate(page, { saving, root = ROOT, log = console.log } 
       continue;
     }
     for (const [name] of pictures) renameSync(join(folder, `${name}.part`), join(folder, name));
-    rmSync(join(folder, 'card.png'), { force: true });
     write();
     log(`drew ${KINDS[entry.kind]}/${entry.key}`);
   }
+  if (left) log(`out of time: ${left} left for the next run`);
   // Folders for cards that have gone, and any left half made. If most of them would go at once, it's likelier that
   // what came back was wrong than that the cards all went, so none do.
   const folders = Object.values(KINDS).flatMap((prefix) => {

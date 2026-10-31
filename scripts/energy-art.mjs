@@ -5,6 +5,7 @@
 // paints the light the first cards had instead, for every type (deck-cards.css).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { TYPES } from '../src/data/types.js';
 
 const OUT = fileURLToPath(new URL('../assets/energy/', import.meta.url));
 // The card's panel, at twice its size.
@@ -187,7 +188,7 @@ function paint([type, { width, height, quality }]) {
       for (let i = 0; i < 46; i += 1) {
         const r = between(2, 13) * (next() < 0.15 ? 1.8 : 1);
         const x = between(0, width);
-        const y = between(0, height) ** 1 * (next() < 0.6 ? 0.7 : 1);
+        const y = between(0, height) * (next() < 0.6 ? 0.7 : 1);
         pen.save();
         pen.strokeStyle = 'rgb(235 250 255 / 0.75)';
         pen.lineWidth = Math.max(1, r * 0.16);
@@ -494,18 +495,23 @@ function paintClassic([, { width, height, quality }]) {
   return canvas.toDataURL('image/webp', quality);
 }
 
-const TYPES = ['ink', 'ember', 'wire', 'spark', 'stone', 'ghost', 'plain', 'dark', 'classic'];
-const wanted = process.argv.slice(2).length ? process.argv.slice(2) : TYPES;
+const PAINTABLE = [...TYPES.map(({ value }) => value), 'classic'];
+const wanted = process.argv.slice(2).length ? process.argv.slice(2) : PAINTABLE;
+const unknown = wanted.filter((type) => !PAINTABLE.includes(type));
+if (unknown.length) throw new Error(`Nothing to paint for ${unknown.join(', ')}. There's ${PAINTABLE.join(', ')}.`);
 
 const { chromium } = await import('playwright');
 const browser = await chromium.launch();
-const page = await browser.newPage();
-mkdirSync(OUT, { recursive: true });
-for (const type of wanted) {
-  const url = await page.evaluate(type === 'classic' ? paintClassic : paint, [type, { ...(type === 'classic' ? CLASSIC : SIZE), quality: QUALITY }]).catch((error) => {
-    throw new Error(`${type}: ${error.message}`);
-  });
-  writeFileSync(`${OUT}${type}.webp`, Buffer.from(url.split(',')[1], 'base64'));
-  console.log(`painted ${type}`);
+try {
+  const page = await browser.newPage();
+  mkdirSync(OUT, { recursive: true });
+  for (const type of wanted) {
+    const url = await page.evaluate(type === 'classic' ? paintClassic : paint, [type, { ...(type === 'classic' ? CLASSIC : SIZE), quality: QUALITY }]).catch((error) => {
+      throw new Error(`${type}: ${error.message}`);
+    });
+    writeFileSync(`${OUT}${type}.webp`, Buffer.from(url.split(',')[1], 'base64'));
+    console.log(`painted ${type}`);
+  }
+} finally {
+  await browser.close();
 }
-await browser.close();

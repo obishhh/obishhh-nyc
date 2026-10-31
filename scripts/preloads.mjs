@@ -1,6 +1,6 @@
 // Lists every module a page loads in its HTML, so the browser fetches them all at once instead of finding each one
-// only once the one importing it has arrived (nine rounds of that on a phone, before anything shows). The home page
-// and the editor's room each have their list.
+// only once the one importing it has arrived (nine rounds of that on a phone, before anything shows). Every page with
+// a script has its list.
 //
 // Run after adding, removing or moving an import: node scripts/preloads.mjs. With --check, it only says whether the
 // lists are out of date (and exits 1 if they are).
@@ -13,6 +13,8 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PAGES = [
   { page: 'index.html', entry: 'src/pages/home.js' },
   { page: 'admin/index.html', entry: 'admin/main.js' },
+  { page: 'credits/index.html', entry: 'src/pages/credits.js' },
+  { page: '404.html', entry: 'src/pages/missing.js' },
 ];
 const START = '<!-- modules: written by scripts/preloads.mjs -->';
 const END = '<!-- /modules -->';
@@ -35,7 +37,7 @@ const stale = pages.filter(({ html, next }) => html !== next);
 
 if (process.argv.includes('--check')) {
   console.log(stale.length
-    ? `Module lists out of date in ${stale.map(({ page }) => page).join(' and ')}: run node scripts/preloads.mjs.`
+    ? `Module lists out of date in ${stale.map(({ page }) => page).join(', ')}: run node scripts/preloads.mjs.`
     : 'Module lists are up to date.');
   process.exit(stale.length ? 1 : 0);
 }

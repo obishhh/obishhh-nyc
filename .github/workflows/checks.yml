@@ -1,0 +1,23 @@
+# Fails a push whose pages no longer list every module they load (see scripts/preloads.mjs).
+name: Checks
+
+on:
+  push:
+    paths-ignore: ['d/**', 'c/**']
+
+permissions:
+  contents: read
+
+jobs:
+  preloads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Module lists are up to date
+        run: node scripts/preloads.mjs --check
