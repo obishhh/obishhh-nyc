@@ -47,6 +47,8 @@ jobs:
           git config user.name "share-pages"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Refresh share pages"
+          # Main may have moved while the pages were drawn: go on top of it rather than fail the push.
+          git pull --rebase
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
 

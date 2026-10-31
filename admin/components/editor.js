@@ -236,8 +236,15 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     saving = true;
     busy(true);
     try {
-      load(await onSave(data, status, record?.id));
-      if (stay) flash(message);
+      const saved = await onSave(data, status, record?.id);
+      // Words typed while it saved stay put: the form only catches up with the saved card if it hasn't moved on.
+      if (JSON.stringify(current()) === JSON.stringify(data)) load(saved);
+      else {
+        record = saved;
+        snapshot = JSON.stringify(data);
+        refresh();
+      }
+      if (stay || dirty) flash(message);
       else onDone(message);
     } catch (error) {
       flash(error.code === '23505' ? 'Another card already uses that address.' : error.message, true);

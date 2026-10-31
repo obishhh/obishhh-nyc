@@ -313,7 +313,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
       record = await onSave(data, status, record?.id);
       snapshot = editable(data);
       refresh({ now: true });
-      if (stay) flash(message);
+      if (stay || dirty) flash(message);
       else onDone(message);
     } catch (error) {
       flash(error.message, true);

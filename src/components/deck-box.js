@@ -109,11 +109,14 @@ function spread(entries, make, title, onClose) {
   let openedAt = 0;
   let pressedOnDesk = false;
   let byKey = false;
+  // A link's card is raised once the deck has landed; anything else that happens first calls that off.
+  let landing;
 
   // A quick put-away, then shut. Esc goes the same way. `withKey`: put away from the keyboard, so focus goes back to
   // the box for the next key; put away with a pointer, it doesn't, or the box would show focused and stay fanned up.
   function putBack({ withKey = false } = {}) {
     if (!dialog.open || dialog.classList.contains('is-closing')) return;
+    clearTimeout(landing);
     byKey = withKey;
     dialog.classList.add('is-closing');
     setTimeout(() => {
@@ -137,13 +140,19 @@ function spread(entries, make, title, onClose) {
   // Up front and centre, big enough to read: the card slides from its spot to the middle of the window and grows,
   // the rest of the desk dims, and a ✕ sits at its corner. The desk stops scrolling while it's up.
   let front = null;
+  const cards = () => [...dialog.querySelectorAll('.deck-spread__card')];
   function raise(card) {
+    clearTimeout(landing);
+    if (front && front !== card) lowerCard({ instantly: true });
     dialog.querySelector('.is-picked')?.classList.remove('is-picked');
     card.classList.add('is-picked');
     front = card;
+    // The desk stops scrolling first: where a scrollbar takes room, it goes, and the card is measured where it ends up.
+    dialog.classList.add('has-front');
     place();
     card.classList.add('is-front');
-    dialog.classList.add('has-front');
+    // The rest of the desk is out of reach while a card's up, so Tab goes from the card to its ✕ and Save.
+    cards().forEach((each) => (each.inert = each !== card));
     lower.hidden = false;
     stamp.textContent = card.dataset.time;
     stamp.hidden = !card.dataset.time;
@@ -151,12 +160,26 @@ function spread(entries, make, title, onClose) {
     offerSave(card);
   }
 
-  // Save shows once the card's picture is there to save: a card published since the pictures were last drawn has
-  // none yet.
+  // Save shows once the card's picture is here to save: a card published since the pictures were last drawn has
+  // none yet. It's fetched when the card goes up and kept, so a tap on Save can share it at once: a phone only lets a
+  // page share right after a tap, not after waiting on a download.
+  const keepsakes = new Map();
+  const kept = new Map();
+  function keepsake(key) {
+    if (!keepsakes.has(key)) {
+      keepsakes.set(key, fetch(keepsakeOf(key))
+        .then((response) => (response.ok ? response.blob() : null))
+        .then((blob) => blob?.type.startsWith('image/') && kept.set(key, new File([blob], `obishhh-${key}.png`, { type: 'image/png' })))
+        .catch(() => {})
+        .finally(() => keepsakes.delete(key)));
+    }
+    return keepsakes.get(key);
+  }
   async function offerSave(card) {
     save.hidden = true;
-    const ok = await fetch(keepsakeOf(card.dataset.key), { method: 'HEAD' }).then((response) => response.ok, () => false);
-    if (ok && front === card) save.hidden = false;
+    const key = card.dataset.key;
+    if (!kept.has(key)) await keepsake(key);
+    if (kept.has(key) && front === card) save.hidden = false;
   }
 
   // Where the raised card goes: worked out from its spot as laid out, without its tilt or nudge.
@@ -197,6 +220,7 @@ function spread(entries, make, title, onClose) {
     if (instantly) card.style.setProperty('transition', 'none');
     card.classList.remove('is-front');
     dialog.classList.remove('has-front');
+    cards().forEach((each) => (each.inert = false));
     lower.hidden = true;
     save.hidden = true;
     stamp.hidden = true;
@@ -211,25 +235,22 @@ function spread(entries, make, title, onClose) {
   });
   addEventListener('resize', place);
 
-  // On a phone, the share sheet, where Save Image puts it in Photos; elsewhere, a download.
-  save.addEventListener('click', async (event) => {
+  // On a phone, the share sheet, where Save Image puts it in Photos; elsewhere, or if sharing won't, a download.
+  function download(file) {
+    const link = h('a', { href: URL.createObjectURL(file), download: file.name });
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+  save.addEventListener('click', (event) => {
     event.stopPropagation();
-    const key = front?.dataset.key;
-    if (!key) return;
-    const name = `obishhh-${key}.png`;
-    try {
-      const blob = await (await fetch(keepsakeOf(key))).blob();
-      const file = new File([blob], name, { type: 'image/png' });
-      if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file] });
-        return;
-      }
-      const link = h('a', { href: URL.createObjectURL(blob), download: name });
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-    } catch {
-      // Cancelled, or the picture couldn't be fetched: nothing to do.
+    const file = kept.get(front?.dataset.key);
+    if (!file) return;
+    if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
+      // Cancelling the sheet is fine; anything else falls back to a download.
+      navigator.share({ files: [file] }).catch((error) => error.name === 'AbortError' || download(file));
+      return;
     }
+    download(file);
   });
 
   // Turned over to its back and straight over again, the way you'd flip a card to check it.
@@ -270,7 +291,8 @@ function spread(entries, make, title, onClose) {
       const card = [...dialog.querySelectorAll('.deck-spread__card')].find((each) => each.dataset.key === key);
       if (!card) return history.replaceState(history.state, '', withDeckCard(null));
       card.scrollIntoView({ block: 'center' });
-      setTimeout(() => raise(card), reducedMotion.matches ? 0 : LANDED);
+      clearTimeout(landing);
+      landing = setTimeout(() => dialog.open && !front && raise(card), reducedMotion.matches ? 0 : LANDED);
     },
     open() {
       if (dialog.open) return;

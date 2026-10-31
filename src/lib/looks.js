@@ -356,14 +356,27 @@ function copy(canvas) {
   return twin;
 }
 
+// Drawing a look is heavy, so a photo only starts once it's about to be seen: a card on another tab or in the
+// closed deck costs nothing until it's shown.
+const soon = (element, start) => {
+  if (!('IntersectionObserver' in window)) return start();
+  const watch = new IntersectionObserver((entries) => {
+    if (!entries.some((entry) => entry.isIntersecting)) return;
+    watch.disconnect();
+    start();
+  }, { rootMargin: '300px' });
+  watch.observe(element);
+};
+
 // A photo in a look. Default is the plain <img>; the others swap that for their drawing once it's ready, cropped and
 // focused the same way.
 export function photo(src, { look = '', alt = '', position = '', ...props } = {}) {
-  const image = h('img', { ...props, src, alt, decoding: 'async', style: position && { 'object-position': position } });
-  if (!known(look)) return image;
-  image.crossOrigin = 'anonymous';
+  const filtered = known(look);
+  // A look reads the photo's pixels, so ask for it that way from the start (before src), and it's only fetched once.
+  const image = h('img', { ...props, crossorigin: filtered ? 'anonymous' : null, src, alt, decoding: 'async', style: position && { 'object-position': position } });
+  if (!filtered) return image;
   image.dataset.look = look;
-  draw(src, look).then((canvas) => {
+  soon(image, () => draw(src, look).then((canvas) => {
     if (!canvas || !image.parentNode) return;
     const shown = copy(canvas);
     shown.className = `look look--${look}`;
@@ -372,6 +385,6 @@ export function photo(src, { look = '', alt = '', position = '', ...props } = {}
     shown.setAttribute('aria-label', alt);
     if (position) shown.style.setProperty('object-position', position);
     image.replaceWith(shown);
-  });
+  }));
   return image;
 }

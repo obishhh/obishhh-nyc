@@ -255,10 +255,12 @@ html:has(.deck-spread[open]) { overflow: hidden; }
    and holds still underneath. */
 .deck-spread__card.is-front {
   z-index: 5;
-  outline: none;
   transform: translate(var(--front-x), var(--front-y)) scale(var(--front-scale));
   transition: transform 0.42s var(--ease-out), z-index 0s;
 }
+
+/* A raised card's ring only shows for the keyboard, and sits off the card as it does elsewhere. */
+.deck-spread__card.is-front:not(:focus-visible) { outline: none; }
 
 .deck-spread.has-front { overflow: hidden; }
 .deck-spread.has-front .deck-spread__card:not(.is-front) { opacity: 0.25; }
@@ -356,7 +358,10 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
   .deck-box__peek,
-  .deck-spread__card { transition: none; }
+  .deck-spread__card,
+  .deck-spread__card.is-picked,
+  .deck-spread__card.is-front,
+  .deck-spread__card:focus-visible { transition: none; }
 
   .tabbed > .deck-box,
   .deck-spread__card,

@@ -29,6 +29,14 @@ const number = (element, property) => parseFloat(getComputedStyle(element).getPr
 const transform = ({ x, y, scale, turn }) =>
   `translate(${x - CARD.width / 2}px, ${y - CARD.height / 2}px) scale(${scale}) rotate(${turn}deg)`;
 
+// A copy keeps a canvas's size but not what's drawn on it (a photo in a look), so draw that across too.
+function twin(element) {
+  const copy = element.cloneNode(true);
+  const drawn = element.querySelectorAll('canvas');
+  copy.querySelectorAll('canvas').forEach((canvas, index) => canvas.width && canvas.height && canvas.getContext('2d').drawImage(drawn[index], 0, 0));
+  return copy;
+}
+
 // A copy of the card flies between the binder and the article on its own layer, so
 // nothing it passes over can clip or fade it. A card left face down turns back over on the way.
 function fly(face, from, to, duration, back = null) {
@@ -36,7 +44,7 @@ function fly(face, from, to, duration, back = null) {
   ghost.className = 'reader-ghost';
   const turn = document.createElement('div');
   turn.className = 'reader-ghost__turn';
-  turn.append(face.cloneNode(true));
+  turn.append(twin(face));
   if (back) turn.append(back.cloneNode(true));
   ghost.append(turn);
   document.body.append(ghost);
@@ -63,6 +71,8 @@ export function enableReading(binder, cards) {
 
   function show(data, { pushed }) {
     if (current || !data) return;
+    // Something else open (the deck, say, when Forward brings an article back) goes first, or it'd sit over the article.
+    document.querySelectorAll('dialog[open]').forEach((open) => open.close());
     const view = reader(data);
     const pocket = pocketOf(data);
     const returnFocus = document.activeElement;
@@ -183,7 +193,12 @@ export function enableReading(binder, cards) {
   return {
     // Opens the card a shared link points to. Called once the binder's on screen and sized, so it flies from its spot.
     openLinked() {
-      if (slugInUrl()) show(find(slugInUrl()), { pushed: false });
+      const slug = slugInUrl();
+      if (!slug) return;
+      const data = find(slug);
+      // A link to a card that's gone or not out yet just shows the binder, with the address tidied to match.
+      if (data) show(data, { pushed: false });
+      else history.replaceState(history.state, '', withCard(null));
     },
   };
 }

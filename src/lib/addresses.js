@@ -6,11 +6,21 @@ const PATHS = { deck: 'd', card: 'c' };
 // A deck card's key: its number, or its id if it has none.
 export const deckKey = (entry) => (entry.number ? entry.number.replaceAll('/', '-') : String(entry.id ?? ''));
 
-// Which card of a kind the address points at, if any.
+// What a card's key can be: letters, numbers, dashes, dots and underscores, but never just dots.
+export const goodKey = (key) => /^[\w.-]+$/.test(key ?? '') && !/^\.+$/.test(key);
+
+// Which card of a kind the address points at, if any. A garbled or odd-looking key points at nothing.
 export function openedIn(kind, where = location) {
   const path = where.pathname.match(new RegExp(`^/${PATHS[kind]}/([^/]+)/?$`));
-  if (path) return decodeURIComponent(path[1]);
-  return new URLSearchParams(where.search).get(kind);
+  let key = new URLSearchParams(where.search).get(kind);
+  if (path) {
+    try {
+      key = decodeURIComponent(path[1]);
+    } catch {
+      return null;
+    }
+  }
+  return goodKey(key) ? key : null;
 }
 
 // The address with a card of this kind opened, or none: keeps whatever else is in the query (like the open tab), and
