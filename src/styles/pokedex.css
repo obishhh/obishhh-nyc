@@ -1,0 +1,117 @@
+/* The Pokédex, lying on the desk by the deck box (deck-box.css sets where the box is): under it on a computer, tucked
+   in behind it otherwise. A little askew, like it was put down in a hurry. */
+.pokedex {
+  --tilt: -5deg;
+
+  position: absolute;
+  z-index: 1;
+  aspect-ratio: 640 / 528;
+  rotate: var(--tilt);
+  transition: translate 0.25s var(--ease-out), scale 0.15s var(--ease-out);
+  animation: page-in 0.3s var(--ease-out);
+}
+
+.pokedex__photo {
+  width: 100%;
+  height: 100%;
+}
+
+/* The whole thing is the button, over the picture and cut to its outline, so the clear corners around it don't take
+   a press meant for the box behind. */
+.pokedex__open {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  clip-path: polygon(0% 63%, 6% 54%, 11% 50%, 17% 13%, 22% 8%, 28% 6%, 33% 7%, 39% 0%, 44% 1%, 50% 2%, 55% 2%, 61% 3%,
+    67% 4%, 72% 5%, 78% 5%, 83% 9%, 89% 67%, 94% 69%, 100% 75%, 100% 87%, 94% 96%, 89% 98%, 83% 98%, 78% 97%, 72% 95%,
+    67% 98%, 61% 100%, 55% 99%, 50% 98%, 44% 97%, 39% 95%, 33% 94%, 28% 93%, 22% 91%, 17% 90%, 11% 88%, 6% 85%, 0% 75%);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The cut would hide the button's own ring, so it goes round the whole thing instead. */
+.pokedex__open:focus-visible { outline: none; }
+
+.pokedex:has(> .pokedex__open:focus-visible) {
+  outline: 2px solid var(--ink-900);
+  outline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .pokedex:hover { translate: 0 -4px; }
+}
+
+.pokedex:has(> .pokedex__open:active) { scale: 0.97; }
+
+@media (min-width: 1040px) {
+  .tabbed > .pokedex {
+    top: calc(var(--box-top) + var(--box-width) * 860 / 688 - 18px);
+    left: calc(100% + 10px + 12px * var(--scale));
+    width: var(--box-width);
+  }
+}
+
+/* Narrower: lying in front of the box's bottom corner, over the end of the tabs and the first card's. */
+@media (max-width: 1039px) {
+  .tabbed > .pokedex {
+    --tilt: -10deg;
+
+    top: calc(var(--box-top) + var(--box-width) * 860 / 688 * 0.5);
+    right: calc(var(--box-right) + var(--box-width) * 0.66);
+    width: calc(var(--box-width) * 0.9);
+  }
+}
+
+/* Phones: under the box, hanging off past the cards and over the screen's edge, where it's empty, and in front of
+   the box, which is in front of the card it overlaps. */
+@media (max-width: 519px) {
+  .tabbed > .pokedex {
+    --tilt: 7deg;
+
+    z-index: 3;
+    top: calc(var(--box-top) + var(--box-width) * 860 / 688 - 18px);
+    right: calc(var(--box-right) - 40px);
+    width: calc(var(--box-width) * 1.35);
+  }
+}
+
+/* What it says when it's pressed: in the middle of the screen, over everything else gone soft. The screen-sized box
+   blurs what's behind it itself, rather than its backdrop, so it fades in and out in Safari too. */
+.pokedex-says[open] {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 16px;
+  border: 0;
+  background: rgb(255 255 255 / 0.5);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  animation: page-in 0.2s var(--ease-out);
+}
+
+.pokedex-says::backdrop { background: none; }
+
+html:has(.pokedex-says[open]) { overflow: hidden; }
+
+.pokedex-says__box {
+  position: relative;
+  max-width: 320px;
+  margin: 0;
+  padding: 14px 40px 14px 18px;
+  font-size: 18px;
+  text-wrap: pretty;
+  animation: rise-in 0.25s var(--ease-out);
+}
+
+.pokedex-says__box::after { animation: blink 1s steps(1) infinite; }
+
+.pokedex-says:focus-visible { outline: none; }
+
+.pokedex-says.is-leaving { animation: put-away 0.15s ease-in forwards; }

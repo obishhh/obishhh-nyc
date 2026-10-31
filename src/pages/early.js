@@ -35,5 +35,8 @@ askEarly('deck')?.then(([newest]) => {
   if (newest.photo?.second?.src) warmArt({ ...newest.photo.second, look: newest.photo.look });
 }, () => {});
 
+// The Pokédex lies by the box whatever's in the deck.
+warm('/assets/pokedex/pokedex.webp');
+
 // The tabs' photo: down the side on a wide screen, across the top otherwise.
 warm(matchMedia(WIDE).matches ? '/assets/tabs/side.webp' : '/assets/tabs/top.webp');

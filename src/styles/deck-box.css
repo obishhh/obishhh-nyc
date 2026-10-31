@@ -83,21 +83,31 @@
   animation: page-in 0.3s var(--ease-out);
 }
 
+/* Where it goes is kept on the binder, so the Pokédex can lie by it (pokedex.css). */
 @media (min-width: 1040px) {
+  .tabbed {
+    --box-top: calc(56px * var(--scale));
+    --box-width: min(calc(280px * var(--scale)), calc((100vw - var(--binder-width)) / 2 - 36px));
+  }
+
   .tabbed > .deck-box {
-    top: calc(56px * var(--scale));
+    top: var(--box-top);
     left: calc(100% + 10px + 12px * var(--scale));
-    width: min(calc(280px * var(--scale)), calc((100vw - var(--binder-width)) / 2 - 36px));
+    width: var(--box-width);
   }
 }
 
 /* Narrower: in the header's corner, hanging down over the end of the tab strip, where the last tabs are blank. */
 @media (max-width: 1039px) {
-  .tabbed { --box-width: 124px; }
+  .tabbed {
+    --box-width: 124px;
+    --box-top: calc(max(var(--binder-width), 560px) * 94 / 1240 + 4px - var(--box-width) * 860 / 688);
+    --box-right: 0px;
+  }
 
   .tabbed > .deck-box {
-    top: calc(max(var(--binder-width), 560px) * 94 / 1240 + 4px - var(--box-width) * 860 / 688);
-    right: 0;
+    top: var(--box-top);
+    right: var(--box-right);
     width: var(--box-width);
   }
 
@@ -112,13 +122,13 @@
 /* Phones: bigger, up by the site's name and down over the first card's corner, and hanging off past the cards into
    the gutter, short of the screen's edge. In front of the card it overlaps. */
 @media (max-width: 519px) {
-  .tabbed { --box-width: 136px; }
-
-  .tabbed > .deck-box {
-    z-index: 2;
-    top: calc(max(var(--binder-width), 560px) * 94 / 1240 + 52px - var(--box-width) * 860 / 688);
-    right: calc(-1 * min(28px, (100vw - var(--binder-width)) / 2 - 8px));
+  .tabbed {
+    --box-width: 136px;
+    --box-top: calc(max(var(--binder-width), 560px) * 94 / 1240 + 52px - var(--box-width) * 860 / 688);
+    --box-right: calc(-1 * min(28px, (100vw - var(--binder-width)) / 2 - 8px));
   }
+
+  .tabbed > .deck-box { z-index: 2; }
 }
 
 /* Opened: the cards tipped out over the page. */
@@ -312,20 +322,10 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   pointer-events: none;
 }
 
-/* A note's link, in the text box from a Game Boy battle: white, a heavy double border, the line that says what's
-   happening, where to, and the ▼ blinking in the corner for you to press on. */
+/* A note's link, in a game's text box (text-box.css): the line that says what's happening, then where to. */
 .deck-spread__go {
   display: grid;
   gap: 4px;
-  padding: 10px 30px 10px 14px;
-  border: 4px double #1d1b20;
-  border-radius: 8px;
-  background: #fbfaf6;
-  box-shadow: 0 0 0 2px #fbfaf6, 0 6px 16px rgb(0 0 0 / 0.16);
-  color: #1d1b20;
-  font: 700 14px/1.3 var(--font-display);
-  letter-spacing: 0.02em;
-  text-decoration: none;
 }
 
 .deck-spread__go b {
@@ -340,14 +340,6 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   white-space: nowrap;
 }
 
-.deck-spread__go::after {
-  content: '▼';
-  position: absolute;
-  right: 11px;
-  bottom: 7px;
-  font-size: 10px;
-}
-
 .deck-spread.has-front .deck-spread__go.is-ready::after { animation: blink 1s steps(1) infinite; }
 
 .deck-spread__go:hover b,
@@ -357,17 +349,6 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 
 /* It comes up with the card's ✕ and Save, and where it goes follows a beat behind. */
 .deck-spread.has-front .deck-spread__go.is-ready > .deck-spread__go-to { animation: rise-in 0.26s var(--ease-out) 0.44s backwards; }
-
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
-@keyframes blink {
-  50% { opacity: 0; }
-}
 
 /* The card at full size, shrunk to fit; inside it, the card and its back, turned as one. */
 .deck-spread__flip {
@@ -399,10 +380,6 @@ html:has(.deck-spread[open]) { overflow: hidden; }
     opacity: 0;
     transform: translate(var(--shift), calc(var(--dy) + 18px)) rotate(var(--tilt)) scale(0.97);
   }
-}
-
-@keyframes put-away {
-  to { opacity: 0; }
 }
 
 @media (max-width: 519px) {

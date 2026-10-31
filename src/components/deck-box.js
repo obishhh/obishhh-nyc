@@ -89,7 +89,7 @@ function spread(entries, make, title, onClose) {
   const save = h('button', { class: 'deck-spread__close deck-spread__tool deck-spread__save', type: 'button', 'aria-label': 'Save this card', title: 'Save this card' }, svg(SAVE));
   // A note's link, under it in a battle's text box: a wild link appears, and a tap goes to it.
   const site = h('b');
-  const go = h('a', { class: 'deck-spread__tool deck-spread__go', target: '_blank', rel: 'noopener noreferrer' },
+  const go = h('a', { class: 'deck-spread__tool deck-spread__go text-box', target: '_blank', rel: 'noopener noreferrer' },
     h('span', {}, 'A wild link appeared!'),
     h('span', { class: 'deck-spread__go-to' }, 'Go to', site),
   );
