@@ -12,12 +12,6 @@ const VIEWS = [
   { value: 'article', label: 'Article' },
 ];
 
-const HINTS = {
-  revealed: 'Click the card to flip it.',
-  sealed: 'How a draft looks in the binder.',
-  article: 'What opens when the card is tapped.',
-};
-
 // The card exactly as the binder will show it: face up, sealed, or opened as its article.
 export function preview() {
   const back = cardBack();
@@ -26,12 +20,11 @@ export function preview() {
   const stage = h('div', { class: 'preview__stage' }, pocket);
   const buttons = VIEWS.map(({ value, label }) =>
     h('button', { class: 'preview__view', type: 'button', 'aria-pressed': String(value === 'revealed'), dataset: { view: value } }, label));
-  const hint = h('p', { class: 'preview__hint' });
   let view = 'revealed';
   let data = null;
 
   function articleView() {
-    if (!data.body) return h('p', { class: 'preview__empty' }, 'No article yet. Without text, the card just flips.');
+    if (!data.body) return h('p', { class: 'preview__empty' }, 'No article.');
     return h('div', { class: 'preview__article', dataset: { type: data.type } }, article(data, { heading: 'h2' }));
   }
 
@@ -47,7 +40,6 @@ export function preview() {
       if (pocket.parentNode !== stage) stage.replaceChildren(pocket);
     }
     stage.classList.toggle('is-article', view === 'article');
-    hint.textContent = HINTS[view];
   }
 
   function show(next) {
@@ -69,7 +61,6 @@ export function preview() {
     root: h('div', { class: 'preview' },
       stage,
       h('p', { class: 'preview__views', role: 'group', 'aria-label': 'Preview as' }, buttons),
-      hint,
     ),
     update(next) {
       data = next;

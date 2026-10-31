@@ -17,8 +17,8 @@ export function deckShelf() {
     h('header', { class: 'shelf__header' },
       h('h2', { class: 'shelf__title' }, 'Deck box'),
       h('span', { class: 'deck-shelf__actions' },
-        h('a', { class: 'button button--primary', href: '#/deck/new-note', 'aria-label': 'New note' }, '+ Energy'),
-        h('a', { class: 'button button--primary', href: '#/deck/new-snapshot', 'aria-label': 'New Snapshot' }, '+ Trainer'),
+        h('a', { class: 'button button--primary', href: '#/deck/new-note' }, '+ Note'),
+        h('a', { class: 'button button--primary', href: '#/deck/new-snapshot' }, '+ Snapshot'),
       ),
     ),
     summary,
@@ -30,8 +30,8 @@ export function deckShelf() {
     update(entries) {
       const live = entries.filter(({ status }) => status === 'published').length;
       summary.textContent = entries.length
-        ? `${plural(entries.length, 'card')}, ${live} live. Only live ones go in the box; drafts stay here.`
-        : 'Empty. Notes and Snapshots you publish go in the deck box beside the binder.';
+        ? `${plural(entries.length, 'card')}, ${live} live.`
+        : 'Empty.';
       grid.replaceChildren(...entries.map(deckTile));
     },
   };

@@ -1,6 +1,5 @@
 import { h, svg } from '../../src/lib/dom.js';
 import { MAX_TABS, sections } from '../../src/lib/sections.js';
-import { plural } from '../../src/lib/words.js';
 import { blankCard, FINISHES, RARITIES, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { photoGestures } from '../lib/photo-gestures.js';
@@ -44,20 +43,14 @@ function costRow() {
       dropdown('move.cost.0', TYPES, { 'aria-label': 'First energy' }),
       dropdown('move.cost.1', [...none, ...TYPES], { 'aria-label': 'Second energy' }),
     ),
-    'The first energy follows the type until you change it.',
   );
 }
 
-// Which binder tab "filed under" puts the card behind, among the other live cards'. Sealed cards only show under All.
-function whereFiled(value, live, others) {
-  if (!value) return 'Its tab in the binder. Left blank, it only shows under All.';
+// The binder only has so many tabs: a section past them only shows under All.
+function outOfTabs(value, others) {
+  if (!value) return '';
   const ranked = sections([...others, { stats: { filed: value } }]);
-  const place = ranked.findIndex((section) => section.value === value);
-  const company = ranked[place].count - 1;
-  const where = place >= MAX_TABS - 1 ? 'it only shows under All, since the binder’s out of tabs'
-    : company ? `it goes behind the “${value}” tab, with ${plural(company, 'other card')}`
-    : `it gets a “${value}” tab to itself`;
-  return live ? `${where[0].toUpperCase()}${where.slice(1)}.` : `Once it’s live, ${where}.`;
+  return ranked.findIndex((section) => section.value === value) >= MAX_TABS - 1 ? 'Out of tabs: only under All.' : '';
 }
 
 // Edit one card. Every field redraws the preview as you type.
@@ -80,11 +73,10 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
   const articleSection = section('Article',
     row('Text', composer('body', {
       rows: 12,
-      placeholder: 'Leave a blank line between paragraphs.',
       uploadPhoto,
       onError: (error) => flash(`Photo upload failed. ${error.message}`, true),
-    }), 'Tapping a published card opens this. Leave it empty and the card just flips.'),
-    text('slug', 'Address', { placeholder: 'from the title', maxlength: 60, hint: 'The end of its link: obishhh.nyc/?card=…' }),
+    })),
+    text('slug', 'Address', { placeholder: 'from the title', maxlength: 60 }),
   );
 
   const form = h('form', { class: 'editor__form', novalidate: true },
@@ -104,21 +96,21 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
     section('Move',
       text('move.name', 'Name', { placeholder: 'Overthink', maxlength: 24 }),
       number('move.score', 'Damage', { min: 0, max: 999 }),
-      textarea('move.text', 'Text', { placeholder: 'Write 600 words about one font. If heads, write 600 more.', maxlength: 80, hint: 'About 70 characters fit.' }),
+      textarea('move.text', 'Text', { placeholder: 'Write 600 words about one font. If heads, write 600 more.', maxlength: 80 }),
       costRow(),
     ),
     section('Small print',
       text('dex', 'Dex strip', { placeholder: 'Essay. Length: 640 words. Filed: Oct 28, 2026.', maxlength: 64 }),
       select('stats.weakness', 'Weakness', [{ value: '', label: 'Usual for its type' }, ...TYPES]),
-      select('stats.resistance', 'Resistance', [{ value: '', label: 'None' }, ...TYPES], { hint: 'Retreat comes from the read time.' }),
-      textarea('flavor', 'Flavor', { placeholder: 'Optional', maxlength: 80 }),
+      select('stats.resistance', 'Resistance', [{ value: '', label: 'None' }, ...TYPES]),
+      textarea('flavor', 'Flavor', { maxlength: 80 }),
     ),
     articleSection,
     sectionList,
   );
 
   const remove = button('Delete', 'button--danger', destroy);
-  const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished. It’s sealed again.'));
+  const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished.'));
   const save = button('Save draft', '', () => keep());
   const publish = button('Publish', 'button--primary', () => commit('published', 'Published.'));
   const actions = [remove, unpublish, save, publish];
@@ -184,7 +176,7 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
   function refresh() {
     const data = current();
     view.update(data);
-    filedHint.textContent = whereFiled(data.stats.filed, record?.status === 'published', others);
+    filedHint.textContent = outOfTabs(data.stats.filed, others);
     dirty = JSON.stringify(data) !== snapshot;
     renderState();
   }
@@ -257,11 +249,11 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
 
   function keep(options) {
     const live = record?.status === 'published';
-    return commit(live ? 'published' : 'draft', live ? 'Saved. The live card is updated.' : 'Saved. Still sealed on the site.', options);
+    return commit(live ? 'published' : 'draft', 'Saved.', options);
   }
 
   async function destroy() {
-    if (!record || !confirm(`Delete “${record.title || 'Untitled'}”? This can’t be undone.`)) return;
+    if (!record || !confirm(`Delete “${record.title || 'Untitled'}”?`)) return;
     busy(true);
     try {
       await onDelete(record);

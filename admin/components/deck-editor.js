@@ -70,70 +70,49 @@ function uploader({ uploadPhoto, onError, name, empty, filled }) {
 
 // The second photo, for a Snapshot split down the middle: add one, swap it, or take it away again.
 function secondRows({ uploadPhoto, onError }) {
-  const upload = uploader({ uploadPhoto, onError, name: 'photo.second.src', empty: 'Add a second photo…', filled: 'Change the second photo…' });
+  const upload = uploader({ uploadPhoto, onError, name: 'photo.second.src', empty: 'Add…', filled: 'Replace…' });
   const position = h('input', { type: 'hidden', name: 'photo.second.position' });
   const zoom = zoomControl('photo.second.zoom');
   const drop = h('button', { class: 'button button--quiet', type: 'button' }, 'Remove');
-  upload.src.addEventListener('uploaded', () => {
+  const forget = () => {
     position.value = '';
     zoom.clear();
-  });
+  };
+  upload.src.addEventListener('uploaded', forget);
   drop.addEventListener('click', () => {
     upload.src.value = '';
-    position.value = '';
-    zoom.clear();
+    forget();
     upload.src.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  const shown = row('Second photo', h('div', { class: 'inline' }, upload.button, drop, upload.src, position),
-    'Two photos split the picture down the middle. Drag either half in the preview to line it up, and pinch to zoom.');
-  const zoomRow = row('Second zoom', zoom.root);
+  const shown = row('Second photo', h('div', {}, h('div', { class: 'inline' }, upload.button, drop, upload.src, position), zoom.root));
   return {
     zoom,
-    rows: [shown, zoomRow],
+    rows: [shown],
     show(first, second) {
       shown.hidden = !first;
-      zoomRow.hidden = !second;
       drop.hidden = !second;
+      zoom.root.hidden = !second;
       upload.show(second);
     },
   };
 }
 
-// The photo: upload one, then pick what stays in frame.
+// The photo: upload one, then pick what stays in frame and how it's drawn.
 function photoRows({ uploadPhoto, onError }) {
+  const upload = uploader({ uploadPhoto, onError, name: 'photo.src', empty: 'Upload…', filled: 'Replace…' });
   const focus = focusPicker('photo.position');
-  const src = h('input', { type: 'hidden', name: 'photo.src' });
-  const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
-  const label = h('span', {}, 'Upload a photo…');
+  upload.src.addEventListener('uploaded', () => focus.clear());
   const focusRow = row('Focus', focus.root);
-  const lookRow = select('photo.look', 'Filter', LOOKS, { hint: 'Drawn on the card as it shows.' });
-  let uploading = false;
-  file.addEventListener('change', async () => {
-    const [picked] = file.files;
-    if (!picked) return;
-    uploading = true;
-    label.textContent = 'Uploading…';
-    try {
-      src.value = await uploadPhoto(picked);
-      focus.clear();
-      src.dispatchEvent(new Event('input', { bubbles: true }));
-    } catch (error) {
-      onError(error);
-    } finally {
-      uploading = false;
-      label.textContent = src.value ? 'Upload a different photo…' : 'Upload a photo…';
-      file.value = '';
-    }
-  });
+  const lookRow = select('photo.look', 'Filter', LOOKS);
   return {
-    file,
+    file: upload.file,
     focus,
-    rows: [row('Photo', h('div', {}, h('label', { class: 'button button--quiet art__upload' }, file, label), src)), focusRow, lookRow],
+    rows: [row('Photo', h('div', {}, upload.button, upload.src)), focusRow, lookRow],
     show(value) {
       focusRow.hidden = !value;
       lookRow.hidden = !value;
       focus.show(value);
-      if (!uploading) label.textContent = value ? 'Upload a different photo…' : 'Upload a photo…';
+      upload.show(value);
     },
   };
 }
@@ -144,9 +123,9 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
   const preview = h('div', { class: 'binder__pocket', style: { '--tilt': '0deg' } });
   const form = h('form', { class: 'editor__form', novalidate: true });
   const remove = button('Delete', 'button--danger', destroy);
-  const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished. It’s out of the box.'));
+  const unpublish = button('Unpublish', '', () => commit('draft', 'Unpublished.'));
   const save = button('Save draft', '', () => keep());
-  const publish = button('Publish', 'button--primary', () => commit('published', 'Published. It’s in the box.'));
+  const publish = button('Publish', 'button--primary', () => commit('published', 'Published.'));
   const actions = [remove, unpublish, save, publish];
   let flashTimer;
   let previewTimer;
@@ -183,10 +162,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
     h('div', { class: 'editor__body' },
       form,
       h('aside', { class: 'editor__preview', 'aria-label': 'Preview' },
-        h('div', { class: 'preview' },
-          h('div', { class: 'preview__stage' }, preview),
-          h('p', { class: 'preview__hint' }, 'How it looks when the deck box is tipped out.'),
-        ),
+        h('div', { class: 'preview' }, h('div', { class: 'preview__stage' }, preview)),
       ),
     ),
   );
@@ -210,10 +186,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
         ? section('Note',
           select('type', 'Type', TYPES),
           textarea('text', 'Words', { ...words, placeholder: 'Two pigeons fought over one fry. Both lost.' }),
-          text('link', 'Link', {
-            placeholder: 'nytimes.com/…', maxlength: 512, inputmode: 'url', autocapitalize: 'off', spellcheck: 'false',
-            hint: 'Somewhere to send people. It goes at the bottom, and makes it a Special Note.',
-          }),
+          text('link', 'Link', { placeholder: 'nytimes.com/…', maxlength: 512, inputmode: 'url', autocapitalize: 'off', spellcheck: 'false' }),
         )
         : section('Snapshot',
           ...photo.rows,
@@ -221,11 +194,11 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
           text('photo.alt', 'Alt text', { placeholder: 'Describe the photo', maxlength: 160 }),
           text('title', 'Title', { placeholder: 'Bodega Cat', maxlength: 24 }),
           textarea('text', 'Caption', { ...words, placeholder: 'Search your deck for a cat. He’s already on the counter.' }),
-          text('rule', 'Rule line', { placeholder: SNAPSHOT_RULE, maxlength: 60, hint: 'Left blank, it says the usual line.' }),
-          text('place', 'Place', { placeholder: 'Union Sq', maxlength: 18, hint: 'Short, so the copyright stays in the middle.' }),
+          text('rule', 'Rule line', { placeholder: SNAPSHOT_RULE, maxlength: 60 }),
+          text('place', 'Place', { placeholder: 'Union Sq', maxlength: 18 }),
         ),
       section('Small print',
-        text('date', 'Posted', { type: 'date', hint: 'Left blank, it’s today.' }),
+        text('date', 'Posted', { type: 'date' }),
         text('number', 'Number', { placeholder: '012/100', maxlength: 9 }),
       ),
     );
@@ -265,7 +238,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
 
   function refresh({ now = false } = {}) {
     const data = current();
-    counter.textContent = `${data.text.length} of ${MAX_TEXT[kind]}.${kind === 'note' ? ' Shorter gets written bigger.' : ''}`;
+    counter.textContent = `${data.text.length}/${MAX_TEXT[kind]}`;
     photo?.show(data.photo.src);
     second?.show(data.photo.src, data.photo.second?.src);
     dirty = editable(data) !== snapshot;
@@ -286,8 +259,8 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
   }
 
   function linkOk({ link }) {
-    if (!link || (linkTo(link) && !/\s/.test(link))) return true;
-    flash('That link doesn’t look like a web address.', true);
+    if (!link || (linkTo(link) && !/\s/.test(link) && link.length <= 512)) return true;
+    flash(link.length > 512 ? 'That link’s too long.' : 'That link doesn’t look like a web address.', true);
     form.elements.namedItem('link')?.focus();
     return false;
   }
@@ -319,11 +292,11 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
 
   function keep(options) {
     const live = record?.status === 'published';
-    return commit(live ? 'published' : 'draft', live ? 'Saved. The box is updated.' : 'Saved. Still a draft.', options);
+    return commit(live ? 'published' : 'draft', 'Saved.', options);
   }
 
   async function destroy() {
-    if (!record || !confirm('Take this card out of the deck for good? This can’t be undone.')) return;
+    if (!record || !confirm('Delete this card?')) return;
     busy(true);
     try {
       await onDelete(record);

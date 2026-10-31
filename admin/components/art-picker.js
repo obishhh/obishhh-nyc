@@ -8,7 +8,7 @@ const NO_CREDIT = { alt: '', illustrator: 'obishhh', title: '', author: '', lice
 const CREDIT_KEYS = Object.keys(NO_CREDIT);
 
 const LICENSE_CHOICES = [
-  { value: '', label: 'My own (no credit needed)' },
+  { value: '', label: 'Mine' },
   ...Object.keys(licenses).map((name) => ({ value: name, label: name })),
 ];
 
@@ -25,11 +25,11 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
   const focus = focusPicker('art.position');
   const grid = h('div', { class: 'art__grid' }, library.map((work) => option(work.src, work.title)));
   const file = h('input', { class: 'visually-hidden', type: 'file', accept: 'image/*' });
-  const uploadLabel = h('span', {}, 'Upload an image…');
+  const uploadLabel = h('span', {}, 'Upload…');
   const uploader = h('label', { class: 'button button--quiet art__upload' }, file, uploadLabel);
   const license = dropdown('art.license', LICENSE_CHOICES);
   const focusRow = row('Focus', focus.root);
-  const lookRow = select('art.look', 'Filter', LOOKS, { hint: 'Drawn on the card as it shows.' });
+  const lookRow = select('art.look', 'Filter', LOOKS);
   const root = h('div', { class: 'art' }, grid, uploader);
 
   const rows = [
@@ -40,7 +40,7 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
     text('art.illustrator', 'Illustrator', { placeholder: 'obishhh', maxlength: 40 }),
     text('art.title', 'Work', { placeholder: 'Title of the original' }),
     text('art.author', 'Author'),
-    row('License', license, 'Licensed art is listed on the credits page.'),
+    row('License', license),
     text('art.source', 'Source', { type: 'url', placeholder: 'https://' }),
   ];
   const control = (key) => rows.map((each) => each.querySelector(`[name="art.${key}"]`)).find(Boolean);
@@ -91,7 +91,7 @@ export function artPicker({ library, loadUploads, upload, creditFor, onError }) 
       onError(error);
     } finally {
       uploader.classList.remove('is-busy');
-      uploadLabel.textContent = 'Upload an image…';
+      uploadLabel.textContent = 'Upload…';
     }
   });
 
