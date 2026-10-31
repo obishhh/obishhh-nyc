@@ -374,11 +374,37 @@ const soon = (element, start) => {
 export const pixelated = (look) => Boolean(DRAW[look]?.pixelated);
 const lookClass = (look) => `look look--${look}${pixelated(look) ? ' look--pixelated' : ''}`;
 
+// How a photo sits in its frame: the point that stays in view (an object-position, "40% 60%") and how far it's zoomed
+// in on that point ("1.5"). Zoom grows the photo around the point and trims it back to its frame, so the frame and
+// everything around it stay as they are.
+export const MOST_ZOOM = 3;
+export const zoomOf = (zoom) => Math.min(MOST_ZOOM, Math.max(1, Number(zoom) || 1));
+export function framing(position = '', zoom = '') {
+  const style = position ? { 'object-position': position } : {};
+  const z = zoomOf(zoom);
+  if (z === 1) return style;
+  const [x = 50, y = 50] = (position.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+  const trim = 1 - 1 / z;
+  const cut = (value) => `${+(value * trim).toFixed(3)}%`;
+  return {
+    ...style,
+    transform: `scale(${z})`,
+    'transform-origin': `${x}% ${y}%`,
+    'clip-path': `inset(${cut(y)} ${cut(100 - x)} ${cut(100 - y)} ${cut(x)})`,
+  };
+}
+
+// Sets a photo's framing on it as it's shown, clearing whatever it had.
+export function frame(element, position, zoom) {
+  for (const name of ['object-position', 'transform', 'transform-origin', 'clip-path']) element.style.removeProperty(name);
+  for (const [name, value] of Object.entries(framing(position, zoom))) element.style.setProperty(name, value);
+}
+
 // A photo in a look. Default is the plain <img>; a look saved already drawn is that picture; the others swap the
 // plain photo for their drawing once it's ready, cropped and focused the same way.
-export function photo(src, { look = '', baked = '', alt = '', position = '', ...props } = {}) {
+export function photo(src, { look = '', baked = '', alt = '', position = '', zoom = '', ...props } = {}) {
   const filtered = isLook(look);
-  const style = position && { 'object-position': position };
+  const style = framing(position, zoom);
   if (filtered && baked) return h('img', { ...props, class: lookClass(look), src: baked, alt, decoding: 'async', style });
   // A look reads the photo's pixels, so ask for it that way from the start (before src), and it's only fetched once.
   const image = h('img', { ...props, crossorigin: filtered ? 'anonymous' : null, src, alt, decoding: 'async', style });
@@ -390,7 +416,7 @@ export function photo(src, { look = '', baked = '', alt = '', position = '', ...
     shown.className = lookClass(look);
     shown.setAttribute('role', 'img');
     shown.setAttribute('aria-label', alt);
-    if (position) shown.style.setProperty('object-position', position);
+    frame(shown, position, zoom);
     image.replaceWith(shown);
   }));
   return image;

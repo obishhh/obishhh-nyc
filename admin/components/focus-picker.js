@@ -1,10 +1,43 @@
 import { h } from '../../src/lib/dom.js';
+import { MOST_ZOOM, zoomOf } from '../../src/lib/looks.js';
 
 const STEP = 5;
 const clamp = (value) => Math.min(100, Math.max(0, Math.round(value)));
 
-// Pick the part of the picture that stays in frame. Stored as a CSS object-position.
+// How far a photo is zoomed in on its focus point: a slider, kept in a hidden field as "1.5" ('' for not at all).
+// Pinching the photo in the preview moves it too.
+export function zoomControl(name) {
+  const input = h('input', { type: 'hidden', name });
+  const slider = h('input', { class: 'zoom__slider', type: 'range', min: 1, max: MOST_ZOOM, step: 0.05, value: 1, 'aria-label': 'Zoom' });
+  const amount = h('span', { class: 'zoom__amount', 'aria-hidden': 'true' });
+  const show = (zoom) => {
+    slider.value = String(zoom);
+    amount.textContent = `${zoom.toFixed(1)}×`;
+  };
+  slider.addEventListener('input', () => {
+    const zoom = zoomOf(slider.value);
+    input.value = zoom === 1 ? '' : String(zoom);
+    show(zoom);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  return {
+    root: h('label', { class: 'zoom' }, h('span', { class: 'zoom__label' }, 'Zoom'), slider, amount, input),
+    input,
+    clear() {
+      input.value = '';
+      this.sync();
+    },
+    // Pick up whatever the form or a pinch just wrote into the hidden input.
+    sync() {
+      show(zoomOf(input.value));
+    },
+  };
+}
+
+// Pick the part of the picture that stays in frame, and how far in it's zoomed. Stored as a CSS object-position, and
+// beside it (`…zoom` for `…position`) the zoom.
 export function focusPicker(name) {
+  const zoom = zoomControl(name.replace(/position$/, 'zoom'));
   const input = h('input', { type: 'hidden', name });
   const image = h('img', { class: 'focus__image', alt: '', draggable: 'false' });
   const dot = h('span', { class: 'focus__dot', 'aria-hidden': 'true' });
@@ -58,7 +91,8 @@ export function focusPicker(name) {
 
   const root = h('div', { class: 'focus' },
     pad,
-    h('p', { class: 'row__hint' }, 'Drag the dot to choose what stays in frame. ', reset),
+    h('p', { class: 'row__hint' }, 'Drag the dot to choose what stays in frame, and pinch the preview to zoom. ', reset),
+    zoom.root,
     input,
   );
 
@@ -69,12 +103,14 @@ export function focusPicker(name) {
     },
     clear() {
       input.value = '';
+      zoom.clear();
       this.sync();
     },
-    // Pick up whatever the form just wrote into the hidden input.
+    // Pick up whatever the form, or a drag or pinch in the preview, just wrote into the hidden inputs.
     sync() {
       [x = 50, y = 50] = (input.value.match(/\d+(\.\d+)?/g) ?? []).map(Number);
       render();
+      zoom.sync();
     },
   };
 }

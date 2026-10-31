@@ -3,6 +3,7 @@ import { MAX_TABS, sections } from '../../src/lib/sections.js';
 import { plural } from '../../src/lib/words.js';
 import { blankCard, FINISHES, RARITIES, TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
+import { photoGestures } from '../lib/photo-gestures.js';
 import { formatDate } from '../lib/format.js';
 import { ARROW_LEFT } from '../lib/icons.js';
 import { recall, store } from '../lib/prefs.js';
@@ -270,6 +271,13 @@ export function editor({ cards, art: artOptions, uploadPhoto, onSave, onDelete, 
       busy(false);
     }
   }
+
+  // Drag the picture on the preview's card to slide it in its frame, or pinch it to zoom.
+  photoGestures(view.root, {
+    frames: '.card__art',
+    fields: () => ['art.position', 'art.zoom'].map((name) => form.elements.namedItem(name)),
+    onChange: () => art.sync(),
+  });
 
   form.addEventListener('input', ({ target }) => {
     // The first energy follows the type, unless it's been set to something else.

@@ -7,7 +7,8 @@ import { readForm, writeForm } from '../lib/form.js';
 import { formatDate } from '../lib/format.js';
 import { ARROW_LEFT } from '../lib/icons.js';
 import { button, row, section, select, text, textarea } from './fields.js';
-import { focusPicker } from './focus-picker.js';
+import { photoGestures } from '../lib/photo-gestures.js';
+import { focusPicker, zoomControl } from './focus-picker.js';
 
 const STATUS = { new: 'New', draft: 'Draft', published: 'Live' };
 const NAMES = { note: 'note', snapshot: 'Snapshot' };
@@ -27,7 +28,7 @@ function blankDeckCard(kind, deck) {
   const numbers = deck.map(({ number }) => parseInt(number, 10)).filter(Number.isFinite);
   const next = String(Math.max(0, ...numbers) + 1).padStart(3, '0');
   const set = deck.find(({ number }) => number.includes('/'))?.number.split('/')[1] ?? '100';
-  return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', rule: '', place: '', photo: { src: '', alt: '', position: '', look: '' }, date: today() };
+  return { kind, number: `${next}/${set}`, type: 'plain', title: '', text: '', rule: '', place: '', photo: { src: '', alt: '', position: '', zoom: '', look: '' }, date: today() };
 }
 
 // An upload button that puts the uploaded photo's address in a hidden field and says what it did.
@@ -67,19 +68,27 @@ function uploader({ uploadPhoto, onError, name, empty, filled }) {
 function secondRows({ uploadPhoto, onError }) {
   const upload = uploader({ uploadPhoto, onError, name: 'photo.second.src', empty: 'Add a second photo…', filled: 'Change the second photo…' });
   const position = h('input', { type: 'hidden', name: 'photo.second.position' });
+  const zoom = zoomControl('photo.second.zoom');
   const drop = h('button', { class: 'button button--quiet', type: 'button' }, 'Remove');
-  upload.src.addEventListener('uploaded', () => (position.value = ''));
+  upload.src.addEventListener('uploaded', () => {
+    position.value = '';
+    zoom.clear();
+  });
   drop.addEventListener('click', () => {
     upload.src.value = '';
     position.value = '';
+    zoom.clear();
     upload.src.dispatchEvent(new Event('input', { bubbles: true }));
   });
   const shown = row('Second photo', h('div', { class: 'inline' }, upload.button, drop, upload.src, position),
-    'Two photos split the picture down the middle. Drag either half in the preview to line it up.');
+    'Two photos split the picture down the middle. Drag either half in the preview to line it up, and pinch to zoom.');
+  const zoomRow = row('Second zoom', zoom.root);
   return {
-    rows: [shown],
+    zoom,
+    rows: [shown, zoomRow],
     show(first, second) {
       shown.hidden = !first;
+      zoomRow.hidden = !second;
       drop.hidden = !second;
       upload.show(second);
     },
@@ -148,50 +157,18 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
 
   trackPointer(preview, '.card');
 
-  // Drag a photo in the preview to slide it within its frame: either half of a split Snapshot, or the whole photo.
-  // The preview is redrawn as the form changes, so the frame is found again on every move.
-  let dragging = null;
-  const frameAt = (half) => preview.querySelector(half === null ? '.snapshot__art' : `.snapshot__half[data-half="${half}"]`);
-  const fieldFor = (half) => form.elements.namedItem(half === '1' ? 'photo.second.position' : 'photo.position');
-  preview.addEventListener('pointerdown', (event) => {
-    const frame = event.target.closest('.snapshot__half, .snapshot__art');
-    const picture = frame?.querySelector('img, canvas');
-    if (!frame || !picture || kind !== 'snapshot') return;
-    event.preventDefault();
-    preview.setPointerCapture(event.pointerId);
-    const [x = 50, y = 50] = (fieldFor(frame.dataset.half ?? null).value.match(/\d+(\.\d+)?/g) ?? []).map(Number);
-    dragging = { half: frame.dataset.half ?? null, x, y, from: [event.clientX, event.clientY] };
+  // Drag a photo in the preview to slide it within its frame, or pinch it to zoom: either half of a split Snapshot, or
+  // the whole photo.
+  photoGestures(preview, {
+    frames: '.snapshot__half, .snapshot__art',
+    keyOf: (frame) => frame.dataset.half ?? '',
+    fields: (half) => ['position', 'zoom'].map((field) => form.elements.namedItem(half === '1' ? `photo.second.${field}` : `photo.${field}`)),
+    enabled: () => kind === 'snapshot',
+    onChange: () => {
+      photo?.focus.sync();
+      second?.zoom.sync();
+    },
   });
-  preview.addEventListener('pointermove', (event) => {
-    if (!dragging || !preview.hasPointerCapture(event.pointerId)) return;
-    const frame = frameAt(dragging.half);
-    const picture = frame?.querySelector('img, canvas');
-    if (!picture) return;
-    // How far the photo overhangs its frame when it covers it: that's the room it has to slide.
-    const box = frame.getBoundingClientRect();
-    const [wide, tall] = picture instanceof HTMLImageElement ? [picture.naturalWidth, picture.naturalHeight] : [picture.width, picture.height];
-    if (!wide || !tall) return;
-    const scale = Math.max(box.width / wide, box.height / tall);
-    const [spareX, spareY] = [wide * scale - box.width, tall * scale - box.height];
-    const [dx, dy] = [event.clientX - dragging.from[0], event.clientY - dragging.from[1]];
-    const clamp = (v) => Math.min(100, Math.max(0, v));
-    const x = spareX > 0.5 ? clamp(dragging.x - (dx / spareX) * 100) : 50;
-    const y = spareY > 0.5 ? clamp(dragging.y - (dy / spareY) * 100) : 50;
-    const value = `${Math.round(x)}% ${Math.round(y)}%`;
-    picture.style.setProperty('object-position', value);
-    const field = fieldFor(dragging.half);
-    if (field.value !== value) {
-      field.value = value;
-      field.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-  });
-  const stopDragging = () => {
-    if (!dragging) return;
-    dragging = null;
-    photo?.focus.sync();
-  };
-  preview.addEventListener('pointerup', stopDragging);
-  preview.addEventListener('pointercancel', stopDragging);
 
   const root = h('div', { class: 'editor deck-editor' },
     h('div', { class: 'editor__bar' },
@@ -248,7 +225,7 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
 
   // What's in the form, tidied: trimmed, with a blank date read as today.
   function current() {
-    const values = { photo: { src: '', alt: '', position: '', look: '', second: { src: '', position: '' } }, ...readForm(form) };
+    const values = { photo: { src: '', alt: '', position: '', zoom: '', look: '', second: { src: '', position: '', zoom: '' } }, ...readForm(form) };
     const data = { ...record, ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, trim(value)])), kind };
     data.photo = Object.fromEntries(Object.entries(values.photo).map(([key, value]) => [key, trim(value)]));
     data.date ||= today();
@@ -348,10 +325,11 @@ export function deckEditor({ deck, uploadPhoto, onSave, onDelete, onDone }) {
       build();
     }
     const data = next ? structuredClone(next) : blankDeckCard(kind, deck());
-    data.photo = { src: '', alt: '', position: '', look: '', ...data.photo };
-    data.photo.second = { src: '', position: '', ...data.photo.second };
+    data.photo = { src: '', alt: '', position: '', zoom: '', look: '', ...data.photo };
+    data.photo.second = { src: '', position: '', zoom: '', ...data.photo.second };
     writeForm(form, data);
     photo?.focus.sync();
+    second?.zoom.sync();
     snapshot = editable(current());
     refresh({ now: true });
   }

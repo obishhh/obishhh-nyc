@@ -1,3 +1,5 @@
+import { zoomOf } from '../../src/lib/looks.js';
+
 // Paints a card the way the binder shows it sealed (blurred, washed out, no words) into a small image,
 // so the site can show one picture instead of blurring a live card.
 
@@ -9,7 +11,9 @@ const BLUR_RADII = [7, 6, 7];
 const SATURATION = 0.7;
 
 export async function sealedKey({ art, type, finish }) {
-  const bytes = new TextEncoder().encode(JSON.stringify([VERSION, art.baked || art.src, art.position, type, finish]));
+  // A zoom only joins the key when there is one, so cards without stay painted as they are.
+  const zoom = zoomOf(art.zoom) === 1 ? [] : [zoomOf(art.zoom)];
+  const bytes = new TextEncoder().encode(JSON.stringify([VERSION, art.baked || art.src, art.position, type, finish, ...zoom]));
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
   return [...digest.slice(0, 12)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
@@ -78,16 +82,19 @@ function coin(ctx, x, y, radius, fill) {
   ctx.restore();
 }
 
-function cover(ctx, image, x, y, w, h, position = '') {
+// Covers the frame the way the card does: cropped to its focus point, and zoomed in on that point.
+function cover(ctx, image, x, y, w, h, position = '', zoom = '') {
   const [px = 50, py = 50] = (position.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+  const z = zoomOf(zoom);
   const scale = Math.max(w / image.naturalWidth, h / image.naturalHeight);
   const dw = image.naturalWidth * scale;
   const dh = image.naturalHeight * scale;
+  const [ox, oy] = [x + w * (px / 100), y + h * (py / 100)];
   ctx.save();
   ctx.beginPath();
   ctx.rect(x, y, w, h);
   ctx.clip();
-  ctx.drawImage(image, x + (w - dw) * (px / 100), y + (h - dh) * (py / 100), dw, dh);
+  ctx.drawImage(image, ox + z * (x + (w - dw) * (px / 100) - ox), oy + z * (y + (h - dh) * (py / 100) - oy), dw * z, dh * z);
   ctx.restore();
 }
 
@@ -121,7 +128,7 @@ function drawCard(ctx, { type, finish, art }, image) {
 
   ctx.fillStyle = diagonal(ctx, 22, 50, 208, 134, [[0, c.foil[0]], [0.45, c.foil[1]], [1, c.foil[2]]]);
   ctx.fillRect(22, 50, 208, 134);
-  if (image) cover(ctx, image, 25, 53, 202, 128, art.position);
+  if (image) cover(ctx, image, 25, 53, 202, 128, art.position, art.zoom);
   if (finish === 'holo') rainbow(ctx, 25, 53, 202, 128, 0.25);
 
   const dex = ctx.createLinearGradient(22, 0, 230, 0);
