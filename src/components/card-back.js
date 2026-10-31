@@ -14,3 +14,8 @@ const LOGO = `<svg class="card-back__logo" viewBox="0 0 252 110" aria-hidden="tr
 export function cardBack() {
   return h('div', { class: 'card-back', 'aria-hidden': 'true' }, svg(LOGO));
 }
+
+// A card that turns over to this back: a button for it, face up to start with (see flip.js).
+export function flipCard(face, props) {
+  return h('div', { role: 'button', tabindex: 0, 'aria-pressed': 'false', ...props }, face, cardBack());
+}

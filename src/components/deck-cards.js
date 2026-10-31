@@ -2,8 +2,8 @@ import { knownType, typeName } from '../data/types.js';
 import { h, svg } from '../lib/dom.js';
 import { energyGlyphs } from '../lib/glyphs.js';
 import { photo } from '../lib/looks.js';
-import { safeImage } from '../lib/markdown.js';
 import { HAND, scribble } from '../lib/scrawl.js';
+import { linkTo, safeImage } from '../lib/urls.js';
 import { energy } from './energy.js';
 import { smallPrint } from './small-print.js';
 import { wear } from './wear.js';
@@ -14,16 +14,7 @@ const energyArt = (type) => `url('/assets/energy/${type}.webp')`;
 // Notes are written as big as they'll fit on the card, the way you would: shorter ones bigger. A little room is left
 // around the edges.
 const MARKER = { size: 46, width: 200, height: 236 };
-// Where a note links to, if it's a web address: the address, and the site's name without its www.
-export function linkTo(url) {
-  if (!/^https?:\/\//i.test(url ?? '')) return null;
-  try {
-    const { hostname } = new URL(url);
-    return hostname ? { href: url, site: hostname.replace(/^www\./, '') } : null;
-  } catch {
-    return null;
-  }
-}
+
 // Dates come as 'YYYY-MM-DD'. Midday, so no timezone tips them into the day before.
 const day = (date, options) => (date ? new Date(`${date}T12:00:00`).toLocaleDateString('en-US', options) : '');
 
@@ -58,16 +49,16 @@ export const SNAPSHOT_RULE = 'Play as many Snapshots as you like. Nobody’s cou
 // A Snapshot's picture: one photo, or two side by side, each half cropped to its own position. The halves are
 // numbered, so the editor can tell which one is being dragged.
 function snapshotPicture({ src, alt, position, zoom, look, baked, second }) {
-  const first = safeImage(src ?? '');
-  const other = safeImage(second?.src ?? '');
-  const firstBaked = safeImage(baked ?? '');
+  const first = safeImage(src);
+  const other = safeImage(second?.src);
+  const firstBaked = safeImage(baked);
   if (!first) return null;
   // Only fetched once it's shown: the deck's cards are made before anyone opens it, and may never be.
   if (!other) return photo(first, { alt, position, zoom, look, baked: firstBaked, loading: 'lazy' });
   return h('div', { class: 'snapshot__halves', role: 'img', 'aria-label': alt },
     h('div', { class: 'snapshot__half', dataset: { half: '0' } }, photo(first, { alt: '', position, zoom, look, baked: firstBaked, loading: 'lazy' })),
     h('div', { class: 'snapshot__half', dataset: { half: '1' } },
-      photo(other, { alt: '', position: second.position, zoom: second.zoom, look, baked: safeImage(second.baked ?? ''), loading: 'lazy' })),
+      photo(other, { alt: '', position: second.position, zoom: second.zoom, look, baked: safeImage(second.baked), loading: 'lazy' })),
   );
 }
 

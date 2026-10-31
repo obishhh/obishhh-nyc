@@ -1,7 +1,7 @@
+import { CARD } from '../components/card.js';
 import { reader } from '../components/reader.js';
 import { addressFor, openedIn } from './addresses.js';
 
-const CARD = { width: 252, height: 352 };
 const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 

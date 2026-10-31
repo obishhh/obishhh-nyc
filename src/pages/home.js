@@ -1,4 +1,5 @@
 import { binder } from '../components/binder.js';
+import { CARD } from '../components/card.js';
 import { colophon } from '../components/colophon.js';
 import { deckBox } from '../components/deck-box.js';
 import { deckCard } from '../components/deck-cards.js';
@@ -21,6 +22,8 @@ const POCKETS = 9;
 const ROWS_SHOWN = 2.25;
 // The smallest the cards get to fit a short window.
 const SMALLEST = 0.5;
+// The gap between the binder's rows, at full size (binder.css).
+const ROW_GAP = 28;
 // The All tab's value: blank, which no section can be, so a section called "all" can't clash with it.
 const ALL = '';
 
@@ -70,7 +73,7 @@ function fitToWindow(page) {
     if (!wide.matches) return root.style.removeProperty('--fit');
     // The cards' top doesn't move with their size, so it's safe to read with --fit already set.
     const top = page.getBoundingClientRect().top + scrollY;
-    const scale = (root.clientHeight - top) / (full * (352 + 28) + (ROWS_SHOWN - full) * 352);
+    const scale = (root.clientHeight - top) / (full * (CARD.height + ROW_GAP) + (ROWS_SHOWN - full) * CARD.height);
     const value = Math.max(SMALLEST, scale).toFixed(3);
     if (root.style.getPropertyValue('--fit') !== value) root.style.setProperty('--fit', value);
   };

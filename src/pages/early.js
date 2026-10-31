@@ -2,11 +2,12 @@
 // as they're back, so both are on their way while the rest of the page's code arrives.
 import { WIDE } from '../lib/screens.js';
 import { askEarly } from '../lib/supabase.js';
+import { safeImage } from '../lib/urls.js';
 
 // Fetched the way the card will ask for it, so the card finds it ready: a photo drawn in its look here is read back
 // pixel by pixel, which takes asking for it that way.
 function warm(src, { readBack = false } = {}) {
-  if (typeof src !== 'string' || !/^(https:\/\/|\/(?!\/))/.test(src)) return;
+  if (!safeImage(src)) return;
   const image = new Image();
   if (readBack) image.crossOrigin = 'anonymous';
   image.src = src;

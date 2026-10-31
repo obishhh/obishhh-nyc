@@ -1,9 +1,10 @@
 import { addressFor, deckKey, goodKey, openedIn } from '../lib/addresses.js';
 import { h, svg } from '../lib/dom.js';
+import { CARD } from './card.js';
 import { cardBack } from './card-back.js';
-import { linkTo } from './deck-cards.js';
 import { HAND, handwriting, INK, random, roughen, scrawl } from '../lib/scrawl.js';
 import { seeded } from '../lib/seeded.js';
+import { linkTo } from '../lib/urls.js';
 import { plural } from '../lib/words.js';
 
 // How far each card lands from its spot when tipped out: tilt in degrees, shift in px.
@@ -426,7 +427,7 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
   );
   // The peeking cards are real ones, shrunk to fit the box whatever size it's drawn at.
   new ResizeObserver(([entry]) => {
-    box.style.setProperty('--peek-scale', ((entry.contentRect.width * PEEK) / 252).toFixed(4));
+    box.style.setProperty('--peek-scale', ((entry.contentRect.width * PEEK) / CARD.width).toFixed(4));
   }).observe(box);
 
   // The deck's cards are made while nothing else is happening, a few at a time (a note's handwriting is the slow

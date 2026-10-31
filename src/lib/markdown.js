@@ -1,11 +1,7 @@
+import { safeImage, safeLink } from './urls.js';
+
 // Posts are a small Markdown: ## headings, > quotes, lists, ``` code, photos, **bold**, *italic*, `code`, [links](url).
 // It parses to plain data, so nothing in a post can become HTML.
-
-const SAFE_LINK = /^(https?:\/\/|mailto:|\/(?!\/)|#|\?)/i;
-const SAFE_IMAGE = /^(https:\/\/|\/(?!\/))/i;
-
-export const safeLink = (url) => (SAFE_LINK.test(url) ? url : null);
-export const safeImage = (url) => (SAFE_IMAGE.test(url) ? url : null);
 
 // Spans are capped in length so a stray marker can't send a pattern searching the whole post.
 const INLINE = [

@@ -1,7 +1,8 @@
-import { deckCard, linkTo, SNAPSHOT_RULE } from '../../src/components/deck-cards.js';
+import { deckCard, SNAPSHOT_RULE } from '../../src/components/deck-cards.js';
 import { h } from '../../src/lib/dom.js';
 import { LOOKS } from '../../src/lib/looks.js';
 import { trackPointer } from '../../src/lib/pointer.js';
+import { linkTo } from '../../src/lib/urls.js';
 import { TYPES } from '../data/options.js';
 import { readForm, writeForm } from '../lib/form.js';
 import { photoGestures } from '../lib/photo-gestures.js';

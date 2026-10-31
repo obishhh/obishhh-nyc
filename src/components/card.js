@@ -1,12 +1,15 @@
 import { knownType } from '../data/types.js';
 import { h } from '../lib/dom.js';
 import { photo } from '../lib/looks.js';
-import { safeImage } from '../lib/markdown.js';
+import { safeImage } from '../lib/urls.js';
 import { battleStats } from './battle-stats.js';
 import { energy } from './energy.js';
 import { rarity } from './rarity.js';
 import { smallPrint } from './small-print.js';
 import { wear } from './wear.js';
+
+// A card's size, as card.css draws it: the binder, the reader and the deck box scale it from here.
+export const CARD = { width: 252, height: 352 };
 
 // Letters that reach above the lowercase ones, so a word centres on its capitals rather than its x-height.
 const TALL = /[A-Z0-9bdfhkl]/;
@@ -23,8 +26,8 @@ function nameBar({ title, minutes, type }) {
 }
 
 function artwork({ src, alt, position, zoom, look, baked }) {
-  const picture = safeImage(src ?? '');
-  return h('figure', { class: 'card__art' }, picture && photo(picture, { alt, position, zoom, look, baked: safeImage(baked ?? ''), width: 202, height: 128 }));
+  const picture = safeImage(src);
+  return h('figure', { class: 'card__art' }, picture && photo(picture, { alt, position, zoom, look, baked: safeImage(baked), width: 202, height: 128 }));
 }
 
 function dexStrip({ dex, firstPrint }) {

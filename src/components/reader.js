@@ -1,7 +1,8 @@
 import { h, svg } from '../lib/dom.js';
+import { enableFlip } from '../lib/flip.js';
 import { article } from './article.js';
 import { card } from './card.js';
-import { cardBack } from './card-back.js';
+import { flipCard } from './card-back.js';
 import { rarity } from './rarity.js';
 
 const CLOSE = `<svg class="reader__icon" viewBox="0 0 16 16" aria-hidden="true">
@@ -10,10 +11,7 @@ const CLOSE = `<svg class="reader__icon" viewBox="0 0 16 16" aria-hidden="true">
 
 // A published card opened up: the card on one side, what it's about on the other.
 export function reader(data) {
-  const flip = h('div', { class: 'reader__flip', role: 'button', tabindex: 0, 'aria-pressed': 'false', 'aria-label': 'Turn the card over' },
-    card(data),
-    cardBack(),
-  );
+  const flip = flipCard(card(data), { class: 'reader__flip', 'aria-label': 'Turn the card over' });
   const close = h('button', { class: 'reader__close', type: 'button', 'aria-label': 'Close' }, svg(CLOSE));
 
   const root = h('div', { class: 'reader', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'reader-title', tabindex: -1, dataset: { type: data.type } },
@@ -32,12 +30,7 @@ export function reader(data) {
     ),
   );
 
-  flip.addEventListener('click', () => flip.setAttribute('aria-pressed', String(flip.getAttribute('aria-pressed') !== 'true')));
-  flip.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    flip.click();
-  });
+  enableFlip(flip, '.reader__flip');
 
   return {
     root,
