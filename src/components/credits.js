@@ -2,9 +2,16 @@ import { licenses } from '../data/licenses.js';
 import { h } from '../lib/dom.js';
 import { safeLink } from '../lib/markdown.js';
 
-function entry({ label, src, title, author, license, source, changes = 'cropped' }) {
+// The art as the card shows it. A sealed card only shares its blurred picture, which is the whole card: its thumbnail
+// is the art's window in it, so it lines up with the rest (or an empty one, before it's been painted).
+function thumb({ src, sealed }) {
+  if (sealed) return h('span', { class: 'credits__thumb credits__thumb--sealed' }, src && h('img', { src, alt: '', loading: 'lazy', decoding: 'async' }));
+  return h('img', { class: 'credits__thumb', src, alt: '', width: 202, height: 128, loading: 'lazy', decoding: 'async' });
+}
+
+function entry({ label, src, sealed, title, author, license, source, changes = 'cropped' }) {
   return h('li', { class: 'credits__entry' },
-    h('img', { class: 'credits__thumb', src, alt: '', width: 202, height: 128, loading: 'lazy', decoding: 'async' }),
+    thumb({ src, sealed }),
     h('div', { class: 'credits__text' },
       h('p', { class: 'credits__card' }, label),
       h('p', { class: 'credits__work' }, safeLink(source) ? h('a', { href: source }, title) : title, ` by ${author}`),
@@ -14,13 +21,12 @@ function entry({ label, src, title, author, license, source, changes = 'cropped'
 }
 
 // One entry per licensed work, in binder order. Your own photos need no credit.
-// Sealed cards only share their blurred picture, so that stands in as the thumbnail.
 function cardWorks(cards) {
   const works = new Map();
-  for (const { title, sealed, art } of cards) {
+  for (const { title, number, sealed, art } of cards) {
     const key = art.source || art.src;
     if (key && art.license && !works.has(key)) {
-      works.set(key, { label: sealed ? 'Sealed card' : title, ...art, src: art.src || art.sealed });
+      works.set(key, { label: sealed ? `Sealed card · ${number}` : title, ...art, sealed, src: sealed ? art.sealed : art.src });
     }
   }
   return [...works.values()];

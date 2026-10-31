@@ -39,6 +39,23 @@
   border-radius: 3px;
 }
 
+/* A sealed card's thumbnail: its blurred picture, which is the whole card at 300 × 400 (see admin/lib/sealed-image.js),
+   cropped to the art's window in it (202 × 128, at 49 in and 77 down), 8 inside it so the blurred frame stays out. */
+.credits__thumb--sealed {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--page-line);
+}
+
+.credits__thumb--sealed > img {
+  position: absolute;
+  top: calc(-85 / (186 * 128 / 202) * 100%);
+  left: calc(-57 / 186 * 100%);
+  width: calc(300 / 186 * 100%);
+  max-width: none;
+}
+
 .credits__card {
   margin: 0;
   font: 700 17px/1.3 var(--font-display);
