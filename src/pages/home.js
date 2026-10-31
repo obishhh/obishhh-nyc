@@ -14,7 +14,7 @@ import { trackPointer } from '../lib/pointer.js';
 import { revealWhenReady } from '../lib/reveal.js';
 import { handwriting } from '../lib/scrawl.js';
 import { WIDE } from '../lib/screens.js';
-import { sections } from '../lib/sections.js';
+import { MAX_TABS, sections } from '../lib/sections.js';
 
 const POCKETS = 9;
 // On a computer the window shows two rows and a peek of the third, so the cards stay a good size.
@@ -30,7 +30,8 @@ const sleeve = () =>
 // Hangs the tabs off the binder: All, then one per section. Picking one hides every other card, sealed ones included,
 // and empty sleeves fill out the page so it's as tall as the tabs.
 function tabbed(page, cards) {
-  const tabs = [{ value: ALL, label: 'All', count: cards.length }, ...sections(cards)];
+  // Only as many as the binder has tabs for: past those, a section only shows under All.
+  const tabs = [{ value: ALL, label: 'All', count: cards.length }, ...sections(cards)].slice(0, MAX_TABS);
   const asked = new URLSearchParams(location.search).get('filed');
   const pockets = [...page.children];
   const sleeves = Array.from({ length: POCKETS - 1 }, sleeve);
@@ -102,12 +103,17 @@ async function binderPage() {
   }
   if (!cards.length) return { root: notice('The binder is empty. Fresh cards soon.') };
 
-  const page = binder(cards, { label: 'Binder page 1' });
-  trackPointer(page, '.card');
-  // Reading has to come before flipping: it claims taps on cards with an article, so those open instead of turning over.
-  const reading = enableReading(page, cards);
-  enableFlip(page, '.binder__flip');
-  return { ...tabbed(page, cards), page, reading };
+  // A card that won't draw says so, rather than leaving the page blank.
+  try {
+    const page = binder(cards, { label: 'Binder page 1' });
+    trackPointer(page, '.card');
+    // Reading has to come before flipping: it claims taps on cards with an article, so those open instead of turning over.
+    const reading = enableReading(page, cards);
+    enableFlip(page, '.binder__flip');
+    return { ...tabbed(page, cards), page, reading };
+  } catch {
+    return { root: notice('The binder is stuck shut. Refresh to try again.') };
+  }
 }
 
 const main = h('main', { class: 'page' });

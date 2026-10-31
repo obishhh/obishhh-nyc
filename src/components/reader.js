@@ -16,7 +16,7 @@ export function reader(data) {
   );
   const close = h('button', { class: 'reader__close', type: 'button', 'aria-label': 'Close' }, svg(CLOSE));
 
-  const root = h('div', { class: 'reader', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'reader-title', dataset: { type: data.type } },
+  const root = h('div', { class: 'reader', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'reader-title', tabindex: -1, dataset: { type: data.type } },
     h('div', { class: 'reader__backdrop' }),
     h('article', { class: 'reader__sheet' },
       h('header', { class: 'reader__bar' },

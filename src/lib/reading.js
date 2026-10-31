@@ -113,7 +113,8 @@ export function enableReading(binder, cards) {
       pocket.classList.add('is-out');
       state.opening = fly(pocket.querySelector('.card'), from, to, 540).then(() => (view.pocket.style.visibility = ''));
     }
-    state.opening.then(() => current === state && !state.closing && view.close.focus({ preventScroll: true }));
+    // The keyboard goes to the ✕; a mouse or finger just to the article, so Safari doesn't ring the ✕ as if tabbed to.
+    state.opening.then(() => current === state && !state.closing && (usingKeyboard ? view.close : view.root).focus({ preventScroll: true }));
   }
 
   async function finish(state, pocket, returnFocus, outside) {
@@ -151,7 +152,9 @@ export function enableReading(binder, cards) {
   // Closing from the page: step back if we added the history entry, otherwise just
   // drop ?card= so a shared link doesn't send people off the site.
   function leave() {
-    if (!current || current.closing) return;
+    if (!current || current.closing || current.leaving) return;
+    // Once: a second ✕ or Esc before the step back lands would step back off the site.
+    current.leaving = true;
     if (current.pushed) history.back();
     else {
       history.replaceState(null, '', withCard(null));

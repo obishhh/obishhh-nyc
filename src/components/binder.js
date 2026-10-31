@@ -6,9 +6,10 @@ import { sealed } from './sealed.js';
 
 const MAX_TILT = 0.8;
 
+// A card with an article opens it; one without just turns over, so only that one is a button that stays pressed.
 function flippable(data) {
   const label = data.body ? `Read ${data.title}` : `${data.title}. Flip card.`;
-  return h('div', { class: 'binder__flip', role: 'button', tabindex: 0, 'aria-pressed': 'false', 'aria-label': label, dataset: data.body && { slug: data.slug } },
+  return h('div', { class: 'binder__flip', role: 'button', tabindex: 0, 'aria-pressed': !data.body && 'false', 'aria-label': label, dataset: data.body && { slug: data.slug } },
     card(data),
     cardBack(),
   );

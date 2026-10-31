@@ -13,7 +13,7 @@ const SEALED_FACE = {
 // The deck box's published notes and Snapshots, newest first.
 export const loadDeck = () => rpc('deck');
 
-// A published card with no text has no article, so it just flips.
+// A published card with no text has no article, so it just flips; nor does one with no address to open it at.
 export const loadBinder = async () =>
   (await rpc('binder')).map((data) =>
-    data.sealed ? { ...SEALED_FACE, ...data } : { ...data, body: data.body?.trim() || undefined });
+    data.sealed ? { ...SEALED_FACE, ...data } : { ...data, body: (data.slug && data.body?.trim()) || undefined });
