@@ -38,14 +38,14 @@ function twin(element) {
 }
 
 // Whatever lies on the binder over the pocket a card's going back into (the deck box, the Pokédex) stays over it as
-// it lands: lifted above the flight while it lasts, and coming up with the page as the article fades, as it would
-// from under the article.
+// it lands: lifted above the flight while it lasts, each as far as the next so they keep their own order, and coming
+// up with the page as the article fades, as it would from under the article.
 function keepOver(pocket, flight, fade) {
   const spot = pocket.getBoundingClientRect();
   for (const over of document.querySelectorAll('[data-over-binder]')) {
     const box = over.getBoundingClientRect();
     if (box.right < spot.left || box.left > spot.right || box.bottom < spot.top || box.top > spot.bottom) continue;
-    over.style.setProperty('z-index', '61');
+    over.style.setProperty('z-index', String(61 + (parseInt(getComputedStyle(over).zIndex, 10) || 0)));
     const coming = over.animate([{ opacity: 0 }, { opacity: 1 }], fade);
     flight.then(() => {
       coming.cancel();
