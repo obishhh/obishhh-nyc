@@ -223,7 +223,7 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   height: calc(352px * var(--note-scale));
   border-radius: 14px;
   transform: translate(var(--shift), var(--dy)) rotate(var(--tilt));
-  transition: transform 0.3s var(--ease-out), z-index 0s 0.3s;
+  transition: transform 0.3s var(--ease-out), z-index 0s 0.3s, opacity 0.3s;
   animation: tip-out 0.5s var(--ease-out) backwards;
   animation-delay: calc(min(var(--index), 8) * 45ms);
 }
@@ -249,6 +249,43 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 .deck-spread__card:focus-visible {
   outline: 2px solid var(--ink-900);
   outline-offset: 6px;
+}
+
+/* Up front to read: from its spot to the middle of the window, straightened and grown. The rest of the desk dims
+   and holds still underneath. */
+.deck-spread__card.is-front {
+  z-index: 5;
+  outline: none;
+  transform: translate(var(--front-x), var(--front-y)) scale(var(--front-scale));
+  transition: transform 0.42s var(--ease-out), z-index 0s;
+}
+
+.deck-spread.has-front { overflow: hidden; }
+.deck-spread.has-front .deck-spread__card:not(.is-front) { opacity: 0.25; }
+.deck-spread.has-front .deck-spread__bar { opacity: 0.35; transition: opacity 0.3s; }
+
+/* The raised card's ✕, at its top right corner. */
+.deck-spread__lower {
+  position: fixed;
+  z-index: 6;
+  animation: page-in 0.3s var(--ease-out) 0.25s backwards;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.18);
+}
+
+.deck-spread__lower[hidden] { display: none; }
+
+/* When the raised card went up: just the time, centred under it. */
+.deck-spread__time {
+  position: fixed;
+  z-index: 6;
+  left: 0;
+  margin: 0;
+  color: var(--page-muted);
+  font: 500 13px/1 var(--font-display);
+  letter-spacing: 0.04em;
+  text-align: center;
+  pointer-events: none;
+  animation: page-in 0.3s var(--ease-out) 0.25s backwards;
 }
 
 /* The card at full size, shrunk to fit; inside it, the card and its back, turned as one. */
