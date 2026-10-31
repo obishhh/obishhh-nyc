@@ -142,9 +142,78 @@ function smoothNoise(x, y, scale) {
 const PAPER = [246, 240, 226];
 const clamp = (v) => Math.max(0, Math.min(255, v));
 
+// A limited palette, the way a card's art keeps to a few colours: the picture's two or three strongest hues stay,
+// richer and pulled together, and everything else settles into earth tones, browns where it was warm and greys where
+// it was cool, keeping its light and dark.
+const HUE_BINS = 12;
+const KEPT_HUES = 3;
+const BROWNS = [[52, 38, 30], [118, 92, 70], [196, 178, 150], [240, 232, 214]];
+const GREYS = [[44, 46, 52], [110, 112, 118], [182, 184, 186], [236, 236, 232]];
+
+function hsl(r, g, b) {
+  const [max, min] = [Math.max(r, g, b) / 255, Math.min(r, g, b) / 255];
+  const light = (max + min) / 2;
+  if (max === min) return [0, 0, light];
+  const d = max - min;
+  const sat = light > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const [rr, gg, bb] = [r / 255, g / 255, b / 255];
+  const hue = max === rr ? ((gg - bb) / d + (gg < bb ? 6 : 0)) : max === gg ? (bb - rr) / d + 2 : (rr - gg) / d + 4;
+  return [hue * 60, sat, light];
+}
+
+function rgb(h, s, l) {
+  const k = (n) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  return [0, 8, 4].map((n) => 255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
+}
+
+const ramp = (stops, light) => {
+  const at = Math.min(stops.length - 1.001, Math.max(0, light * (stops.length - 1)));
+  const [low, t] = [Math.floor(at), at - Math.floor(at)];
+  return stops[low].map((v, c) => v + (stops[low + 1][c] - v) * t);
+};
+
+function limitPalette(data) {
+  // Which hues the picture is really about: weighted by how vivid each pixel is.
+  const weight = new Float32Array(HUE_BINS);
+  for (let i = 0; i < data.length; i += 4) {
+    const [h, sat, light] = hsl(data[i], data[i + 1], data[i + 2]);
+    if (sat > 0.3 && light > 0.12 && light < 0.92) weight[Math.floor(h / (360 / HUE_BINS)) % HUE_BINS] += sat * sat;
+  }
+  const total = weight.reduce((sum, w) => sum + w, 0) || 1;
+  const kept = [...weight.keys()].sort((a, b) => weight[b] - weight[a]).slice(0, KEPT_HUES).filter((bin) => weight[bin] / total > 0.06);
+  // Each kept hue settles on its own most-used shade, so a cat is one orange, not twenty.
+  const centre = new Map(kept.map((bin) => {
+    let [x, y] = [0, 0];
+    for (let i = 0; i < data.length; i += 4) {
+      const [h, sat] = hsl(data[i], data[i + 1], data[i + 2]);
+      if (Math.floor(h / (360 / HUE_BINS)) % HUE_BINS === bin && sat > 0.3) {
+        x += Math.cos((h * Math.PI) / 180) * sat;
+        y += Math.sin((h * Math.PI) / 180) * sat;
+      }
+    }
+    return [bin, ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360];
+  }));
+  for (let i = 0; i < data.length; i += 4) {
+    const [h, sat, light] = hsl(data[i], data[i + 1], data[i + 2]);
+    const bin = Math.floor(h / (360 / HUE_BINS)) % HUE_BINS;
+    const near = [bin, (bin + 1) % HUE_BINS, (bin + HUE_BINS - 1) % HUE_BINS].find((b) => centre.has(b));
+    let out;
+    if (near !== undefined && sat > 0.22) {
+      out = rgb(centre.get(near), Math.min(1, sat * 1.35 + 0.1), light);
+    } else {
+      // Warm leftovers (reds through yellow-greens) go brown; cool ones (greens through purples) go grey.
+      const warm = sat > 0.06 && (h < 75 || h > 330);
+      out = ramp(warm ? BROWNS : GREYS, light);
+    }
+    [data[i], data[i + 1], data[i + 2]] = out;
+  }
+}
+
 // The painted art of the first sets: soft washes of colour on paper, pooling darker where one wash meets the next,
 // over a faint pencil drawing.
 function watercolour({ data, width, height }) {
+  limitPalette(data);
   const wash = blurred(data, width, height, 3);
   const lines = edges(data, width, height);
   // Pigment settles in a few strengths, so neighbouring washes meet at an edge. Only the strength steps, never the
@@ -179,6 +248,7 @@ function watercolour({ data, width, height }) {
 // The coloured-pencil backgrounds of the first sets: strokes on a slant, packed tighter in the darks, cream paper
 // between them, and the shapes outlined in a darker pencil.
 function pencil({ data, width, height }) {
+  limitPalette(data);
   const soft = blurred(data, width, height, 1);
   const lines = edges(data, width, height);
   for (let i = 0; i < data.length; i += 4) {
@@ -204,6 +274,7 @@ function pencil({ data, width, height }) {
 
 // Official cel-style art: each colour flattened to a lit tone and a shadow tone, under clean dark outlines.
 function cel({ data, width, height }) {
+  limitPalette(data);
   const soft = blurred(data, width, height, 2);
   const lines = edges(blurred(data, width, height, 1), width, height);
   for (let i = 0; i < data.length; i += 4) {
@@ -222,6 +293,7 @@ function cel({ data, width, height }) {
 
 // Flat, punchier colour in a few steps, with dark outlines wherever the picture changes sharply.
 function comic({ data, width, height }) {
+  limitPalette(data);
   const lum = new Float32Array(width * height);
   for (let p = 0; p < lum.length; p += 1) lum[p] = 0.3 * data[p * 4] + 0.59 * data[p * 4 + 1] + 0.11 * data[p * 4 + 2];
   const edge = new Uint8Array(width * height);
