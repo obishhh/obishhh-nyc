@@ -82,7 +82,7 @@ const SAVE = `<svg class="deck-spread__icon" viewBox="0 0 16 16" aria-hidden="tr
 // and back; tap anywhere else (or its ✕, or Esc) and it goes back to its spot. Built once, then reused.
 function spread(entries, make, title, onClose) {
   const close = h('button', { class: 'deck-spread__close', type: 'button', 'aria-label': 'Put the cards back' }, svg(CLOSE));
-  // What comes up with a raised card: its ✕ and Save side by side at its bottom right corner, and under it the time
+  // What comes up with a raised card: Save and its ✕ side by side at its bottom right corner, and under it the time
   // it went up. They show when they're ready (`is-ready`) and a card is up, and arrive together as it lands.
   const lower = h('button', { class: 'deck-spread__close deck-spread__tool deck-spread__lower is-ready', type: 'button', 'aria-label': 'Put this card down' }, svg(CLOSE));
   const stamp = h('p', { class: 'deck-spread__tool deck-spread__time' });
@@ -114,8 +114,8 @@ function spread(entries, make, title, onClose) {
       }),
     ),
     stamp,
-    lower,
     save,
+    lower,
     go,
   );
   let openedAt = 0;
@@ -145,7 +145,7 @@ function spread(entries, make, title, onClose) {
   // Only a press and release both on the desk put the cards back, so dragging across a caption doesn't.
   dialog.addEventListener('pointerdown', (event) => (pressedOnDesk = onDesk(event.target)));
   // Up front and centre, big enough to read: the card slides from its spot to the middle of the window and grows,
-  // the rest of the desk dims, and its ✕ and Save come up at its corner. The desk stops scrolling while it's up.
+  // the rest of the desk dims, and its Save and ✕ come up at its corner. The desk stops scrolling while it's up.
   let front = null;
   const cards = () => [...dialog.querySelectorAll('.deck-spread__card')];
   function raise(card) {
@@ -213,14 +213,9 @@ function spread(entries, make, title, onClose) {
     ask(key).then((ok) => {
       if (front !== card) return;
       save.classList.toggle('is-ready', ok);
-      placeLower();
       if (ok && sharing()) fileOf(key);
     });
   }
-
-  // The ✕ beside Save, or in the corner itself for a card with no picture to save yet.
-  let corner = 0;
-  const placeLower = () => lower.style.setProperty('left', `${(saveable.get(front.dataset.key) === false ? corner : corner - 44).toFixed(1)}px`);
 
   // Where the raised card goes: worked out from its spot as laid out, without its tilt or nudge.
   function place() {
@@ -242,11 +237,11 @@ function spread(entries, make, title, onClose) {
     front.style.setProperty('--front-x', `${x.toFixed(1)}px`);
     front.style.setProperty('--front-y', `${y.toFixed(1)}px`);
     front.style.setProperty('--front-scale', scale.toFixed(3));
-    // Save on the raised card's bottom right corner, half off it but never off the screen, and the ✕ by it.
-    corner = Math.min(wide / 2 + (spot.width * scale) / 2 - 14, wide - 42);
+    // The ✕ on the raised card's bottom right corner, half off it but never off the screen, and Save just left of it.
+    const corner = Math.min(wide / 2 + (spot.width * scale) / 2 - 14, wide - 42);
     const bottom = middle + (spot.height * scale) / 2;
-    save.style.setProperty('left', `${corner.toFixed(1)}px`);
-    placeLower();
+    lower.style.setProperty('left', `${corner.toFixed(1)}px`);
+    save.style.setProperty('left', `${(corner - 44).toFixed(1)}px`);
     for (const tool of [save, lower]) tool.style.setProperty('top', `${(bottom - 14).toFixed(1)}px`);
     // The time it went up, just under the card.
     stamp.style.setProperty('top', `${(bottom + 12).toFixed(1)}px`);
