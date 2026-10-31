@@ -1,10 +1,12 @@
 import { h } from '../lib/dom.js';
+import { reducedMotion } from '../lib/screens.js';
 import { safeImage } from '../lib/urls.js';
 import { card } from './card.js';
 
 const ART_WAIT = 1200;
 
-// Painted in the editor when the card is saved. Older cards fall back to blurring the live card.
+// Painted in the editor when the card is saved. One saved before that is blurred from the card itself, which has
+// nothing on it but its type and number: a sealed card never sends its art or words.
 function face(data) {
   const painted = safeImage(data.art.sealed);
   if (painted) return h('img', { class: 'sealed__image', src: painted, alt: '', width: 300, height: 400, decoding: 'async' });
@@ -29,7 +31,6 @@ function notYet() {
   return { frames, duration: 340 + swings * 30 + Math.random() * 60 };
 }
 
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 // The blur says it's not out yet; screen readers get it said out loud. Tap it and it shakes its head.
 export function sealed(data) {

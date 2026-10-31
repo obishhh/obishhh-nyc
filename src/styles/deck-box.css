@@ -49,16 +49,21 @@
 
   position: absolute;
   top: 2.5%;
-  left: 27%;
+  left: calc((100% - var(--peek)) / 2);
+  width: var(--peek);
   aspect-ratio: 252 / 352;
   transform: var(--rest);
   transform-origin: 50% 100%;
   transition: transform var(--rise, 0.45s) var(--ease-out) var(--wait, 0s);
 }
 
-/* Their own layers only while they're likely to move, not the whole time the page is open. */
-.deck-box:hover .deck-box__peek,
-.deck-box:focus-within .deck-box__peek { will-change: transform; }
+/* Their own layers only while they're likely to move, not the whole time the page is open; never for a finger, whose
+   tap leaves :hover stuck and only ever opens the box. */
+@media (hover: hover) {
+  .deck-box:hover .deck-box__peek { will-change: transform; }
+}
+
+.deck-box:has(> .deck-box__open:focus-visible) .deck-box__peek { will-change: transform; }
 
 .deck-box__peek > .card {
   position: absolute;
@@ -133,8 +138,6 @@
 
 /* Opened: the cards tipped out over the page. */
 .deck-spread {
-  --note-scale: 1;
-
   width: 100%;
   height: 100%;
   max-width: none;
@@ -153,23 +156,37 @@
 
 .deck-spread:focus { outline: none; }
 
-/* Plain, not blurred: a blur under this much white barely shows, and costs the whole screen every frame. */
-.deck-spread::backdrop { background: rgb(255 255 255 / 0.9); }
+.deck-spread { -webkit-tap-highlight-color: transparent; }
+
+/* The backs of cards lying face up are out of sight, and only cost a repaint every frame they move. A raised card
+   needs its back for turning over, and one going back down may still be turning. */
+.deck-spread__card:not(.is-front, .is-turning) .card-back { visibility: hidden; }
+
+/* The white over the page: plain, not blurred, since a blur under this much white barely shows and costs the whole
+   screen every frame. Drawn by the desk itself rather than its backdrop, which Safari won't fade. */
+.deck-spread::backdrop { background: none; }
+
+.deck-spread::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgb(255 255 255 / 0.9);
+  pointer-events: none;
+}
 
 /* In: the desk fades up and the cards tip out on their own. Out: everything's put away quickly. */
-.deck-spread[open]::backdrop,
+.deck-spread[open]::before,
 .deck-spread[open] .deck-spread__bar { animation: page-in 0.25s var(--ease-out); }
 
-.deck-spread.is-closing::backdrop,
-.deck-spread.is-closing .deck-spread__bar { animation: put-away 0.18s ease-in forwards; }
+.deck-spread.is-closing::before,
+.deck-spread.is-closing .deck-spread__bar { animation: put-away var(--put-back) ease-in forwards; }
 
-.deck-spread.is-closing .deck-spread__card { animation: put-back 0.18s ease-in forwards; }
-
-html:has(.deck-spread[open]) { overflow: hidden; }
+.deck-spread.is-closing .deck-spread__card { animation: put-back var(--put-back) ease-in forwards; }
 
 .deck-spread__bar,
 .deck-spread__cards {
-  width: min(100%, calc(4 * 252px * var(--note-scale) + 72px));
+  width: min(100%, calc(4 * var(--card-width) + 72px));
   margin: 0 auto;
 }
 
@@ -214,21 +231,16 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   cursor: pointer;
 }
 
-.deck-spread__close:hover { background: var(--page-wash); }
-
-.deck-spread__icon {
-  width: 16px;
-  height: 16px;
+@media (hover: hover) {
+  .deck-spread__close:hover { background: var(--page-wash); }
 }
 
 /* Tight, so the cards' jitter lands them a little over each other. */
 .deck-spread__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, calc(252px * var(--note-scale)));
+  grid-template-columns: repeat(auto-fill, var(--card-width));
   justify-content: center;
   gap: 2px 6px;
-  padding: 0;
-  list-style: none;
 }
 
 /* A card coming forward jumps to the top at once; one going back stays on top until it has settled. */
@@ -236,17 +248,19 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   --shift: var(--dx);
 
   position: relative;
-  width: calc(252px * var(--note-scale));
-  height: calc(352px * var(--note-scale));
+  width: var(--card-width);
+  height: var(--card-height);
   border-radius: 14px;
   transform: translate(var(--shift), var(--dy)) rotate(var(--tilt));
+  cursor: pointer;
   transition: transform 0.3s var(--ease-out), z-index 0s 0.3s;
   animation: tip-out 0.5s var(--ease-out) backwards;
   animation-delay: calc(min(var(--index), 8) * 45ms);
 }
 
 /* Past the first screenful, cards are just there: no point animating what's off screen. */
-.deck-spread__card:nth-child(n + 13) { animation: none; }
+.deck-spread__card:nth-child(n + 13),
+.deck-spread__card.is-landed { animation: none; }
 
 /* Picked: on top of the pile, tilt and all. */
 .deck-spread__card.is-picked,
@@ -369,15 +383,13 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 /* It comes up with the card's ✕ and Save, and where it goes follows a beat behind. */
 .deck-spread.has-front .deck-spread__go.is-ready > .deck-spread__go-to { animation: rise-in 0.26s var(--ease-out) 0.44s backwards; }
 
-/* The card at full size, shrunk to fit; inside it, the card and its back, turned as one. */
+/* The card; inside it, the card and its back, turned as one. */
 .deck-spread__flip {
   position: absolute;
   top: 0;
   left: 0;
-  width: 252px;
-  height: 352px;
-  transform: scale(var(--note-scale));
-  transform-origin: 0 0;
+  width: var(--card-width);
+  height: var(--card-height);
   perspective: 1400px;
 }
 
@@ -387,14 +399,26 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   transform-style: preserve-3d;
 }
 
+/* Both ends written out, and gone once a card's landed: an animation left hanging on a card, or one that has to read
+   where it is to know where to start, keeps every later move of it off the graphics card. */
 @keyframes tip-out {
   from {
     opacity: 0;
     transform: translate(var(--shift), calc(var(--dy) - 36px)) rotate(calc(var(--tilt) * -2)) scale(0.94);
   }
+
+  to {
+    opacity: 1;
+    transform: translate(var(--shift), var(--dy)) rotate(var(--tilt));
+  }
 }
 
 @keyframes put-back {
+  from {
+    opacity: 1;
+    transform: translate(var(--shift), var(--dy)) rotate(var(--tilt));
+  }
+
   to {
     opacity: 0;
     transform: translate(var(--shift), calc(var(--dy) + 18px)) rotate(var(--tilt)) scale(0.97);

@@ -1,5 +1,6 @@
+import { reducedMotion } from './screens.js';
+
 const DURATION = 220;
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 // Fade the page out before following a link, instead of cutting to the next page.
 export function fadeOut(link) {

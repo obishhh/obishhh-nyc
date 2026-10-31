@@ -1,7 +1,7 @@
 .card-back {
   position: relative;
-  width: 252px;
-  height: 352px;
+  width: var(--card-width);
+  height: var(--card-height);
   border-radius: 12px;
   background: url('/assets/card-back.webp') center / 100% 100% no-repeat;
   box-shadow: 0 1px 2px rgb(13 10 5 / 0.22), 0 8px 14px -4px rgb(13 10 5 / 0.16);
@@ -48,13 +48,27 @@
   paint-order: stroke fill;
 }
 
+/* A card that turns over (flipCard), round its middle when it's pressed. Where it sits and how it's turned is up to
+   the binder or the reader. */
+.flip {
+  width: var(--card-width);
+  height: var(--card-height);
+  border-radius: 12px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s var(--ease-out);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.flip[aria-pressed='true'] { --flip: 180deg; }
+
 /* Wherever a card turns over (the binder, the reader, the flight between them, the deck), its face and this back sit on
    top of each other, each hidden from behind, the back turned round to start with. */
-:is(.binder__flip, .reader__flip, .reader-ghost__turn, .deck-spread__turn) > * {
+:is(.flip, .reader-ghost__turn, .deck-spread__turn) > * {
   position: absolute;
   inset: 0;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
 
-:is(.binder__flip, .reader__flip, .reader-ghost__turn, .deck-spread__turn) > .card-back { transform: rotateY(180deg); }
+:is(.flip, .reader-ghost__turn, .deck-spread__turn) > .card-back { transform: rotateY(180deg); }

@@ -1,13 +1,10 @@
 import { h, svg } from '../lib/dom.js';
 import { enableFlip } from '../lib/flip.js';
+import { CLOSE } from '../lib/glyphs.js';
 import { article } from './article.js';
 import { card } from './card.js';
 import { flipCard } from './card-back.js';
 import { rarity } from './rarity.js';
-
-const CLOSE = `<svg class="reader__icon" viewBox="0 0 16 16" aria-hidden="true">
-  <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-</svg>`;
 
 // A published card opened up: the card on one side, what it's about on the other.
 export function reader(data) {

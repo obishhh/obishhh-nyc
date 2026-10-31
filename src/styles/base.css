@@ -15,6 +15,12 @@ body {
 
 img { display: block; max-width: 100%; }
 
+/* The small line icons on buttons: ✕, Save. */
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
 /* Hidden means hidden, whatever display a part gives itself. */
 [hidden] { display: none !important; }
 
@@ -32,6 +38,13 @@ img { display: block; max-width: 100%; }
   overflow-x: clip;
 }
 
+/* While something's open over the page (an article, the deck, the Pokédex), the page stays put under it. Room for the
+   scrollbar is kept either way, so locking it doesn't nudge anything sideways. */
+html { scrollbar-gutter: stable; }
+
+html.is-reading,
+html:has(.deck-spread[open], .pokedex-says[open]) { overflow: hidden; }
+
 body { animation: page-in 0.3s var(--ease-out); }
 
 body.is-waiting {
@@ -39,11 +52,15 @@ body.is-waiting {
   animation: none;
 }
 
+/* Every keyframe says where it starts and ends, so none has to read what's underneath, which keeps it on the
+   graphics card. */
 @keyframes page-in {
   from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes put-away {
+  from { opacity: 1; }
   to { opacity: 0; }
 }
 
@@ -51,6 +68,11 @@ body.is-waiting {
   from {
     opacity: 0;
     transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

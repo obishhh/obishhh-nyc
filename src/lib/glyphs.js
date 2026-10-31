@@ -1,3 +1,8 @@
+// The ✕ that shuts or puts away.
+export const CLOSE = `<svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+  <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>`;
+
 // Type symbols: black shapes, with their cut-outs in the colour of the orb they sit on. Dark's orb is too dark for black,
 // so its moon is drawn in light, the way the real cards turn that one round.
 export const energyGlyphs = {

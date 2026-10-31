@@ -1,15 +1,11 @@
-/* Locking the page scroll mustn't nudge the binder sideways. */
-html { scrollbar-gutter: stable; }
-.is-reading { overflow: hidden; }
-
 /* The card in flight between the binder and an article. */
 .reader-ghost {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 60;
-  width: 252px;
-  height: 352px;
+  width: var(--card-width);
+  height: var(--card-height);
   pointer-events: none;
   will-change: transform;
   perspective: 1400px;
@@ -82,9 +78,9 @@ html { scrollbar-gutter: stable; }
   cursor: pointer;
 }
 
-.reader__close:hover { background: #ffffff; }
-.reader__icon { width: 16px; height: 16px; }
-
+@media (hover: hover) {
+  .reader__close:hover { background: #ffffff; }
+}
 .reader__layout {
   display: grid;
   grid-template-columns: 290px minmax(0, 1fr);
@@ -106,8 +102,8 @@ html { scrollbar-gutter: stable; }
 
 .reader__pocket {
   position: relative;
-  width: calc(252px * 1.15);
-  height: calc(352px * 1.15);
+  width: calc(var(--card-width) * 1.15);
+  height: calc(var(--card-height) * 1.15);
   perspective: 1400px;
 }
 
@@ -115,18 +111,11 @@ html { scrollbar-gutter: stable; }
   position: absolute;
   top: 0;
   left: 0;
-  width: 252px;
-  height: 352px;
-  border-radius: 12px;
   transform-origin: top left;
   /* Scaled from the corner, but turned over around its middle. */
-  transform: scale(1.15) translateX(126px) rotateY(var(--flip, 0deg)) translateX(-126px);
-  transform-style: preserve-3d;
-  transition: transform 0.6s var(--ease-out);
-  cursor: pointer;
+  transform: scale(1.15) translateX(calc(var(--card-width) / 2)) rotateY(var(--flip, 0deg)) translateX(calc(var(--card-width) / -2));
 }
 
-.reader__flip[aria-pressed='true'] { --flip: 180deg; }
 .reader__flip:focus-visible { outline-offset: 6px; }
 
 .reader__text {
@@ -155,6 +144,6 @@ html { scrollbar-gutter: stable; }
   }
 
   .reader__card { position: static; padding-top: 4px; }
-  .reader__pocket { width: calc(252px * 0.78); height: calc(352px * 0.78); }
-  .reader__flip { transform: scale(0.78) translateX(126px) rotateY(var(--flip, 0deg)) translateX(-126px); }
+  .reader__pocket { width: calc(var(--card-width) * 0.78); height: calc(var(--card-height) * 0.78); }
+  .reader__flip { transform: scale(0.78) translateX(calc(var(--card-width) / 2)) rotateY(var(--flip, 0deg)) translateX(calc(var(--card-width) / -2)); }
 }

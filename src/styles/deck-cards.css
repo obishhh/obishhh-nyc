@@ -195,10 +195,16 @@
   text-align: center;
 }
 
-/* No maker's mark on the left of a note, so the copyright needs centring on its own. */
-.note-card .card__footer {
+/* The copyright dead centre whatever's either side of it: three equal columns, the number in the last. A note has
+   nothing on the left; a Snapshot has its place, trimmed to its column. */
+:is(.note-card, .snapshot) .card__footer {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
+}
+
+:is(.note-card, .snapshot) .card__number { justify-self: end; }
+
+.note-card .card__footer {
   height: 11px;
   margin: 0 -6px;
   padding: 0 8px 1px;
@@ -207,8 +213,6 @@
   color: #4e525b;
   text-shadow: 0 0.5px 0 rgb(255 255 255 / 0.6);
 }
-
-.note-card .card__number { justify-self: end; }
 
 /* Plain marker, straight on the card. Long notes shrink to fit. */
 .note-card__ink {
@@ -327,12 +331,7 @@
   font: 400 10.5px/14px var(--font-body);
 }
 
-/* The copyright sits dead centre, whatever the place says: three equal columns, the place trimmed to its own. */
-.snapshot .card__footer {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 6px;
-}
+.snapshot .card__footer { gap: 6px; }
 
 .snapshot .card__footer > :first-child {
   min-width: 0;
@@ -340,8 +339,6 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-
-.snapshot .card__number { justify-self: end; }
 
 .snapshot__rule {
   color: var(--ink-600);

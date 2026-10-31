@@ -1,9 +1,11 @@
 import { addressFor, deckKey, goodKey, openedIn } from '../lib/addresses.js';
-import { h, svg } from '../lib/dom.js';
+import { copyDrawn, h, idle, svg } from '../lib/dom.js';
+import { CLOSE } from '../lib/glyphs.js';
 import { CARD } from './card.js';
 import { cardBack } from './card-back.js';
-import { HAND, handwriting, INK, random, roughen, scrawl } from '../lib/scrawl.js';
-import { seeded } from '../lib/seeded.js';
+import { reducedMotion } from '../lib/screens.js';
+import { HAND, handwriting, INK, roughen, scrawl } from '../lib/scrawl.js';
+import { jitter, random, seeded } from '../lib/seeded.js';
 import { linkTo } from '../lib/urls.js';
 import { plural } from '../lib/words.js';
 
@@ -27,12 +29,7 @@ const FLIP_OVER = [
   { transform: 'rotateY(180deg)', offset: 0.55 },
   { transform: 'rotateY(360deg)' },
 ];
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const percent = (part, whole) => `${((part / whole) * 100).toFixed(3)}%`;
-
-const CLOSE = `<svg class="deck-spread__icon" viewBox="0 0 16 16" aria-hidden="true">
-  <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-</svg>`;
 
 // Writes on the lid's front in marker, slanted with the face so it sits on the plastic.
 function label(text) {
@@ -73,7 +70,7 @@ const withDeckCard = (key) => addressFor('deck', key);
 // A deck card's picture to keep, drawn with its share page (see scripts/share-pages.mjs).
 const keepsakeOf = (key) => `/d/${encodeURIComponent(key)}/save.png`;
 
-const SAVE = `<svg class="deck-spread__icon" viewBox="0 0 16 16" aria-hidden="true">
+const SAVE = `<svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
   <path d="M8 2.5v7.5M4.8 7l3.2 3.2L11.2 7M3 12.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
@@ -93,7 +90,7 @@ function spread(entries, make, title, onClose) {
     h('span', {}, 'A wild link appeared!'),
     h('span', { class: 'deck-spread__go-to' }, 'Go to', site),
   );
-  const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1 },
+  const dialog = h('dialog', { class: 'deck-spread', 'aria-labelledby': 'deck-spread-title', tabindex: -1, style: { '--put-back': `${PUT_BACK}ms` } },
     h('header', { class: 'deck-spread__bar' },
       h('div', { class: 'deck-spread__heading' },
         h('h2', { class: 'deck-spread__title', id: 'deck-spread-title' }, title),
@@ -101,16 +98,19 @@ function spread(entries, make, title, onClose) {
       ),
       close,
     ),
-    h('ol', { class: 'deck-spread__cards' },
+    h('div', { class: 'deck-spread__cards' },
       entries.map((entry, index) => {
-        const toss = (key, most) => ((seeded(`${entry.id ?? index}:${key}`) * 2 - 1) * most).toFixed(1);
-        return h('li', {
-          class: 'deck-spread__card', tabindex: 0, dataset: { time: timeOf(entry.at), key: deckKey(entry), link: linkTo(entry.link)?.href ?? '' },
+        const toss = (key, most) => (jitter(`${entry.id ?? index}:${key}`) * most).toFixed(1);
+        const face = make(entry);
+        const link = linkTo(entry.link);
+        return h('div', {
+          class: 'deck-spread__card', role: 'button', tabindex: 0, 'aria-label': face.getAttribute('aria-label'),
+          dataset: { time: timeOf(entry.at), key: deckKey(entry), link: link?.href, site: link?.site },
           style: {
             '--tilt': `${toss('tilt', SCATTER.tilt)}deg`, '--dx': `${toss('x', SCATTER.x)}px`, '--dy': `${toss('y', SCATTER.y)}px`,
             '--side': index % 2 ? '1' : '-1', '--index': String(index),
           },
-        }, h('div', { class: 'deck-spread__flip' }, h('div', { class: 'deck-spread__turn' }, make(entry), cardBack())));
+        }, h('div', { class: 'deck-spread__flip' }, h('div', { class: 'deck-spread__turn' }, face, cardBack())));
       }),
     ),
     stamp,
@@ -137,10 +137,17 @@ function spread(entries, make, title, onClose) {
   const onDesk = (target) => !target.closest('.deck-spread__card, .deck-spread__bar');
   // A click with no pointer behind it (detail 0) came from Enter or Space.
   close.addEventListener('click', (event) => putBack({ withKey: event.detail === 0 }));
+  // Esc, or a phone's back gesture: a raised card goes down, or else the cards go away.
+  const goBack = () => {
+    if (!front) return putBack({ withKey: true });
+    const card = front;
+    const onTool = document.activeElement?.closest('.deck-spread__tool');
+    lowerCard();
+    if (onTool) card.focus({ preventScroll: true });
+  };
   dialog.addEventListener('cancel', (event) => {
     event.preventDefault();
-    if (front) lowerCard();
-    else putBack({ withKey: true });
+    goBack();
   });
   // Only a press and release both on the desk put the cards back, so dragging across a caption doesn't.
   dialog.addEventListener('pointerdown', (event) => (pressedOnDesk = onDesk(event.target)));
@@ -164,11 +171,11 @@ function spread(entries, make, title, onClose) {
     cards().forEach((each) => (each.inert = each !== card));
     stamp.textContent = card.dataset.time;
     stamp.classList.toggle('is-ready', Boolean(card.dataset.time));
-    const linked = linkTo(card.dataset.link);
-    go.classList.toggle('is-ready', Boolean(linked));
-    if (linked) {
-      go.href = linked.href;
-      site.textContent = linked.site;
+    const { link, site: where } = card.dataset;
+    go.classList.toggle('is-ready', Boolean(link));
+    if (link) {
+      go.href = link;
+      site.textContent = where;
     } else go.removeAttribute('href');
     if (goodKey(card.dataset.key)) history.replaceState(history.state, '', withDeckCard(card.dataset.key));
     offerSave(card);
@@ -213,7 +220,9 @@ function spread(entries, make, title, onClose) {
     ask(key).then((ok) => {
       if (front !== card) return;
       save.classList.toggle('is-ready', ok);
-      if (ok && sharing()) fileOf(key);
+      if (!ok || !sharing()) return;
+      for (const held of files.keys()) held === key || files.delete(held);
+      fileOf(key);
     });
   }
 
@@ -272,7 +281,11 @@ function spread(entries, make, title, onClose) {
     lowerCard();
     if (event.detail === 0) card?.focus({ preventScroll: true });
   });
-  addEventListener('resize', place);
+  let placing;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(placing);
+    placing = requestAnimationFrame(place);
+  });
 
   // On a phone, the share sheet, where Save Image puts it in Photos; elsewhere, or if sharing won't, a download.
   function download(file) {
@@ -280,20 +293,27 @@ function spread(entries, make, title, onClose) {
     link.click();
     setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   }
+  // One save at a time: a double tap saves once.
+  let saving = false;
   save.addEventListener('click', async (event) => {
     event.stopPropagation();
     const key = front?.dataset.key;
-    if (!key) return;
-    const fetched = files.get(key);
-    // Usually here already; if not, waited for, and a phone that won't share by then gets a download instead.
-    const file = fetched instanceof File ? fetched : await fileOf(key);
-    if (!file) return;
-    if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
-      // Cancelling the sheet is fine; anything else falls back to a download.
-      navigator.share({ files: [file] }).catch((error) => error.name === 'AbortError' || download(file));
-      return;
+    if (!key || saving || event.detail > 1) return;
+    saving = true;
+    try {
+      const fetched = files.get(key);
+      // Usually here already; if not, waited for, and a phone that won't share by then gets a download instead.
+      const file = fetched instanceof File ? fetched : await fileOf(key);
+      if (!file) return;
+      if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
+        // Cancelling the sheet is fine; anything else falls back to a download.
+        await navigator.share({ files: [file] }).catch((error) => error.name === 'AbortError' || download(file));
+        return;
+      }
+      download(file);
+    } finally {
+      saving = false;
     }
-    download(file);
   });
 
   // Turned over to its back and straight over again, the way you'd flip a card to check it.
@@ -301,32 +321,40 @@ function spread(entries, make, title, onClose) {
     const turn = card.querySelector('.deck-spread__turn');
     if (reducedMotion.matches || turn.getAnimations().length) return;
     const way = Math.random() < 0.5 ? 1 : -1;
+    // Its back shows while it turns, even if it's put down partway (deck-box.css).
+    card.classList.add('is-turning');
     turn.animate(FLIP_OVER.map(({ transform, offset }) => ({ offset, transform: transform.replace(/(\d+)deg/, (_, deg) => `${deg * way}deg`) })), {
       duration: 860, easing: 'cubic-bezier(0.45, 0, 0.2, 1)',
-    });
+    }).finished.catch(() => {}).then(() => card.classList.remove('is-turning'));
   }
 
-  const tap = (card) => (card === front ? flipOver(card) : raise(card));
+  const closing = () => dialog.classList.contains('is-closing');
   dialog.addEventListener('click', (event) => {
+    if (closing()) return;
     const card = event.target.closest('.deck-spread__card');
-    // With a card up, a tap on it turns it over; a tap anywhere else (another card, the desk) puts it down.
-    if (front) {
-      if (card === front) flipOver(card);
-      else if (!event.target.closest('.deck-spread__bar')) lowerCard();
-      return;
-    }
-    if (card) tap(card);
+    // With a card up, a tap on it turns it over; a tap anywhere else (the rest of the desk is dimmed) puts it down.
+    if (front) return card === front ? flipOver(card) : lowerCard();
+    if (card) raise(card);
     else if (pressedOnDesk && onDesk(event.target) && performance.now() - openedAt > SETTLE) putBack();
   });
   dialog.addEventListener('keydown', (event) => {
+    if (closing()) return event.key === 'Escape' && event.preventDefault();
+    // Esc is handled here rather than left to the dialog, which shuts at once on a second Esc in a row.
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      return goBack();
+    }
     const card = event.target.closest('.deck-spread__card');
     if (!card || (event.key !== 'Enter' && event.key !== ' ')) return;
     event.preventDefault();
-    if (front && card !== front) lowerCard();
-    tap(card);
+    if (card === front) flipOver(card);
+    else raise(card);
   });
+  // Landed: the tip-out's let go of, so the card's later moves stay smooth (deck-box.css).
+  dialog.addEventListener('animationend', (event) => event.animationName === 'tip-out' && event.target.classList.add('is-landed'));
   // However it shuts (put away, or closed from outside, like going Forward to an article), it's left tidy.
   dialog.addEventListener('close', () => {
+    cards().forEach((card) => card.classList.remove('is-landed'));
     landing += 1;
     dialog.classList.remove('is-closing');
     lowerCard({ instantly: true });
@@ -341,7 +369,7 @@ function spread(entries, make, title, onClose) {
     // Open on one card, raised: for a link to it. A card that's no longer in the deck just opens the deck.
     openOn(key) {
       this.open();
-      const card = [...dialog.querySelectorAll('.deck-spread__card')].find((each) => each.dataset.key === key);
+      const card = cards().find((each) => each.dataset.key === key);
       if (!card) return history.replaceState(history.state, '', withDeckCard(null));
       card.scrollIntoView({ block: 'center' });
       const ticket = (landing += 1);
@@ -396,9 +424,16 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
     class: 'deck-box__open', type: 'button', 'aria-haspopup': 'dialog',
     'aria-label': `Open the deck box: ${plural(entries.length, 'card')}`,
   });
+  // Each card's made once, the slow part being a note's handwriting: the ones peeking out of the box first, as they're
+  // what a hand going for it shows, then the rest of the deck. The box shows copies, and the spread's laid out from
+  // the cards themselves, so opening the box is instant.
+  const made = new Map();
+  const cardFor = (entry) => {
+    if (!made.has(entry)) made.set(entry, make(entry));
+    return made.get(entry);
+  };
   // The newest few, the newest in front. The ones behind stand to either side of it in turn, further out the
-  // further back they are, so each shows over a shoulder. Only the front one is drawn straight away; the rest are
-  // drawn when the page is idle, or as soon as someone goes for the box.
+  // further back they are, so each shows over a shoulder. Only the front one is drawn straight away.
   const peeks = entries.slice(0, PEEKING).map((entry, behind) => {
     // Standing in the box, each a little askew its own way.
     const settle = random(seeded(`peek:${entry.id ?? behind}`));
@@ -406,20 +441,29 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
     return h('span', {
       class: 'deck-box__peek', 'aria-hidden': 'true', inert: true,
       style: {
-        width: `${PEEK * 100}%`, '--behind': String(behind),
+        '--behind': String(behind),
         '--rest-x': `${(lean * 4 + between(settle, -2, 2)).toFixed(1)}%`,
         '--rest-r': `${(-3 + lean * 3 + between(settle, -2.5, 2.5)).toFixed(1)}deg`,
       },
-    }, behind === 0 && make(entry));
+    }, behind === 0 && copyDrawn(cardFor(entry)));
   });
   fanOut(peeks, random(seeded(`fan:${entries[0]?.id}`)));
-  let filled = peeks.length < 2;
-  const fillPeeks = () => {
-    if (filled) return;
-    filled = true;
-    peeks.slice(1).forEach((peek, index) => peek.append(make(entries[index + 1])));
+  const empty = peeks.slice(1).map((peek, index) => [peek, entries[index + 1]]);
+  // The next card that isn't made yet, peeking ones first: false once they all are.
+  const makeNext = () => {
+    if (empty.length) {
+      const [peek, entry] = empty.shift();
+      peek.append(copyDrawn(cardFor(entry)));
+      return true;
+    }
+    const entry = entries.find((each) => !made.has(each));
+    if (entry) cardFor(entry);
+    return Boolean(entry);
   };
-  const box = h('div', { class: 'deck-box', dataset: { overBinder: '' } },
+  const fillPeeks = () => {
+    while (empty.length) makeNext();
+  };
+  const box = h('div', { class: 'deck-box', dataset: { overBinder: '' }, style: { '--peek': `${PEEK * 100}%` } },
     [...peeks].reverse(),
     h('img', { class: 'deck-box__front', src: PHOTO.src, alt: '', width: PHOTO.width, height: PHOTO.height, decoding: 'async' }),
     label(text),
@@ -430,14 +474,10 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
     box.style.setProperty('--peek-scale', ((entry.contentRect.width * PEEK) / CARD.width).toFixed(4));
   }).observe(box);
 
-  // The deck's cards are made while nothing else is happening, a few at a time (a note's handwriting is the slow
-  // part), and then the spread's laid out from them, so opening the box is instant and no one moment pays for it all.
-  const made = new Map();
-  const madeFor = (entry) => made.get(entry) ?? make(entry);
   let view;
   const ready = () => {
     fillPeeks();
-    return (view ??= spread(entries, madeFor, title, ({ byKey }) => {
+    return (view ??= spread(entries, cardFor, title, ({ byKey }) => {
       // The dialog hands focus back to the box on its own as it shuts; keep it only for the keyboard.
       if (byKey) open.focus({ preventScroll: true });
       else open.blur();
@@ -446,28 +486,30 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
   box.addEventListener('pointerenter', fillPeeks, { once: true });
   open.addEventListener('focus', fillPeeks, { once: true });
   box.addEventListener('pointerenter', () => fanOut(peeks, Math.random));
-  open.addEventListener('focus', () => fanOut(peeks, Math.random));
-  const idle = (work) => ('requestIdleCallback' in window
-    ? requestIdleCallback(work, { timeout: 2000 })
-    : setTimeout(() => work({ timeRemaining: () => 0 }), 300));
+  open.addEventListener('focus', () => open.matches(':focus-visible') && fanOut(peeks, Math.random));
+  // Made while nothing else is happening: a card a moment, while it has room for one (a note takes 25–35ms), or one
+  // anyway once it's been put off a while.
   const prepare = (deadline) => {
     if (view) return;
-    for (const entry of entries) {
-      if (made.has(entry)) continue;
-      // At least one a time, and more while the moment lasts.
-      if (made.size && deadline.timeRemaining() < 8) return idle(prepare);
-      made.set(entry, make(entry));
+    while (deadline.didTimeout || deadline.timeRemaining() > 30) {
+      if (!makeNext()) return void ready();
+      if (deadline.didTimeout) break;
     }
-    ready();
+    idle(prepare, 2000);
   };
-  idle(prepare);
+  idle(prepare, 2000);
+  // Back or Forward onto a link to a card opens the deck on it, as following the link would.
+  addEventListener('popstate', () => keyInUrl() && !openedIn('card') && ready().openOn(keyInUrl()));
   open.addEventListener('click', () => ready().open());
   return {
     root: box,
-    // A link straight to one card (?deck=001-100): open the deck on it.
+    // A link straight to one card (?deck=001-100): open the deck on it, once its cards are made, a card a task so
+    // the page keeps moving as it comes up.
     openLinked() {
       const key = keyInUrl();
-      if (key) ready().openOn(key);
+      if (!key) return;
+      const next = () => (view || !makeNext() ? ready().openOn(key) : setTimeout(next));
+      next();
     },
   };
 }

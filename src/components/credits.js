@@ -2,8 +2,9 @@ import { licenses } from '../data/licenses.js';
 import { h } from '../lib/dom.js';
 import { safeImage, safeLink } from '../lib/urls.js';
 
-// The art as the card shows it. A sealed card only shares its blurred picture, which is the whole card: its thumbnail
-// is the art's window in it, so it lines up with the rest (or an empty one, before it's been painted).
+// The art as it was made, since it's the art being credited. A sealed card only shares its blurred picture, which is the
+// whole card: its thumbnail is the art's window in it, so it lines up with the rest (or an empty one, before it's
+// been painted).
 function thumb({ src: given, sealed }) {
   const src = safeImage(given);
   if (sealed) return h('span', { class: 'credits__thumb credits__thumb--sealed' }, src && h('img', { src, alt: '', loading: 'lazy', decoding: 'async' }));

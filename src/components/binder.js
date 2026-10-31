@@ -1,5 +1,5 @@
 import { h } from '../lib/dom.js';
-import { seeded } from '../lib/seeded.js';
+import { jitter } from '../lib/seeded.js';
 import { card } from './card.js';
 import { flipCard } from './card-back.js';
 import { sealed } from './sealed.js';
@@ -13,11 +13,15 @@ function flippable(data) {
 }
 
 function pocket(data) {
-  const tilt = (seeded(data.number) * 2 - 1) * MAX_TILT;
+  const tilt = jitter(data.number) * MAX_TILT;
   return h('li', { class: 'binder__pocket', style: { '--tilt': `${tilt.toFixed(2)}deg` } },
     data.sealed ? sealed(data) : flippable(data),
   );
 }
+
+// An empty pocket, so a short section still fills the page.
+export const sleeve = () =>
+  h('li', { class: 'binder__pocket', 'aria-hidden': 'true', style: { '--tilt': '0deg' } }, h('span', { class: 'binder__sleeve' }));
 
 export function binder(cards, { label = 'Binder page' } = {}) {
   return h('ol', { class: 'binder', 'aria-label': label }, cards.map(pocket));

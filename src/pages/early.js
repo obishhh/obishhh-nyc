@@ -31,6 +31,12 @@ askEarly('binder')?.then((cards) => {
 askEarly('deck')?.then(([newest]) => {
   if (!newest) return;
   warm('/assets/deck/box-front.webp');
+  if (newest.kind === 'note') {
+    // A note's painting and the light over it, or the classic light on its own.
+    warm('/assets/energy/classic.webp');
+    if (newest.design !== 'classic') warm(`/assets/energy/${newest.type}.webp`);
+    return;
+  }
   warmArt(newest.photo);
   if (newest.photo?.second?.src) warmArt({ ...newest.photo.second, look: newest.photo.look });
 }, () => {});

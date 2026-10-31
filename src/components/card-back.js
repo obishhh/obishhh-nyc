@@ -16,6 +16,6 @@ export function cardBack() {
 }
 
 // A card that turns over to this back: a button for it, face up to start with (see flip.js).
-export function flipCard(face, props) {
-  return h('div', { role: 'button', tabindex: 0, 'aria-pressed': 'false', ...props }, face, cardBack());
+export function flipCard(face, { class: name = '', ...props } = {}) {
+  return h('div', { role: 'button', tabindex: 0, 'aria-pressed': 'false', ...props, class: `flip ${name}`.trim() }, face, cardBack());
 }

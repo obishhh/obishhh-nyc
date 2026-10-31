@@ -98,8 +98,6 @@
 
 .pokedex-says::backdrop { background: none; }
 
-html:has(.pokedex-says[open]) { overflow: hidden; }
-
 .pokedex-says__box {
   position: relative;
   max-width: 320px;

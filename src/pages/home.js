@@ -1,4 +1,4 @@
-import { binder } from '../components/binder.js';
+import { binder, sleeve } from '../components/binder.js';
 import { CARD } from '../components/card.js';
 import { colophon } from '../components/colophon.js';
 import { deckBox } from '../components/deck-box.js';
@@ -27,9 +27,6 @@ const SMALLEST = 0.5;
 const ROW_GAP = 28;
 // The All tab's value: blank, which no section can be, so a section called "all" can't clash with it.
 const ALL = '';
-
-const sleeve = () =>
-  h('li', { class: 'binder__pocket', 'aria-hidden': 'true', style: { '--tilt': '0deg' } }, h('span', { class: 'binder__sleeve' }));
 
 // Hangs the tabs off the binder: All, then one per section. Picking one hides every other card, sealed ones included,
 // and empty sleeves fill out the page so it's as tall as the tabs.

@@ -1,4 +1,4 @@
-import { h } from './dom.js';
+import { copyCanvas, h, idle } from './dom.js';
 
 // How a photo can be shown on a card. The editor draws a photo's look when it's saved and keeps the picture beside
 // it (`baked`), so the site just shows that. One saved before then is drawn here instead: the plain photo goes up
@@ -393,40 +393,38 @@ export function draw(src, look) {
   return drawn.get(key);
 }
 
-function copy(canvas) {
-  const twin = Object.assign(document.createElement('canvas'), { width: canvas.width, height: canvas.height });
-  twin.getContext('2d').drawImage(canvas, 0, 0);
-  return twin;
-}
-
 // Drawing a look is heavy, so a photo only starts once it's on the page with a size (a card on a tab that isn't open,
 // or in the closed deck, costs nothing until it's shown), and then when the page has a moment, so it doesn't stall
 // whatever's moving as it appears. Not when it scrolls into view: the open deck draws them all, so none is blank.
-const idle = (start) => ('requestIdleCallback' in window ? requestIdleCallback(start, { timeout: 500 }) : setTimeout(start, 50));
 const soon = (element, start) => {
   if (!('ResizeObserver' in window)) return start();
   const watch = new ResizeObserver((entries) => {
     if (!entries.some(({ contentRect }) => contentRect.width && contentRect.height)) return;
     watch.disconnect();
-    idle(start);
+    idle(start, 500);
   });
   watch.observe(element);
 };
 
 // The pixel looks are drawn small and shown big, every pixel a hard square.
 export const pixelated = (look) => Boolean(DRAW[look]?.pixelated);
-const lookClass = (look) => `look look--${look}${pixelated(look) ? ' look--pixelated' : ''}`;
+const lookClass = (look) => `look${pixelated(look) ? ' look--pixelated' : ''}`;
 
 // How a photo sits in its frame: the point that stays in view (an object-position, "40% 60%") and how far it's zoomed
 // in on that point ("1.5"). Zoom grows the photo around the point and trims it back to its frame, so the frame and
 // everything around it stay as they are.
 export const MOST_ZOOM = 3;
 export const zoomOf = (zoom) => Math.min(MOST_ZOOM, Math.max(1, Number(zoom) || 1));
-export function framing(position, zoom) {
+// The point as numbers out of 100: "40% 60%" is [40, 60], and anything missing is the middle.
+export function focusOf(position) {
+  const [x = 50, y = 50] = (String(position || '').match(/\d+(\.\d+)?/g) ?? []).map(Number);
+  return [x, y];
+}
+function framing(position, zoom) {
   const style = position ? { 'object-position': position } : {};
   const z = zoomOf(zoom);
   if (z === 1) return style;
-  const [x = 50, y = 50] = (String(position || '').match(/\d+(\.\d+)?/g) ?? []).map(Number);
+  const [x, y] = focusOf(position);
   const trim = 1 - 1 / z;
   const cut = (value) => `${+(value * trim).toFixed(3)}%`;
   return {
@@ -445,7 +443,7 @@ export function frame(element, position, zoom) {
 
 // A look's drawing, as a photo in its frame.
 function drawing(canvas, { look, alt, position, zoom }) {
-  const shown = copy(canvas);
+  const shown = copyCanvas(canvas);
   shown.className = lookClass(look);
   shown.setAttribute('role', 'img');
   shown.setAttribute('aria-label', alt);
@@ -468,12 +466,7 @@ export function photo(src, { look = '', baked = '', alt = '', position = '', zoo
   // A look reads the photo's pixels, so ask for it that way from the start (before src), and it's only fetched once.
   const image = h('img', { ...props, crossorigin: filtered ? 'anonymous' : null, src, alt, decoding: 'async', style });
   if (!filtered) return image;
-  image.dataset.look = look;
-  const swap = () => draw(src, look).then((canvas) => {
-    if (!canvas) delete image.dataset.look;
-    if (!canvas || !image.parentNode) return;
-    image.replaceWith(drawing(canvas, { look, alt, position, zoom }));
-  });
+  const swap = () => draw(src, look).then((canvas) => canvas && image.parentNode && image.replaceWith(drawing(canvas, { look, alt, position, zoom })));
   // Already being drawn for another card: this one takes it as soon as it's done.
   if (drawn.has(keyOf(src, look))) swap();
   else soon(image, swap);

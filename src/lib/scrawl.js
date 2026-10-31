@@ -1,4 +1,5 @@
-import { seeded } from './seeded.js';
+import { copyCanvas } from './dom.js';
+import { jitter, random, seeded } from './seeded.js';
 
 export const INK = [30, 27, 38];
 // The marker hand everything's written in.
@@ -11,20 +12,10 @@ export const handwriting = (hand = HAND) =>
 const DEG = Math.PI / 180;
 
 // The same wobble (-1 to 1) for the same text every time, so handwriting doesn't change on reload.
-const wobbler = (text) => (key) => seeded(`${text}:${key}`) * 2 - 1;
-
-export function random(seed) {
-  let state = Math.floor(seed * 4294967295) || 1;
-  return () => {
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+const wobbler = (text) => (key) => jitter(`${text}:${key}`);
 
 // Size the word is written at; it's scaled to fit its spot afterwards.
-export const EM = 64;
+const EM = 64;
 
 let measurer;
 const measure = (font) => {
@@ -121,8 +112,7 @@ const written = new Map();
 const KEEP = 40;
 
 function copy(sheet) {
-  const twin = Object.assign(document.createElement('canvas'), { width: sheet.width, height: sheet.height });
-  twin.getContext('2d').drawImage(sheet, 0, 0);
+  const twin = copyCanvas(sheet);
   twin.style.width = sheet.style.width;
   return twin;
 }
@@ -197,7 +187,7 @@ function write(text, { hand, size: biggest, width, height = Infinity }) {
     const word = scrawl(line, { hand });
     const fit = Math.min(scale * ratio, sheet.width / word.width);
     const [w, h] = [word.width * fit, word.height * fit];
-    const drift = (seeded(`${line}:drift`) * 2 - 1) * Math.max(0, sheet.width - w) * 0.3;
+    const drift = jitter(`${line}:drift`) * Math.max(0, sheet.width - w) * 0.3;
     ink.drawImage(word, (sheet.width - w) / 2 + drift, ((index + 0.5) * leading + size * 0.25) * ratio - h / 2, w, h);
   });
   // A note is written in Sharpie: solid strokes, only a whisper of patchiness.

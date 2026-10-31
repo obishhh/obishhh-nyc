@@ -1,8 +1,8 @@
 import { h } from '../lib/dom.js';
-import { HAND, handwriting, inkOver, place, random, roughen, scrawl, swipe } from '../lib/scrawl.js';
+import { HAND, handwriting, inkOver, place, roughen, scrawl, swipe } from '../lib/scrawl.js';
 import { WIDE } from '../lib/screens.js';
 import { MAX_TABS } from '../lib/sections.js';
-import { seeded } from '../lib/seeded.js';
+import { jitter, random, seeded } from '../lib/seeded.js';
 import { plural } from '../lib/words.js';
 
 // Where each of the photo's MAX_TABS tabs sits, top to bottom (side) or left to right (top): its edges and the middle of its face.
@@ -47,7 +47,7 @@ function mark(index, label, side) {
     pen.translate(0, length);
     pen.rotate(-Math.PI / 2);
   }
-  swipe(pen, { length, at: (MARK.inside + 1) * DETAIL, weight: MARK.weight * DETAIL, wobble: (key) => seeded(`${label}:mark:${key}`) * 2 - 1 });
+  swipe(pen, { length, at: (MARK.inside + 1) * DETAIL, weight: MARK.weight * DETAIL, wobble: (key) => jitter(`${label}:mark:${key}`) });
   roughen(canvas, random(seeded(`${label}:mark`)), MARKERS[index]);
   return canvas;
 }
@@ -98,7 +98,7 @@ export function dividers(tabs, { active, onSelect, hand = HAND }) {
       place(pen, scrawl(String(tab.label).slice(0, LONGEST), { hand }), {
         x: side ? across : along, y: side ? along : across, angle: side ? -Math.PI / 2 : 0,
         size: face, length: ((to - from) / 100) * length * ROOM.length, thickness: face * ROOM.thickness,
-        wobble: [seeded(`${tab.label}:along`) * 2 - 1, seeded(`${tab.label}:across`) * 2 - 1],
+        wobble: [jitter(`${tab.label}:along`), jitter(`${tab.label}:across`)],
       });
     });
     inkOver(ctx, ink, seeded(shown.map((tab) => tab.label).join()));

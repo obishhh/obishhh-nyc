@@ -1,9 +1,10 @@
 import { CARD } from '../components/card.js';
 import { reader } from '../components/reader.js';
 import { addressFor, openedIn } from './addresses.js';
+import { copyDrawn } from './dom.js';
+import { reducedMotion } from './screens.js';
 
 const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
@@ -29,14 +30,6 @@ const number = (element, property) => parseFloat(getComputedStyle(element).getPr
 const transform = ({ x, y, scale, turn }) =>
   `translate(${x - CARD.width / 2}px, ${y - CARD.height / 2}px) scale(${scale}) rotate(${turn}deg)`;
 
-// A copy keeps a canvas's size but not what's drawn on it (a photo in a look), so draw that across too.
-function twin(element) {
-  const copy = element.cloneNode(true);
-  const drawn = element.querySelectorAll('canvas');
-  copy.querySelectorAll('canvas').forEach((canvas, index) => canvas.width && canvas.height && canvas.getContext('2d').drawImage(drawn[index], 0, 0));
-  return copy;
-}
-
 // Whatever lies on the binder over the pocket a card's going back into (the deck box, the Pokédex) stays over it as
 // it lands: lifted above the flight while it lasts, each as far as the next so they keep their own order, and coming
 // up with the page as the article fades, as it would from under the article.
@@ -61,7 +54,7 @@ function fly(face, from, to, duration, back = null) {
   ghost.className = 'reader-ghost';
   const turn = document.createElement('div');
   turn.className = 'reader-ghost__turn';
-  turn.append(twin(face));
+  turn.append(copyDrawn(face));
   if (back) turn.append(back.cloneNode(true));
   ghost.append(turn);
   document.body.append(ghost);

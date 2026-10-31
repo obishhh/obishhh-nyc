@@ -10,7 +10,7 @@ import { wear } from './wear.js';
 
 // Each type's energy, painted (scripts/energy-art.mjs): water's ripples, fire's flames, and so on. A classic note
 // has none: it's the type's plain colour and the light that every type shares (deck-cards.css).
-const energyArt = (type, design) => (design === 'classic' ? null : `url('/assets/energy/${type}.webp')`);
+const energyArt = (type, classic) => (classic ? null : `url('/assets/energy/${type}.webp')`);
 
 // Notes are written as big as they'll fit on the card, the way you would: shorter ones bigger. A little room is left
 // around the edges.
@@ -22,17 +22,18 @@ const day = (date, options) => (date ? new Date(`${date}T12:00:00`).toLocaleDate
 // A note: a blank energy card somebody wrote on in marker. Silver bars top and bottom, the type's
 // symbol glowing in the middle. The writing is a picture, so it carries the words for screen readers.
 // One with a link is a Special Note, the way an energy that does more than the basics is a Special Energy; the link
-// itself comes up under it when it's raised (see deck-box.js). A classic one is laid out like the very first energy
-// cards instead: a coloured band across the top and white light round the orb.
+// itself comes up under it when it's raised (see deck-box.js). A classic one is laid out like the energy cards before
+// the paintings instead: the type's plain colour, white light round the orb, and a plain silver bar.
 export function noteCard({ type: given, design, text, date, number, link }) {
   const type = knownType(given);
+  const classic = design === 'classic';
   const ink = text ? scribble(text, { hand: HAND, ...MARKER }) : null;
   ink?.classList.add('note-card__ink');
   ink?.setAttribute('role', 'img');
   ink?.setAttribute('aria-label', text);
   const posted = day(date, { month: 'short', day: 'numeric', year: 'numeric' });
-  return h('article', { class: 'card note-card', dataset: { type, design: design === 'classic' ? design : null, finish: 'standard' }, 'aria-label': `${typeName(type)} Type note` },
-    h('div', { class: 'card__panel', style: { '--energy-art': energyArt(type, design) } },
+  return h('article', { class: 'card note-card', dataset: { type, design: classic ? 'classic' : null }, 'aria-label': `${typeName(type)} Type note` },
+    h('div', { class: 'card__panel', style: { '--energy-art': energyArt(type, classic) } },
       h('header', { class: 'note-card__bar' }, h('span', { class: 'note-card__label' }, linkTo(link) ? 'Special Note' : 'Basic Note'), energy(type)),
       h('div', { class: 'note-card__energy', 'aria-hidden': 'true' }, h('span', { class: 'note-card__orb' }, svg(energyGlyphs[type]))),
       h('span', { class: 'note-card__wear', 'aria-hidden': 'true' }),
@@ -68,7 +69,7 @@ function snapshotPicture({ src, alt, position, zoom, look, baked, second }) {
 export function snapshotCard({ title, photo: picked, text, rule, place, date, number }) {
   const when = day(date, { month: 'short', day: 'numeric' });
   const shot = picked && typeof picked === 'object' ? picked : {};
-  return h('article', { class: 'card snapshot', dataset: { finish: 'standard' }, 'aria-label': title },
+  return h('article', { class: 'card snapshot', 'aria-label': title },
     h('div', { class: 'card__panel' },
       h('p', { class: 'snapshot__banner' }, 'Snapshot'),
       h('h2', { class: 'card__title' }, title),

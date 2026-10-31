@@ -8,7 +8,7 @@ import { rarity } from './rarity.js';
 import { smallPrint } from './small-print.js';
 import { wear } from './wear.js';
 
-// A card's size, as card.css draws it: the binder, the reader and the deck box scale it from here.
+// A card's size, as --card-width and --card-height (tokens.css): the binder, the reader and the deck box scale it from here.
 export const CARD = { width: 252, height: 352 };
 
 // Letters that reach above the lowercase ones, so a word centres on its capitals rather than its x-height.
@@ -55,7 +55,7 @@ function filedLine({ stats }) {
 }
 
 export function card(data) {
-  return h('article', { class: 'card card--post', dataset: { type: knownType(data.type), finish: data.finish }, 'aria-label': data.title },
+  return h('article', { class: 'card', dataset: { type: knownType(data.type), finish: data.finish }, 'aria-label': data.title },
     h('div', { class: 'card__panel' },
       filedLine(data),
       nameBar(data),
