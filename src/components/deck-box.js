@@ -419,7 +419,7 @@ export function deckBox(entries, { make, label: text = 'notes', title = 'The Dec
     filled = true;
     peeks.slice(1).forEach((peek, index) => peek.append(make(entries[index + 1])));
   };
-  const box = h('div', { class: 'deck-box' },
+  const box = h('div', { class: 'deck-box', dataset: { overBinder: '' } },
     [...peeks].reverse(),
     h('img', { class: 'deck-box__front', src: PHOTO.src, alt: '', width: PHOTO.width, height: PHOTO.height, decoding: 'async' }),
     label(text),

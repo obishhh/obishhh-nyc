@@ -37,6 +37,23 @@ function twin(element) {
   return copy;
 }
 
+// Whatever lies on the binder over the pocket a card's going back into (the deck box, the Pokédex) stays over it as
+// it lands: lifted above the flight while it lasts, and coming up with the page as the article fades, as it would
+// from under the article.
+function keepOver(pocket, flight, fade) {
+  const spot = pocket.getBoundingClientRect();
+  for (const over of document.querySelectorAll('[data-over-binder]')) {
+    const box = over.getBoundingClientRect();
+    if (box.right < spot.left || box.left > spot.right || box.bottom < spot.top || box.top > spot.bottom) continue;
+    over.style.setProperty('z-index', '61');
+    const coming = over.animate([{ opacity: 0 }, { opacity: 1 }], fade);
+    flight.then(() => {
+      coming.cancel();
+      over.style.removeProperty('z-index');
+    });
+  }
+}
+
 // A copy of the card flies between the binder and the article on its own layer, so
 // nothing it passes over can clip or fade it. A card left face down turns back over on the way.
 function fly(face, from, to, duration, back = null) {
@@ -137,6 +154,7 @@ export function enableReading(binder, cards) {
       view.pocket.style.visibility = 'hidden';
       const faceDown = view.pocket.querySelector('[aria-pressed="true"]');
       flight = fly(view.pocket.querySelector('.card'), from, to, 460, faceDown && view.pocket.querySelector('.card-back'));
+      keepOver(pocket, flight, fadeOut);
     }
     await Promise.all([flight, ...fades.map((animation) => animation.finished)]);
     view.root.remove();

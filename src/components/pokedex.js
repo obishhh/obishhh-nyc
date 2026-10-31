@@ -10,7 +10,7 @@ const SAYS = ['Will be uploading photos of my favourite cards that I have pulled
 export function pokedex() {
   const open = h('button', { class: 'pokedex__open', type: 'button', 'aria-label': 'Pokédex', 'aria-haspopup': 'dialog' });
   const says = h('dialog', { class: 'pokedex-says', 'aria-label': 'Pokédex', 'aria-live': 'polite' });
-  const root = h('div', { class: 'pokedex' },
+  const root = h('div', { class: 'pokedex', dataset: { overBinder: '' } },
     h('img', { class: 'pokedex__photo', src: PHOTO.src, alt: '', width: PHOTO.width, height: PHOTO.height, decoding: 'async' }),
     open,
     says,

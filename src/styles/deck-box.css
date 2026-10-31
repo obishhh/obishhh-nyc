@@ -240,7 +240,7 @@ html:has(.deck-spread[open]) { overflow: hidden; }
   height: calc(352px * var(--note-scale));
   border-radius: 14px;
   transform: translate(var(--shift), var(--dy)) rotate(var(--tilt));
-  transition: transform 0.3s var(--ease-out), z-index 0s 0.3s, opacity 0.3s;
+  transition: transform 0.3s var(--ease-out), z-index 0s 0.3s;
   animation: tip-out 0.5s var(--ease-out) backwards;
   animation-delay: calc(min(var(--index), 8) * 45ms);
 }
@@ -279,7 +279,26 @@ html:has(.deck-spread[open]) { overflow: hidden; }
 .deck-spread__card.is-front:not(:focus-visible) { outline: none; }
 
 .deck-spread.has-front { overflow: hidden; }
-.deck-spread.has-front .deck-spread__card:not(.is-front) { opacity: 0.25; }
+
+/* With a card up, the rest of the desk goes pale under one veil, below the raised card, so the cards still lie over
+   each other as they did. Faded one by one, the cards underneath would show through the ones on top. */
+.deck-spread__cards::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  background: rgb(255 255 255 / 0.75);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0s 0.3s;
+  pointer-events: none;
+}
+
+.deck-spread.has-front .deck-spread__cards::after {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s;
+}
 
 /* The deck's own title and ✕ go while a card's up, so the card's ✕ is the only one there, and come back after. */
 .deck-spread__bar { transition: opacity 0.2s, visibility 0s; }
